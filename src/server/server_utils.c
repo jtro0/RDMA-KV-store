@@ -93,9 +93,10 @@ int server_init(int argc, char *argv[])
                 debug = 1;
                 break;
             case 'p':
-                port = atoi(argv[optind]);
+                port = atoi(optarg);
                 break;
             default:
+                usage(argv[0]);
                 exit(EXIT_SUCCESS);
         }
     }
