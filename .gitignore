@@ -53,6 +53,17 @@ dkms.conf
 
 # IDE
 .idea
+venv
 
 # CMake
 cmake-build-debug
+CMakeFiles
+cmake_install.cmake
+CMakeCache.txt
+dump.dat
+Makefile
+RDMA_KV_store.cbp
+
+# Generated
+Testing
+bin

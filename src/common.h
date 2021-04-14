@@ -5,10 +5,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#define SERVER                          "EDU_OS_SERVER"
 
 #define PORT        35303
 #define MAXLINE     128
 #define MSG_SIZE    4096
+#define DUMP_FILE   "dump.dat"
 
 // Request protocol methods
 enum method { UNK, SET, GET, DEL, PING, DUMP, RST, EXIT, SETOPT };
@@ -87,5 +89,5 @@ do { \
 
 #define check(A, M, ...) if(!(A)) {error(M, ##__VA_ARGS__); errno=0; goto error;}
 
-struct request * allocate_request();
+//struct request * allocate_request();
 #endif //RDMA_KV_STORE_COMMON_H
