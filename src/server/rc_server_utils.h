@@ -1,0 +1,8 @@
+//
+// Created by jtroo on 15-04-21.
+//
+
+#ifndef RDMA_KV_STORE_RC_SERVER_UTILS_H
+#define RDMA_KV_STORE_RC_SERVER_UTILS_H
+
+#endif //RDMA_KV_STORE_RC_SERVER_UTILS_H

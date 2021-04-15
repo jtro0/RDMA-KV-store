@@ -5,7 +5,7 @@
 #ifndef RDMA_KV_STORE_TCP_SERVER_UTILS_H
 #define RDMA_KV_STORE_TCP_SERVER_UTILS_H
 
-#include "server_utils.h"
+#include "server/server_utils.h"
 
 int init_tcp_server(struct conn_info *connInfo);
 int tcp_accept(int sockfd, struct sockaddr *addr, socklen_t * addrlen);

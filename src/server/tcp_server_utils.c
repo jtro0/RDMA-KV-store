@@ -59,12 +59,6 @@ int init_tcp_server(struct conn_info *connInfo) {
     return connInfo->tcp_listening_info->socket_fd;
 }
 
-void close_connection(int socket)
-{
-    pr_debug("Closing connection on socket %d\n", socket);
-    close(socket);
-}
-
 int tcp_accept(int sockfd, struct sockaddr *addr, socklen_t * addrlen)
 {
     pr_info("TCP Accept new connection\n");

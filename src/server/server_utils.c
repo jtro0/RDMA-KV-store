@@ -137,6 +137,12 @@ int accept_new_connection(struct conn_info *conn_info, struct conn_info *new_con
     return ret;
 }
 
+void close_connection(int socket)
+{
+    pr_debug("Closing connection on socket %d\n", socket);
+    close(socket);
+}
+
 int connection_ready(int socket)
 {
     struct timeval timeout;
