@@ -77,8 +77,8 @@ void *main_job(void *arg) {
     request->connection_close = 0;
 
     pr_info("Starting new session from %s:%d\n",
-            inet_ntoa(conn_info->tcp_listening_info->addr.sin_addr),
-            ntohs(conn_info->tcp_listening_info->addr.sin_port));
+            inet_ntoa(conn_info->addr.sin_addr),
+            ntohs(conn_info->addr.sin_port));
 
     do {
         method = recv_request(conn_info->tcp_listening_info->socket_fd, request);

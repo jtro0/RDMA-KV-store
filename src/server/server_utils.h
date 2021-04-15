@@ -12,21 +12,34 @@
 #include "request_dispatcher.h"
 #include "common.h"
 
+// TODO Remove RDMA stuff here and move them to rdma_common or rc/uc/ud_server_utils
+#include "rdma_common.h"
+
 #define BACKLOG     10
 #define TIMEOUT     60
 
 enum connection_type { TCP, RC, UC, UD};
 
 struct tcp_conn_info {
-    struct sockaddr_in addr;
     int socket_fd;
+};
+
+struct rc_conn_info {
+    struct rdma_event_channel *cm_event_channel;
+    struct rdma_cm_id *cm_server_id;
+    struct ibv_pd *pd;
+    struct ibv_comp_channel *io_completion_channel;
+    struct ibv_cq *cq;
+    struct rdma_cm_id *cm_client_id;
 };
 
 struct conn_info {
     enum connection_type type;
+    struct sockaddr_in addr;
     unsigned int port;
 
     struct tcp_conn_info *tcp_listening_info;
+    struct rc_conn_info *rc_connection;
 };
 
 struct conn_info *server_init(int argc, char *arg[]);

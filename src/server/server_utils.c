@@ -15,7 +15,9 @@
 #include "server_utils.h"
 #include "common.h"
 #include "request_dispatcher.h"
+
 #include "tcp_server_utils.h"
+#include "rc_server_utils.h"
 
 int debug = 0;
 int verbose = 0;
@@ -99,12 +101,19 @@ struct conn_info *server_init(int argc, char *argv[])
         }
     }
 
+    memset((void *)&connInfo->addr, 0, sizeof(connInfo->addr));
+    connInfo->addr.sin_family = AF_INET;
+    connInfo->addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    connInfo->addr.sin_port = htons(connInfo->port);
+
     switch (connInfo->type) {
         case TCP:
             connInfo->tcp_listening_info = calloc(1, sizeof(struct tcp_conn_info));
             init_tcp_server(connInfo);
             break;
         case RC:
+            connInfo->rc_connection = calloc(1, sizeof(struct rc_conn_info));
+            init_rc_server(connInfo);
             break;
         case UC:
             break;

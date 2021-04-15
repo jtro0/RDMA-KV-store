@@ -28,26 +28,21 @@ int init_tcp_server(struct conn_info *connInfo) {
         exit(EXIT_FAILURE);
     }
 
-    memset((void *)&connInfo->tcp_listening_info->addr, 0, sizeof(connInfo->tcp_listening_info->addr));
-    connInfo->tcp_listening_info->addr.sin_family = AF_INET;
-    connInfo->tcp_listening_info->addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    connInfo->tcp_listening_info->addr.sin_port = htons(connInfo->port);
-
-    if ((bind(connInfo->tcp_listening_info->socket_fd, (struct sockaddr *)&connInfo->tcp_listening_info->addr,
-              sizeof(connInfo->tcp_listening_info->addr))) < 0) {
+    if ((bind(connInfo->tcp_listening_info->socket_fd, (struct sockaddr *)&connInfo->addr,
+              sizeof(connInfo->addr))) < 0) {
         perror("address and port binding failed\n");
         exit(EXIT_FAILURE);
     }
 
-    socklen_t addr_len = sizeof(connInfo->tcp_listening_info->addr);
-    if (getsockname(connInfo->tcp_listening_info->socket_fd, (struct sockaddr *)&connInfo->tcp_listening_info->addr, &addr_len)
+    socklen_t addr_len = sizeof(connInfo->addr);
+    if (getsockname(connInfo->tcp_listening_info->socket_fd, (struct sockaddr *)&connInfo->addr, &addr_len)
         == -1) {
         perror("address and port binding failed\n");
         exit(EXIT_FAILURE);
     }
 
     pr_info("[%s] Pid:%d bind on socket:%d Port:%d\n", SERVER,
-            (int)getpid(), connInfo->tcp_listening_info->socket_fd, ntohs(connInfo->tcp_listening_info->addr.sin_port));
+            (int)getpid(), connInfo->tcp_listening_info->socket_fd, ntohs(connInfo->addr.sin_port));
 
     if (listen(connInfo->tcp_listening_info->socket_fd, BACKLOG) < 0) {
         perror("Cannot listen on socket");
@@ -56,6 +51,7 @@ int init_tcp_server(struct conn_info *connInfo) {
 
     pr_info("Listening socket n. %d\n", connInfo->tcp_listening_info->socket_fd);
     signal(SIGPIPE, SIG_IGN);
+
     return connInfo->tcp_listening_info->socket_fd;
 }
 
@@ -85,11 +81,11 @@ int tcp_accept(int sockfd, struct sockaddr *addr, socklen_t * addrlen)
 int tcp_accept_new_connection(int listen_sock, struct conn_info *conn_info)
 {
     int nodelay = 1;
-    socklen_t addrlen = sizeof(conn_info->tcp_listening_info->addr);
+    socklen_t addrlen = sizeof(conn_info->addr);
 
     if ((conn_info->tcp_listening_info->socket_fd =
                  /* accept(listen_sock, (struct sockaddr *)&conn_info->addr, &addrlen)) < 0) { */
-                 tcp_accept(listen_sock, (struct sockaddr *)&conn_info->tcp_listening_info->addr,
+                 tcp_accept(listen_sock, (struct sockaddr *)&conn_info->addr,
                             &addrlen)) < 0) {
         error("Cannot accept new connection\n");
         return -1;
