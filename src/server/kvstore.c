@@ -77,24 +77,24 @@ void *main_job(void *arg) {
     request->connection_close = 0;
 
     pr_info("Starting new session from %s:%d\n",
-            inet_ntoa(conn_info->addr.sin_addr),
-            ntohs(conn_info->addr.sin_port));
+            inet_ntoa(conn_info->tcp_listening_info->addr.sin_addr),
+            ntohs(conn_info->tcp_listening_info->addr.sin_port));
 
     do {
-        method = recv_request(conn_info->socket_fd, request);
+        method = recv_request(conn_info->tcp_listening_info->socket_fd, request);
         switch (method) {
             case SET:
-                set_request(conn_info->socket_fd, request);
+                set_request(conn_info->tcp_listening_info->socket_fd, request);
                 break;
             case GET:
-                get_request(conn_info->socket_fd, request);
+                get_request(conn_info->tcp_listening_info->socket_fd, request);
                 break;
             case DEL:
-                del_request(conn_info->socket_fd, request);
+                del_request(conn_info->tcp_listening_info->socket_fd, request);
                 break;
             case RST:
                 init_hashtable(HT_CAPACITY);
-                send_response(conn_info->socket_fd, OK, 0, NULL);
+                send_response(conn_info->tcp_listening_info->socket_fd, OK, 0, NULL);
                 break;
         }
 
@@ -103,16 +103,16 @@ void *main_job(void *arg) {
 
     } while (!request->connection_close);
 
-    close_connection(conn_info->socket_fd);
+    close_connection(conn_info->tcp_listening_info->socket_fd);
     free(request);
     free(conn_info);
     return (void *) NULL;
 }
 
 int main(int argc, char *argv[]) {
-    int listen_sock, init;
+    int init;
 
-    listen_sock = server_init(argc, argv);
+    struct conn_info *server_connection = server_init(argc, argv);
 
     pr_debug("Initializing table\n");
     if ((init = init_hashtable(HT_CAPACITY)) < 0) {
@@ -132,16 +132,14 @@ int main(int argc, char *argv[]) {
     }
 
     for (;;) {
-        struct conn_info *conn_info =
+        struct conn_info *new_conn_info =
                 calloc(1, sizeof(struct conn_info));
-        if (accept_new_connection(listen_sock, conn_info) < 0) {
-            error("Cannot accept new connection");
-            free(conn_info);
+        if (accept_new_connection(server_connection, new_conn_info) < 0) {
             continue;
         }
         pthread_t thread_id;
         printf("Before Thread\n");
-        pthread_create(&thread_id, NULL, main_job, conn_info);
+        pthread_create(&thread_id, NULL, main_job, new_conn_info);
 //        main_job(conn_info);
     }
 

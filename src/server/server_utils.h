@@ -12,13 +12,25 @@
 #include "request_dispatcher.h"
 #include "common.h"
 
-struct conn_info {
+#define BACKLOG     10
+#define TIMEOUT     60
+
+enum connection_type { TCP, RC, UC, UD};
+
+struct tcp_conn_info {
     struct sockaddr_in addr;
     int socket_fd;
 };
 
-int server_init(int argc, char *arg[]);
-int accept_new_connection(int listen_sock, struct conn_info *conn_info);
+struct conn_info {
+    enum connection_type type;
+    unsigned int port;
+
+    struct tcp_conn_info *tcp_listening_info;
+};
+
+struct conn_info *server_init(int argc, char *arg[]);
+int accept_new_connection(struct conn_info *conn_info, struct conn_info *new_conn_info);
 int recv_request(int socket, struct request *request);
 int connection_ready(int socket);
 int receive_header(int socket, struct request *request);

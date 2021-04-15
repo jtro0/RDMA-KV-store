@@ -26,4 +26,4 @@ include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("/usr/include/rdma")
 include_directories("/usr/include/infiniband")
 
-add_executable(RDMA_KV_store ${SERVER_SOURCE}/kvstore.c ${SERVER_SOURCE}/kvstore.h ${SERVER_SOURCE}/hash.c ${SERVER_SOURCE}/hash.h ${PROJECT_SOURCE_DIR}/common.h  ${PROJECT_SOURCE_DIR}/common.c src/server/server_utils.c src/server/server_utils.h src/server/request_dispatcher.c src/server/request_dispatcher.h src/server/parser.c src/server/parser.h)
+add_executable(RDMA_KV_store ${SERVER_SOURCE}/kvstore.c ${SERVER_SOURCE}/kvstore.h ${SERVER_SOURCE}/hash.c ${SERVER_SOURCE}/hash.h ${PROJECT_SOURCE_DIR}/common.h  ${PROJECT_SOURCE_DIR}/common.c src/server/server_utils.c src/server/server_utils.h src/server/request_dispatcher.c src/server/request_dispatcher.h src/server/parser.c src/server/parser.h src/server/tcp_server_utils.c src/server/tcp_server_utils.h)

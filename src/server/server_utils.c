@@ -15,21 +15,10 @@
 #include "server_utils.h"
 #include "common.h"
 #include "request_dispatcher.h"
-
-#define BACKLOG     10
-#define TIMEOUT     60
+#include "tcp_server_utils.h"
 
 int debug = 0;
 int verbose = 0;
-
-int accept(int sockfd, struct sockaddr *addr, socklen_t * addrlen)
-{
-    sockfd = sockfd;
-    addr = addr;
-    addrlen = addrlen;
-    pr_debug("Calling accept() is not allowed\n");
-    exit(EXIT_FAILURE);
-}
 
 struct request *allocate_request()
 {
@@ -42,50 +31,44 @@ struct request *allocate_request()
     return r;
 }
 
-void close_connection(int socket)
-{
-    pr_debug("Closing connection on socket %d\n", socket);
-    close(socket);
-}
-
 void usage(char *prog)
 {
     fprintf(stderr, "Usage %s [--help -h] [--verbose -v] [--debug -d] "
-                    "[--port -p]\n", prog);
+                    "[--port -p] [--rdma -r]\n", prog);
     fprintf(stderr, "--help -h\n\t Print help message\n");
     fprintf(stderr, "--verbose -v\n\t Print info messages\n");
     fprintf(stderr, "--debug -d\n\t Print debug info\n");
     fprintf(stderr,
             "--port -p\n\t Port to bind on. Default: pick the first available port\n");
+    fprintf(stderr,
+            "--rdma -r\n\t Use RDMA. Choose rc, uc, or ud.\n");
 }
 
-int server_init(int argc, char *argv[])
+struct conn_info *server_init(int argc, char *argv[])
 {
-    unsigned int port = PORT;
-    int option = 1;
-    int socket_fd;
-    struct sockaddr_in server_addr;
+    struct conn_info *connInfo = calloc(1, sizeof(struct conn_info));
+    connInfo->port = PORT;
+    connInfo->type = TCP;
+    char *rdma_type;
 
     const struct option long_options[] = {
             {"help", no_argument, NULL, 'h'},
             {"verbose", no_argument, NULL, 'v'},
             {"debug", no_argument, NULL, 'd'},
             {"port", required_argument, NULL, 'p'},
+            {"rdma", required_argument, NULL, 'r'},
             {0, 0, 0, 0}
     };
 
     for (;;) {
         int option_index = 0;
         int c;
-        c = getopt_long(argc, argv, "hvdp:", long_options,
+        c = getopt_long(argc, argv, "hvdp:r:", long_options,
                         &option_index);
         if (c == -1)
             break;
 
         switch (c) {
-            case 'h':
-                usage(argv[0]);
-                exit(EXIT_SUCCESS);
             case 'v':
                 verbose = 1;
                 break;
@@ -93,93 +76,65 @@ int server_init(int argc, char *argv[])
                 debug = 1;
                 break;
             case 'p':
-                port = atoi(argv[optind]);
+                connInfo->port = atoi(optarg);
                 break;
+            case 'r':
+                rdma_type = optarg;
+                if (strncmp(rdma_type, "rc", 2) == 0) {
+                    connInfo->type = RC;
+                    break;
+                }
+                else if (strncmp(rdma_type, "uc", 2) == 0) {
+                    connInfo->type = UC;
+                    break;
+                }
+                else if (strncmp(rdma_type, "ud", 2) == 0) {
+                    connInfo->type = UD;
+                    break;
+                }
+            case 'h':
             default:
+                usage(argv[0]);
                 exit(EXIT_SUCCESS);
         }
     }
 
-    /* TCP connection */
-    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (socket_fd == -1) {
-        perror("socket cannot be created\n");
-        exit(EXIT_FAILURE);
+    switch (connInfo->type) {
+        case TCP:
+            connInfo->tcp_listening_info = calloc(1, sizeof(struct tcp_conn_info));
+            init_tcp_server(connInfo);
+            break;
+        case RC:
+            break;
+        case UC:
+            break;
+        case UD:
+            break;
     }
 
-    /* if the port is busy and in the TIME_WAIT state, reuse it anyway. */
-    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&option,
-                   sizeof(option)) < 0) {
-        close(socket_fd);
-        perror("setsockopt failed\n");
-        exit(EXIT_FAILURE);
-    }
-
-    memset((void *)&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_addr.sin_port = htons(port);
-
-    if ((bind(socket_fd, (struct sockaddr *)&server_addr,
-              sizeof(server_addr))) < 0) {
-        perror("address and port binding failed\n");
-        exit(EXIT_FAILURE);
-    }
-
-    socklen_t addr_len = sizeof(server_addr);
-    if (getsockname(socket_fd, (struct sockaddr *)&server_addr, &addr_len)
-        == -1) {
-        perror("address and port binding failed\n");
-        exit(EXIT_FAILURE);
-    }
-
-    pr_info("[%s] Pid:%d bind on socket:%d Port:%d\n", SERVER,
-            (int)getpid(), socket_fd, ntohs(server_addr.sin_port));
-
-    if (listen(socket_fd, BACKLOG) < 0) {
-        perror("Cannot listen on socket");
-        exit(EXIT_FAILURE);
-    }
-
-    pr_info("Listenig socket n. %d\n", socket_fd);
-    signal(SIGPIPE, SIG_IGN);
-    return socket_fd;
+    return connInfo;
 }
 
-int orig_accept(int sockfd, struct sockaddr *addr, socklen_t * addrlen)
-{
-    static int (*_orig_accept) (int, struct sockaddr *, socklen_t *);
+int accept_new_connection(struct conn_info *conn_info, struct conn_info *new_conn_info) {
     int ret;
-    if (!_orig_accept)
-        _orig_accept = dlsym(RTLD_NEXT, "accept");
-    ret = _orig_accept(sockfd, addr, addrlen);
-    assert(ret != -1);
+
+    switch (conn_info->type) {
+        case TCP:
+            new_conn_info->tcp_listening_info = calloc(1, sizeof(struct tcp_conn_info));
+            ret = tcp_accept_new_connection(conn_info->tcp_listening_info->socket_fd, new_conn_info);
+            break;
+        case RC:
+            break;
+        case UC:
+            break;
+        case UD:
+            break;
+    }
+    if (ret < 0) {
+        error("Cannot accept new connection");
+        free(conn_info);
+    }
     return ret;
-}
-
-/**
- * call accept() on the listening socket for incoming connections
- * @return 0 on success, -1 on error
- */
-int accept_new_connection(int listen_sock, struct conn_info *conn_info)
-{
-    int nodelay = 1;
-    socklen_t addrlen = sizeof(conn_info->addr);
-    if ((conn_info->socket_fd =
-                 /* accept(listen_sock, (struct sockaddr *)&conn_info->addr, &addrlen)) < 0) { */
-                 orig_accept(listen_sock, (struct sockaddr *)&conn_info->addr,
-                             &addrlen)) < 0) {
-        error("Cannot accept new connection\n");
-        return -1;
-    }
-
-    if (setsockopt
-                (conn_info->socket_fd, IPPROTO_TCP, TCP_NODELAY, &nodelay,
-                 sizeof(nodelay)) < 0) {
-        perror("setsockopt TCP_NODELAT");
-        return -1;
-    }
-    return 0;
 }
 
 int connection_ready(int socket)
