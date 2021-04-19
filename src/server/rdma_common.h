@@ -33,10 +33,11 @@
 	fprintf(stderr, "%s : %d : ERROR : "msg, __FILE__, __LINE__, ## args);\
 }while(0);
 
-#define check_for_error(bool, msg, args...)  \
-    if (bool)                                    \
+#define check_for_error(bool, ret, msg, args...)  \
+    if (bool) {                                   \
         rdma_error(msg, args);                \
-    return -errno;
+        return ret;                      \
+    }
 
 #ifdef ACN_RDMA_DEBUG
 /* Debug Macro */

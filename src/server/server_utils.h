@@ -24,13 +24,23 @@ struct tcp_conn_info {
     int socket_fd;
 };
 
-struct rc_conn_info {
+struct rc_client_info {
+    struct rdma_cm_id *cm_client_id;
+    struct ibv_qp *client_qp;
+    struct ibv_mr *client_metadata_mr;
+    struct rdma_buffer_attr client_metadata_attr;
+    struct ibv_sge client_recv_sge;
+    struct ibv_recv_wr client_recv_wr;
+    struct ibv_recv_wr *bad_client_recv_wr;
+};
+
+struct rc_server_info {
     struct rdma_event_channel *cm_event_channel;
     struct rdma_cm_id *cm_server_id;
     struct ibv_pd *pd;
     struct ibv_comp_channel *io_completion_channel;
     struct ibv_cq *cq;
-    struct rdma_cm_id *cm_client_id;
+    struct rc_client_info *clientInfo;
 };
 
 struct conn_info {
@@ -39,7 +49,7 @@ struct conn_info {
     unsigned int port;
 
     struct tcp_conn_info *tcp_listening_info;
-    struct rc_conn_info *rc_connection;
+    struct rc_server_info *rc_connection;
 };
 
 struct conn_info *server_init(int argc, char *arg[]);

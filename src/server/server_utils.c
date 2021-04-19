@@ -112,7 +112,7 @@ struct conn_info *server_init(int argc, char *argv[])
             init_tcp_server(connInfo);
             break;
         case RC:
-            connInfo->rc_connection = calloc(1, sizeof(struct rc_conn_info));
+            connInfo->rc_connection = calloc(1, sizeof(struct rc_server_info));
             init_rc_server(connInfo);
             break;
         case UC:
@@ -133,6 +133,8 @@ int accept_new_connection(struct conn_info *conn_info, struct conn_info *new_con
             ret = tcp_accept_new_connection(conn_info->tcp_listening_info->socket_fd, new_conn_info);
             break;
         case RC:
+            conn_info->rc_connection->clientInfo = calloc(1, sizeof(struct rc_client_info));
+            ret = rc_accept_new_connection(conn_info->rc_connection, conn_info->rc_connection->clientInfo);
             break;
         case UC:
             break;
@@ -141,7 +143,7 @@ int accept_new_connection(struct conn_info *conn_info, struct conn_info *new_con
     }
     if (ret < 0) {
         error("Cannot accept new connection");
-        free(conn_info);
+        free(new_conn_info);
     }
     return ret;
 }
