@@ -379,7 +379,7 @@ class Server:
         if g_debug_server_pid:
             self.proc = MockProc(g_debug_server_pid)
         else:
-            self.proc = subprocess.Popen([SERVER_BIN], stdout=subprocess.PIPE,
+            self.proc = subprocess.Popen([SERVER_BIN, "-t"], stdout=subprocess.PIPE,
                                          stderr=subprocess.PIPE,
                                          universal_newlines=True)
 

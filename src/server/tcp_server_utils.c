@@ -6,7 +6,7 @@
 #include <signal.h>
 #include <dlfcn.h>
 #include <assert.h>
-
+#include <string.h>
 
 #include "tcp_server_utils.h"
 
@@ -99,4 +99,12 @@ int tcp_accept_new_connection(int listen_sock, struct conn_info *conn_info)
     }
 
     return 0;
+}
+
+int tcp_read_header(int socket, struct request *request) {
+    int recved = read(socket, request, sizeof(struct request));
+    if (recved != sizeof(struct request)) {
+        return -1;
+    }
+    return recved;
 }

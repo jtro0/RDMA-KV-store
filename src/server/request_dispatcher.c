@@ -126,7 +126,7 @@ int setopt_request(int socket, struct request *request)
     }
 }
 
-void request_dispatcher(int socket, struct request *request)
+void request_dispatcher(struct conn_info *client, struct request *request)
 {
     pr_info("Method: %s\n", method_to_str(request->method));
     if (request->key) {
@@ -135,20 +135,20 @@ void request_dispatcher(int socket, struct request *request)
 
     switch (request->method) {
         case PING:
-            ping(socket);
+            ping(client->tcp_listening_info->socket_fd);
             break;
         case DUMP:
-            dump(DUMP_FILE, socket);
+            dump(DUMP_FILE, client->tcp_listening_info->socket_fd);
             break;
         case EXIT:
-            send_response(socket, OK, 0, NULL);
+            send_response(client->tcp_listening_info->socket_fd, OK, 0, NULL);
             exit(0);
             break;
         case SETOPT:
-            setopt_request(socket, request);
+            setopt_request(client->tcp_listening_info->socket_fd, request);
             break;
         case UNK:
-            send_response(socket, PARSING_ERROR, 0, NULL);
+            send_response(client->tcp_listening_info->socket_fd, PARSING_ERROR, 0, NULL);
             break;
         default:
             return;

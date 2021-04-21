@@ -65,7 +65,7 @@ struct conn_info *server_init(int argc, char *argv[])
     for (;;) {
         int option_index = 0;
         int c;
-        c = getopt_long(argc, argv, "hvdp:r:", long_options,
+        c = getopt_long(argc, argv, "hvdp:r:t", long_options,
                         &option_index);
         if (c == -1)
             break;
@@ -94,6 +94,9 @@ struct conn_info *server_init(int argc, char *argv[])
                     connInfo->type = UD;
                     break;
                 }
+            case 't':
+                connInfo->is_test = true;
+                break;
             case 'h':
             default:
                 usage(argv[0]);
@@ -173,22 +176,37 @@ int connection_ready(int socket)
     return 0;
 }
 
-int receive_header(int socket, struct request *request)
+int receive_header(struct conn_info *client, struct request *request)
 {
     int recved;
-    recved = parse_header(socket, request);
-    if (recved == 0)
-        return 0;
-    if (recved == -1) {
-        request->connection_close = 1;
-        return -1;
+    // With strings
+    if (client->is_test) {
+        recved = parse_header(client->tcp_listening_info->socket_fd, request);
+        if (recved == 0)
+            return 0;
+        if (recved == -1) {
+            request->connection_close = 1;
+            return -1;
+        }
+        if (recved == -2) {
+            send_response(client->tcp_listening_info->socket_fd, PARSING_ERROR, 0, NULL);
+            request->connection_close = 1;
+            return -1;
+        }
+        return 1;
     }
-    if (recved == -2) {
-        send_response(socket, PARSING_ERROR, 0, NULL);
-        request->connection_close = 1;
-        return -1;
+    switch (client->type) {
+        case TCP:
+            recved = tcp_read_header(client->tcp_listening_info->socket_fd, request);
+            break;
+        case RC:
+            break;
+        case UC:
+            break;
+        case UD:
+            break;
     }
-    return 1;
+    return recved;
 }
 
 /**
@@ -197,19 +215,19 @@ int receive_header(int socket, struct request *request)
  * an error can be caused by the socket not ready for I/O or
  * a bad request which cannot be parsed
  */
-int recv_request(int socket, struct request *request)
+int recv_request(struct conn_info *client, struct request *request)
 {
-    if (connection_ready(socket) == -1) {
+    if (connection_ready(client->tcp_listening_info->socket_fd) == -1) {
         return -1;
     }
-    if (receive_header(socket, request) == -1) {
+    if (receive_header(client, request) == -1) {
         // Connection closed from client side or error occurred
         free(request->key);
         request->key = NULL;
         return -1;
     }
 
-    request_dispatcher(socket, request);
+    request_dispatcher(client, request);
     return request->method;
 }
 
@@ -219,14 +237,14 @@ int recv_request(int socket, struct request *request)
  * On error 'request->connection_close' is set to indicate that the connection
  * should be closed from the server side.
  */
-int read_payload(int socket, struct request *request, size_t expected_len,
+int read_payload(struct conn_info *client, struct request *request, size_t expected_len,
                  char *buf)
 {
     char tmp;
     int recvd = 0;
     // Still read out the payload so we keep the stream consistent
     for (size_t i = 0; i < expected_len; i++) {
-        if (read(socket, &tmp, 1) <= 0) {
+        if (read(client->tcp_listening_info->socket_fd, &tmp, 1) <= 0) {
             request->connection_close = 1;
             return -1;
         }
