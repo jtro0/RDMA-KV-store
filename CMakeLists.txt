@@ -1,9 +1,10 @@
 # Merged CMake from https://github.com/animeshtrivedi/rdma-example
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.15)
 project(RDMA_KV_store C)
 
 set(PROJECT_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
+set(SERVER_SOURCE ${PROJECT_SOURCE_DIR}/server)
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
@@ -25,6 +26,6 @@ include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("/usr/include/rdma")
 include_directories("/usr/include/infiniband")
 
-file(GLOB SERVER_SOURCE "src/server/*.h" "src/server/*.c")
+add_executable(RDMA_KV_store ${SERVER_SOURCE}/kvstore.c ${SERVER_SOURCE}/kvstore.h ${SERVER_SOURCE}/hash.c ${SERVER_SOURCE}/hash.h ${PROJECT_SOURCE_DIR}/common.h  ${PROJECT_SOURCE_DIR}/common.c src/server/server_utils.c src/server/server_utils.h src/server/request_dispatcher.c src/server/request_dispatcher.h src/server/parser.c src/server/parser.h)
 
-add_executable(RDMA_KV_store ${SERVER_SOURCE})
+set_property(TARGET RDMA_KV_store PROPERTY C_STANDARD 99)
