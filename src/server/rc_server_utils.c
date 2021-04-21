@@ -3,6 +3,7 @@
 //
 
 #include "rc_server_utils.h"
+#include "rdma_common.h"
 
 int init_rc_server(struct conn_info *connInfo) {
     struct rdma_cm_event *cmEvent = NULL;
