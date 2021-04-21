@@ -1,6 +1,6 @@
 # Merged CMake from https://github.com/animeshtrivedi/rdma-example
 
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.15)
 project(RDMA_KV_store C)
 
 set(PROJECT_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
