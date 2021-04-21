@@ -4,10 +4,10 @@
 #include "common.h"
 #include "hash.h"
 
-int set_request(int socket, struct request *request);
+int set_request(struct conn_info *client, struct request *request);
 
-void get_request(int fd, struct request *pRequest);
+void get_request(struct conn_info *client, struct request *pRequest);
 
-void del_request(int fd, struct request *pRequest);
+void del_request(struct conn_info *client, struct request *pRequest);
 
 #endif //RDMA_KV_STORE_KVSTORE_H

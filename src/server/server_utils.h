@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <stdbool.h>
 
 #include "request_dispatcher.h"
 #include "common.h"
@@ -25,18 +26,19 @@ struct tcp_conn_info {
 struct conn_info {
     enum connection_type type;
     unsigned int port;
+    bool is_test;
 
     struct tcp_conn_info *tcp_listening_info;
 };
 
 struct conn_info *server_init(int argc, char *arg[]);
 int accept_new_connection(struct conn_info *conn_info, struct conn_info *new_conn_info);
-int recv_request(int socket, struct request *request);
+int recv_request(struct conn_info *client, struct request *request);
 int connection_ready(int socket);
-int receive_header(int socket, struct request *request);
+int receive_header(struct conn_info *client, struct request *request);
 void close_connection(int socket);
 struct request *allocate_request();
-int read_payload(int socket, struct request *request, size_t expected_len,
+int read_payload(struct conn_info *client, struct request *request, size_t expected_len,
                  char *buf);
 int check_payload(int socket, struct request *request, size_t expected_len);
 
