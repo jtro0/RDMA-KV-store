@@ -6,7 +6,7 @@
 #include <signal.h>
 #include <dlfcn.h>
 #include <assert.h>
-
+#include <string.h>
 
 #include "tcp_server_utils.h"
 

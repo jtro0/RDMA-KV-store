@@ -10,7 +10,6 @@
 #include <arpa/inet.h>
 #include <stdbool.h>
 
-#include "request_dispatcher.h"
 #include "common.h"
 
 #define BACKLOG     10

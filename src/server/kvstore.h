@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "hash.h"
+#include "server_utils.h"
 
 int set_request(struct conn_info *client, struct request *request);
 
