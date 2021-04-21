@@ -27,6 +27,6 @@ include_directories("/usr/include/infiniband")
 
 file(GLOB SERVER_SOURCE "src/server/*.h" "src/server/*.c")
 
-add_executable(RDMA_KV_store ${SERVER_SOURCE})
+add_executable(RDMA_KV_store ${SERVER_SOURCE} src/common.h src/common.c)
 
 set_property(TARGET RDMA_KV_store PROPERTY C_STANDARD 99)

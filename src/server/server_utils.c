@@ -22,16 +22,6 @@
 int debug = 0;
 int verbose = 0;
 
-struct request *allocate_request()
-{
-    struct request *r = malloc(sizeof(struct request));
-    if (r == NULL) {
-        pr_debug("error in memory allocation");
-        return NULL;
-    }
-
-    return r;
-}
 
 void usage(char *prog)
 {

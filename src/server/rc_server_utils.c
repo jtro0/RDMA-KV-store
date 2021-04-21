@@ -130,3 +130,84 @@ int rc_accept_new_connection(struct rc_server_info *listening, struct rc_client_
            inet_ntoa(remote_sockaddr.sin_addr));
     return ret;
 }
+
+int send_buffer_meta(struct rc_client_info *client, struct rc_server_info *server) {
+    struct ibv_wc wc;
+    int ret = -1;
+    /* Now, we first wait for the client to start the communication by
+     * sending the server its metadata info. The server does not use it
+     * in our example. We will receive a work completion notification for
+     * our pre-posted receive request.
+     */
+    ret = process_work_completion_events(server->io_completion_channel, &wc, 1);
+    if (ret != 1) {
+        rdma_error("Failed to receive , ret = %d \n", ret);
+        return ret;
+    }
+    /* if all good, then we should have client's buffer information, lets see */
+    printf("Client side buffer information is received...\n");
+    show_rdma_buffer_attr(&client->client_metadata_attr);
+    printf("The client has requested buffer length of : %u bytes \n",
+           client->client_metadata_attr.length);
+
+    client->request = allocate_request();
+    /* We need to setup requested memory buffer. This is where the client will
+    * do RDMA READs and WRITEs. */
+    client->request_mr = rdma_buffer_register(server->pd /* which protection domain */,
+                                         client->request,
+                                          sizeof(struct request) /* what size to allocate */,
+                                         (IBV_ACCESS_LOCAL_WRITE|
+                                          IBV_ACCESS_REMOTE_READ|
+                                          IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
+    check_for_error(!client->request_mr, -ENOMEM, "Server failed to create a buffer \n", -ENOMEM);
+
+    /* This buffer is used to transmit information about the above
+ * buffer to the client. So this contains the metadata about the server
+ * buffer. Hence this is called metadata buffer. Since this is already
+ * on allocated, we just register it.
+     * We need to prepare a send I/O operation that will tell the
+ * client the address of the server buffer.
+ */
+    client->request_attr.address = (uint64_t) client->request_mr->addr;
+    client->request_attr.length = (uint32_t) client->request_mr->length;
+    client->request_attr.stag.local_stag = (uint32_t) client->request_mr->lkey;
+    client->client_metadata_mr = rdma_buffer_register(server->pd /* which protection domain*/,
+                                              &client->request_attr /* which memory to register */,
+                                              sizeof(client->request_attr) /* what is the size of memory */,
+                                              IBV_ACCESS_LOCAL_WRITE /* what access permission */);
+    if(!client->client_metadata_mr){
+        rdma_error("Server failed to create to hold server metadata \n");
+        /* we assume that this is due to out of memory error */
+        return -ENOMEM;
+    }
+    /* We need to transmit this buffer. So we create a send request.
+ * A send request consists of multiple SGE elements. In our case, we only
+ * have one
+ */
+    client->client_send_sge.addr = (uint64_t) &client->request_attr;
+    client->client_send_sge.length = sizeof(client->request_attr);
+    client->client_send_sge.lkey = client->client_metadata_mr->lkey;
+    /* now we link this sge to the send request */
+    bzero(&client->client_send_wr, sizeof(client->client_send_wr));
+    client->client_send_wr.sg_list = &client->client_send_sge;
+    client->client_send_wr.num_sge = 1; // only 1 SGE element in the array
+    client->client_send_wr.opcode = IBV_WR_SEND; // This is a send request
+    client->client_send_wr.send_flags = IBV_SEND_SIGNALED; // We want to get notification
+    /* This is a fast data path operation. Posting an I/O request */
+    ret = ibv_post_send(client->client_qp /* which QP */,
+                        &client->client_send_wr /* Send request that we prepared before */,
+                        &client->bad_client_send_wr /* In case of error, this will contain failed requests */);
+    if (ret) {
+        rdma_error("Posting of server metdata failed, errno: %d \n",
+                   -errno);
+        return -errno;
+    }
+    /* We check for completion notification */
+    ret = process_work_completion_events(server->io_completion_channel, &wc, 1);
+    if (ret != 1) {
+        rdma_error("Failed to send server metadata, ret = %d \n", ret);
+        return ret;
+    }
+    debug("Local buffer metadata has been sent to the client \n");
+    return 0;
+}

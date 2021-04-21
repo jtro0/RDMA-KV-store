@@ -32,6 +32,14 @@ struct rc_client_info {
     struct ibv_sge client_recv_sge;
     struct ibv_recv_wr client_recv_wr;
     struct ibv_recv_wr *bad_client_recv_wr;
+
+    struct request *request;
+    struct ibv_mr *request_mr, *request_attr_mr;
+    struct rdma_buffer_attr request_attr;
+    struct ibv_sge client_send_sge;
+    struct ibv_send_wr client_send_wr;
+    struct ibv_send_wr *bad_client_send_wr;
+
 };
 
 struct rc_server_info {
@@ -59,7 +67,6 @@ int recv_request(struct conn_info *client, struct request *request);
 int connection_ready(int socket);
 int receive_header(struct conn_info *client, struct request *request);
 void close_connection(int socket);
-struct request *allocate_request();
 int read_payload(struct conn_info *client, struct request *request, size_t expected_len,
                  char *buf);
 int check_payload(int socket, struct request *request, size_t expected_len);
