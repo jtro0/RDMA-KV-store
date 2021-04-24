@@ -92,5 +92,7 @@ do { \
 #define check(A, M, ...) if(!(A)) {error(M, ##__VA_ARGS__); errno=0; goto error;}
 
 struct request * allocate_request();
+enum method method_to_enum(const char *str);
+const char *method_to_str(enum method code);
 void print_request(struct request *request);
 #endif //RDMA_KV_STORE_COMMON_H
