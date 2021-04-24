@@ -7,12 +7,12 @@
 
 #include "server/server_utils.h"
 
-int setup_client_resources(struct conn_info *connInfo);
+int setup_client_resources(struct rc_client_connection *client);
 
-int init_rc_server(struct conn_info *connInfo);
+int init_rc_server(struct server_info *server);
 
-int rc_accept_new_connection(struct rc_server_info *listening);
+int rc_accept_new_connection(struct server_info *server);
 
-int rc_receive_header(struct rc_server_info *server);
+int rc_receive_header(struct rc_client_connection *client);
 
 #endif //RDMA_KV_STORE_RC_SERVER_UTILS_H

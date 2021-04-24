@@ -121,28 +121,27 @@ int setopt_request(int socket, struct request *request) {
     }
 }
 
-void request_dispatcher(struct conn_info *client, struct request *request) {
+void request_dispatcher(struct client_info *client) {
+    struct request *request = client->request;
     pr_info("Method: %s\n", method_to_str(request->method));
-    if (request->key) {
-        pr_info("Key: %s [%zu]\n", request->key, request->key_len);
-    }
+    pr_info("Key: %s [%zu]\n", request->key, request->key_len);
 
     switch (request->method) {
         case PING:
-            ping(client->tcp_listening_info->socket_fd);
+            ping(client->tcp_client->socket_fd);
             break;
         case DUMP:
-            dump(DUMP_FILE, client->tcp_listening_info->socket_fd);
+            dump(DUMP_FILE, client->tcp_client->socket_fd);
             break;
         case EXIT:
-            send_response(client->tcp_listening_info->socket_fd, OK, 0, NULL);
+            send_response(client->tcp_client->socket_fd, OK, 0, NULL);
             exit(0);
             break;
         case SETOPT:
-            setopt_request(client->tcp_listening_info->socket_fd, request);
+            setopt_request(client->tcp_client->socket_fd, request);
             break;
         case UNK:
-            send_response(client->tcp_listening_info->socket_fd, PARSING_ERROR, 0, NULL);
+            send_response(client->tcp_client->socket_fd, PARSING_ERROR, 0, NULL);
             break;
         default:
             return;

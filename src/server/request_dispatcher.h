@@ -19,6 +19,6 @@
 #include "common.h"
 
 int send_response(int sock, int code, int payload_len, char *payload);
-void request_dispatcher(struct conn_info *client, struct request *request);
+void request_dispatcher(struct client_info *client);
 
 #endif //RDMA_KV_STORE_REQUEST_DISPATCHER_H

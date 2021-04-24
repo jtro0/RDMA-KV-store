@@ -36,8 +36,8 @@ void usage(char *prog) {
             "--rdma -r\n\t Use RDMA. Choose rc, uc, or ud.\n");
 }
 
-struct conn_info *server_init(int argc, char *argv[]) {
-    struct conn_info *connInfo = calloc(1, sizeof(struct conn_info));
+struct server_info *server_init(int argc, char *argv[]) {
+    struct server_info *connInfo = calloc(1, sizeof(struct server_info));
     connInfo->port = PORT;
     connInfo->type = TCP;
     char *rdma_type;
@@ -96,15 +96,17 @@ struct conn_info *server_init(int argc, char *argv[]) {
     connInfo->addr.sin_addr.s_addr = htonl(INADDR_ANY);
     connInfo->addr.sin_port = htons(connInfo->port);
 
+    connInfo->client = malloc(sizeof(struct client_info));
+    connInfo->client->request = malloc(sizeof(struct request));
+
     switch (connInfo->type) {
         case TCP:
-            connInfo->tcp_listening_info = calloc(1, sizeof(struct tcp_conn_info));
+            connInfo->tcp_server_info = calloc(1, sizeof(struct tcp_conn_info));
             init_tcp_server(connInfo);
             break;
         case RC:
-            connInfo->rc_connection = calloc(1, sizeof(struct rc_server_info));
+            connInfo->rc_server_info = calloc(1, sizeof(struct rc_server_info));
             init_rc_server(connInfo);
-            setup_client_resources(connInfo);
             break;
         case UC:
             break;
@@ -115,16 +117,17 @@ struct conn_info *server_init(int argc, char *argv[]) {
     return connInfo;
 }
 
-int accept_new_connection(struct conn_info *conn_info, struct conn_info *new_conn_info) {
+int accept_new_connection(struct server_info *server, struct client_info *client) {
     int ret;
 
-    switch (conn_info->type) {
+    switch (server->type) {
         case TCP:
-            new_conn_info->tcp_listening_info = calloc(1, sizeof(struct tcp_conn_info));
-            ret = tcp_accept_new_connection(conn_info->tcp_listening_info->socket_fd, new_conn_info);
+            client->tcp_client = malloc(sizeof(struct tcp_client_info));
+            ret = tcp_accept_new_connection(server, client->tcp_client);
             break;
         case RC:
-            ret = rc_accept_new_connection(conn_info->rc_connection);
+            setup_client_resources(client->rc_client);
+            ret = rc_accept_new_connection(server);
             break;
         case UC:
             break;
@@ -133,7 +136,7 @@ int accept_new_connection(struct conn_info *conn_info, struct conn_info *new_con
     }
     if (ret < 0) {
         error("Cannot accept new connection");
-        free(new_conn_info);
+        free(client);
     }
     return ret;
 }
@@ -144,39 +147,39 @@ void close_connection(int socket) {
 }
 
 
-int receive_header(struct conn_info *client, struct request *request) {
+int receive_header(struct client_info *client) {
     int recved;
     // With strings
     if (client->is_test) {
         // TODO remove dup code
-        if (connection_ready(client->tcp_listening_info->socket_fd) == -1) {
+        if (connection_ready(client->tcp_client->socket_fd) == -1) {
             return -1;
         }
 
-        recved = parse_header(client->tcp_listening_info->socket_fd, request);
+        recved = parse_header(client->tcp_client->socket_fd, client->request);
         if (recved == 0)
             return 0;
         if (recved == -1) {
-            request->connection_close = 1;
+            client->request->connection_close = 1;
             return -1;
         }
         if (recved == -2) {
-            send_response(client->tcp_listening_info->socket_fd, PARSING_ERROR, 0, NULL);
-            request->connection_close = 1;
+            send_response(client->tcp_client->socket_fd, PARSING_ERROR, 0, NULL);
+            client->request->connection_close = 1;
             return -1;
         }
         return 1;
     }
     switch (client->type) {
         case TCP:
-            if (connection_ready(client->tcp_listening_info->socket_fd) == -1) {
+            if (connection_ready(client->tcp_client->socket_fd) == -1) {
                 return -1;
             }
-            recved = tcp_read_header(client->tcp_listening_info->socket_fd, request);
+            recved = tcp_read_header(client->tcp_client->socket_fd, client->request);
             break;
         case RC:
             pr_info("rc going to receive\n");
-            recved = rc_receive_header(client->rc_connection);
+            recved = rc_receive_header(client->rc_client);
             break;
         case UC:
             break;
@@ -192,15 +195,15 @@ int receive_header(struct conn_info *client, struct request *request) {
  * an error can be caused by the socket not ready for I/O or
  * a bad request which cannot be parsed
  */
-int recv_request(struct conn_info *client, struct request *request) {
-    if (receive_header(client, request) == -1) {
+int recv_request(struct client_info *client) {
+    if (receive_header(client) == -1) {
         // Connection closed from client side or error occurred
         pr_info("No header received\n");
         return -1;
     }
-    print_request(client->rc_connection->request);
-    request_dispatcher(client, request);
-    return request->method;
+    print_request(client->request);
+    request_dispatcher(client);
+    return client->request->method;
 }
 
 /**
@@ -209,13 +212,13 @@ int recv_request(struct conn_info *client, struct request *request) {
  * On error 'request->connection_close' is set to indicate that the connection
  * should be closed from the server side.
  */
-int read_payload(struct conn_info *client, struct request *request, size_t expected_len,
+int read_payload(struct server_info *client, struct request *request, size_t expected_len,
                  char *buf) {
     char tmp;
     int recvd = 0;
     // Still read out the payload so we keep the stream consistent
     for (size_t i = 0; i < expected_len; i++) {
-        if (read(client->tcp_listening_info->socket_fd, &tmp, 1) <= 0) {
+        if (read(client->tcp_server_info->socket_fd, &tmp, 1) <= 0) {
             request->connection_close = 1;
             return -1;
         }
