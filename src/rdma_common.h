@@ -138,4 +138,7 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel,
 /* prints some details from the cm id */
 void show_rdma_cmid(struct rdma_cm_id *id);
 
+int post_recieve(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf);
+int post_send (size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf);
+
 #endif //RDMA_KV_STORE_RDMA_COMMON_H

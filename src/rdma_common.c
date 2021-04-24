@@ -212,3 +212,49 @@ int get_addr(char *dst, struct sockaddr *addr)
     return ret;
 }
 
+// https://github.com/jcxue/RDMA-Tutorial/blob/65893ec63c9eb004c310e25112c73a80d026c2c3/ib.c
+int post_recieve(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf)
+{
+    int ret = 0;
+    struct ibv_recv_wr *bad_recv_wr;
+
+    struct ibv_sge list = {
+            .addr   = (uintptr_t) buf,
+            .length = size,
+            .lkey   = lkey
+    };
+
+    struct ibv_recv_wr recv_wr = {
+            .wr_id = wr_id,
+            .sg_list = &list,
+            .num_sge = 1
+    };
+
+    ret = ibv_post_recv (qp, &recv_wr, &bad_recv_wr);
+    return ret;
+}
+
+int post_send (size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf)
+{
+    int ret = 0;
+    struct ibv_send_wr *bad_send_wr;
+
+    struct ibv_sge list = {
+            .addr   = (uintptr_t) buf,
+            .length = size,
+            .lkey   = lkey
+    };
+
+    struct ibv_send_wr send_wr = {
+            .wr_id      = wr_id,
+            .sg_list    = &list,
+            .num_sge    = 1,
+            .opcode     = IBV_WR_SEND,
+            .send_flags = IBV_SEND_SIGNALED
+    };
+
+    ret = ibv_post_send (qp, &send_wr, &bad_send_wr);
+    return ret;
+}
+
+

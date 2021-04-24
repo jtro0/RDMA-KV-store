@@ -6,6 +6,7 @@
 #include "request_dispatcher.h"
 #include "hash.h"
 #include "kvstore.h"
+#include "parser.h"
 
 #define HT_CAPACITY 256
 
@@ -82,24 +83,22 @@ void *main_job(void *arg) {
 
     do {
         method = recv_request(conn_info, request);
-        switch (method) {
-            case SET:
-                set_request(conn_info, request);
-                break;
-            case GET:
-                get_request(conn_info, request);
-                break;
-            case DEL:
-                del_request(conn_info, request);
-                break;
-            case RST:
-                init_hashtable(HT_CAPACITY);
-                send_response(conn_info->tcp_listening_info->socket_fd, OK, 0, NULL);
-                break;
-        }
-
-        if (request->key) {
-        }
+        print_request(request);
+//        switch (method) {
+//            case SET:
+//                set_request(conn_info, request);
+//                break;
+//            case GET:
+//                get_request(conn_info, request);
+//                break;
+//            case DEL:
+//                del_request(conn_info, request);
+//                break;
+//            case RST:
+//                init_hashtable(HT_CAPACITY);
+//                send_response(conn_info->tcp_listening_info->socket_fd, OK, 0, NULL);
+//                break;
+//        }
 
     } while (!request->connection_close);
 
@@ -131,19 +130,26 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    for (;;) {
+//    for (;;) {
         struct conn_info *new_conn_info =
                 calloc(1, sizeof(struct conn_info));
         new_conn_info->type = server_connection->type;
         new_conn_info->is_test = server_connection->is_test;
-        if (accept_new_connection(server_connection, new_conn_info) < 0) {
-            continue;
+        if (accept_new_connection(server_connection, server_connection) < 0) {
+//            continue;
+            pr_info("no new connection");
+            return 0;
         }
         pthread_t thread_id;
         printf("Before Thread\n");
-        pthread_create(&thread_id, NULL, main_job, new_conn_info);
+        pthread_create(&thread_id, NULL, main_job, server_connection);
 //        main_job(conn_info);
+//    }
+    void * ret;
+    if (pthread_join(thread_id, &ret) != 0){
+        pr_info("pthread join failed");
     }
+
 
     return 0;
 }

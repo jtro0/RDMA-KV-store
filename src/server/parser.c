@@ -90,7 +90,8 @@ int parse_header(int fd, struct request *request)
     char delim[] = " ";
 
     request->method = UNK;
-    request->key = NULL;
+//    request->key = NULL;
+    bzero(request->key, KEY_SIZE);
     request->key_len = 0;
     request->msg_len = 0;
 
@@ -111,7 +112,7 @@ int parse_header(int fd, struct request *request)
         return nread;
 
     request->key_len = strlen(token);
-    request->key = malloc(request->key_len + 1);
+//    request->key = malloc(request->key_len + 1);
     strcpy(request->key, token);
 
     // Payload len (optional)

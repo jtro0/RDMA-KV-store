@@ -107,6 +107,7 @@ struct conn_info *server_init(int argc, char *argv[])
         case RC:
             connInfo->rc_connection = calloc(1, sizeof(struct rc_server_info));
             init_rc_server(connInfo);
+            setup_client_resources(connInfo);
             break;
         case UC:
             break;
@@ -126,8 +127,9 @@ int accept_new_connection(struct conn_info *conn_info, struct conn_info *new_con
             ret = tcp_accept_new_connection(conn_info->tcp_listening_info->socket_fd, new_conn_info);
             break;
         case RC:
-            conn_info->rc_connection->clientInfo = calloc(1, sizeof(struct rc_client_info));
-            ret = rc_accept_new_connection(conn_info->rc_connection, conn_info->rc_connection->clientInfo);
+//            conn_info->rc_connection->clientInfo = calloc(1, sizeof(struct rc_client_info));
+            ret = rc_accept_new_connection(conn_info->rc_connection);
+            send_buffer_meta(conn_info->rc_connection);
             break;
         case UC:
             break;
@@ -147,30 +149,17 @@ void close_connection(int socket)
     close(socket);
 }
 
-int connection_ready(int socket)
-{
-    struct timeval timeout;
-    timeout.tv_sec = TIMEOUT;
-    timeout.tv_usec = 0;
-    fd_set rset;
-
-    FD_ZERO(&rset);
-    FD_SET(socket, &rset);
-
-    // Close connection after TIMEOUT seconds without requests
-    if (select(socket + 1, &rset, NULL, NULL, &timeout) == -1) {
-        perror("Select timeout expired with no data\n");
-        return -1;
-    }
-
-    return 0;
-}
 
 int receive_header(struct conn_info *client, struct request *request)
 {
     int recved;
     // With strings
     if (client->is_test) {
+        // TODO remove dup code
+        if (connection_ready(client->tcp_listening_info->socket_fd) == -1) {
+            return -1;
+        }
+
         recved = parse_header(client->tcp_listening_info->socket_fd, request);
         if (recved == 0)
             return 0;
@@ -187,9 +176,14 @@ int receive_header(struct conn_info *client, struct request *request)
     }
     switch (client->type) {
         case TCP:
+            if (connection_ready(client->tcp_listening_info->socket_fd) == -1) {
+                return -1;
+            }
             recved = tcp_read_header(client->tcp_listening_info->socket_fd, request);
             break;
         case RC:
+            pr_info("rc going to receive\n");
+            recved = rc_receive_header(client->rc_connection);
             break;
         case UC:
             break;
@@ -207,13 +201,11 @@ int receive_header(struct conn_info *client, struct request *request)
  */
 int recv_request(struct conn_info *client, struct request *request)
 {
-    if (connection_ready(client->tcp_listening_info->socket_fd) == -1) {
-        return -1;
-    }
     if (receive_header(client, request) == -1) {
         // Connection closed from client side or error occurred
-        free(request->key);
-        request->key = NULL;
+        pr_info("no header\n");
+//        free(request->key);
+//        request->key = NULL;
         return -1;
     }
 

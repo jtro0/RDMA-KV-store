@@ -101,6 +101,26 @@ int tcp_accept_new_connection(int listen_sock, struct conn_info *conn_info)
     return 0;
 }
 
+int connection_ready(int socket)
+{
+    struct timeval timeout;
+    timeout.tv_sec = TIMEOUT;
+    timeout.tv_usec = 0;
+    fd_set rset;
+
+    FD_ZERO(&rset);
+    FD_SET(socket, &rset);
+
+    // Close connection after TIMEOUT seconds without requests
+    if (select(socket + 1, &rset, NULL, NULL, &timeout) == -1) {
+        perror("Select timeout expired with no data\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+
 int tcp_read_header(int socket, struct request *request) {
     int recved = read(socket, request, sizeof(struct request));
     if (recved != sizeof(struct request)) {

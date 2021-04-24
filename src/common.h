@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #define SERVER                          "EDU_OS_SERVER"
 
-#define PORT        35303
+#define PORT        35304
 #define MAXLINE     128
 #define MSG_SIZE    4096
 #define DUMP_FILE   "dump.dat"
@@ -15,6 +15,7 @@
 
 // Request protocol methods
 enum method { UNK, SET, GET, DEL, PING, DUMP, RST, EXIT, SETOPT };
+enum connection_type { TCP, RC, UC, UD};
 
 static const struct {
     enum method val;
@@ -53,7 +54,7 @@ extern int debug;
 
 struct request {
     enum method method;
-    char *key;
+    char key[KEY_SIZE];
     size_t key_len;
     size_t msg_len;
     int connection_close;
@@ -91,4 +92,5 @@ do { \
 #define check(A, M, ...) if(!(A)) {error(M, ##__VA_ARGS__); errno=0; goto error;}
 
 struct request * allocate_request();
+void print_request(struct request *request);
 #endif //RDMA_KV_STORE_COMMON_H
