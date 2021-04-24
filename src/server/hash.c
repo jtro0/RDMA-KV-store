@@ -32,8 +32,7 @@ int init_hashtable(size_t capacity) {
  * Hash function by
  * http://www.cse.yorku.ca/~oz/hash.html
  */
-unsigned int hash(char *str)
-{
+unsigned int hash(char *str) {
     unsigned int hash = 5381;
     int c;
     while ((c = *str++) != 0)

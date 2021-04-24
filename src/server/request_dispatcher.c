@@ -11,16 +11,14 @@
 #include "parser.h"
 #include "kvstore.h"
 
-const char *code_msg(int code)
-{
+const char *code_msg(int code) {
     switch (code) {
         RESPONSE_CODES(RESPONSE_TEXT)
     }
     return "Unknown error";
 }
 
-int send_response(int sock, int code, int payload_len, char *payload)
-{
+int send_response(int sock, int code, int payload_len, char *payload) {
     char response[MSG_SIZE];
     ssize_t sent;
     int response_len;
@@ -55,16 +53,14 @@ int send_response(int sock, int code, int payload_len, char *payload)
     return 0;
 }
 
-int ping(int socket)
-{
+int ping(int socket) {
     return send_response(socket, OK, 0, NULL);
 }
 
 /*
  * Thread unsafe
  */
-int dump(const char *filename, int socket)
-{
+int dump(const char *filename, int socket) {
     assert(ht != NULL);
 
     int fd;
@@ -103,8 +99,7 @@ int dump(const char *filename, int socket)
     return send_response(socket, OK, 0, NULL);
 }
 
-int setopt_request(int socket, struct request *request)
-{
+int setopt_request(int socket, struct request *request) {
     if (!strcmp(request->key, "SNDBUF")) {
         char respbuf[256];
         int sndbuf = 0;
@@ -126,8 +121,7 @@ int setopt_request(int socket, struct request *request)
     }
 }
 
-void request_dispatcher(struct conn_info *client, struct request *request)
-{
+void request_dispatcher(struct conn_info *client, struct request *request) {
     pr_info("Method: %s\n", method_to_str(request->method));
     if (request->key) {
         pr_info("Key: %s [%zu]\n", request->key, request->key_len);

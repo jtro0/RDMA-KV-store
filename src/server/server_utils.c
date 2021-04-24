@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -23,8 +24,7 @@ int debug = 0;
 int verbose = 0;
 
 
-void usage(char *prog)
-{
+void usage(char *prog) {
     fprintf(stderr, "Usage %s [--help -h] [--verbose -v] [--debug -d] "
                     "[--port -p] [--rdma -r]\n", prog);
     fprintf(stderr, "--help -h\n\t Print help message\n");
@@ -36,20 +36,19 @@ void usage(char *prog)
             "--rdma -r\n\t Use RDMA. Choose rc, uc, or ud.\n");
 }
 
-struct conn_info *server_init(int argc, char *argv[])
-{
+struct conn_info *server_init(int argc, char *argv[]) {
     struct conn_info *connInfo = calloc(1, sizeof(struct conn_info));
     connInfo->port = PORT;
     connInfo->type = TCP;
     char *rdma_type;
 
     const struct option long_options[] = {
-            {"help", no_argument, NULL, 'h'},
-            {"verbose", no_argument, NULL, 'v'},
-            {"debug", no_argument, NULL, 'd'},
-            {"port", required_argument, NULL, 'p'},
-            {"rdma", required_argument, NULL, 'r'},
-            {0, 0, 0, 0}
+            {"help",    no_argument,       NULL, 'h'},
+            {"verbose", no_argument,       NULL, 'v'},
+            {"debug",   no_argument,       NULL, 'd'},
+            {"port",    required_argument, NULL, 'p'},
+            {"rdma",    required_argument, NULL, 'r'},
+            {0, 0, 0,                            0}
     };
 
     for (;;) {
@@ -75,12 +74,10 @@ struct conn_info *server_init(int argc, char *argv[])
                 if (strncmp(rdma_type, "rc", 2) == 0) {
                     connInfo->type = RC;
                     break;
-                }
-                else if (strncmp(rdma_type, "uc", 2) == 0) {
+                } else if (strncmp(rdma_type, "uc", 2) == 0) {
                     connInfo->type = UC;
                     break;
-                }
-                else if (strncmp(rdma_type, "ud", 2) == 0) {
+                } else if (strncmp(rdma_type, "ud", 2) == 0) {
                     connInfo->type = UD;
                     break;
                 }
@@ -94,7 +91,7 @@ struct conn_info *server_init(int argc, char *argv[])
         }
     }
 
-    memset((void *)&connInfo->addr, 0, sizeof(connInfo->addr));
+    memset((void *) &connInfo->addr, 0, sizeof(connInfo->addr));
     connInfo->addr.sin_family = AF_INET;
     connInfo->addr.sin_addr.s_addr = htonl(INADDR_ANY);
     connInfo->addr.sin_port = htons(connInfo->port);
@@ -141,15 +138,13 @@ int accept_new_connection(struct conn_info *conn_info, struct conn_info *new_con
     return ret;
 }
 
-void close_connection(int socket)
-{
+void close_connection(int socket) {
     pr_debug("Closing connection on socket %d\n", socket);
     close(socket);
 }
 
 
-int receive_header(struct conn_info *client, struct request *request)
-{
+int receive_header(struct conn_info *client, struct request *request) {
     int recved;
     // With strings
     if (client->is_test) {
@@ -197,8 +192,7 @@ int receive_header(struct conn_info *client, struct request *request)
  * an error can be caused by the socket not ready for I/O or
  * a bad request which cannot be parsed
  */
-int recv_request(struct conn_info *client, struct request *request)
-{
+int recv_request(struct conn_info *client, struct request *request) {
     if (receive_header(client, request) == -1) {
         // Connection closed from client side or error occurred
         pr_info("No header received\n");
@@ -216,8 +210,7 @@ int recv_request(struct conn_info *client, struct request *request)
  * should be closed from the server side.
  */
 int read_payload(struct conn_info *client, struct request *request, size_t expected_len,
-                 char *buf)
-{
+                 char *buf) {
     char tmp;
     int recvd = 0;
     // Still read out the payload so we keep the stream consistent
@@ -237,8 +230,7 @@ int read_payload(struct conn_info *client, struct request *request, size_t expec
  * Check the payload is well formed and read the last byte which shoudl be '\n'
  * It returns 0 on success, -1 otherwise.
  */
-int check_payload(int socket, struct request *request, size_t expected_len)
-{
+int check_payload(int socket, struct request *request, size_t expected_len) {
     char tmp;
     int rcved;
 

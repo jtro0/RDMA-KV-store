@@ -11,8 +11,7 @@
  * @param maxlen max size for line's length
  * @return On success the number of read bytes, -1 on error
  */
-int read_line(int fd, char *buf, int maxlen)
-{
+int read_line(int fd, char *buf, int maxlen) {
     int i;
     char c;
 
@@ -35,8 +34,7 @@ int read_line(int fd, char *buf, int maxlen)
     return i;
 }
 
-ssize_t send_on_socket(int fd, const void *buf, size_t n)
-{
+ssize_t send_on_socket(int fd, const void *buf, size_t n) {
     size_t nleft;
     ssize_t nwritten;
     const char *ptr;
@@ -57,9 +55,7 @@ ssize_t send_on_socket(int fd, const void *buf, size_t n)
 }
 
 
-
-int parse_header(int fd, struct request *request)
-{
+int parse_header(int fd, struct request *request) {
     int nread;
     char line[MSG_SIZE], *token;
     char *saveptr;

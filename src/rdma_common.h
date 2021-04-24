@@ -28,16 +28,14 @@
 #include <rdma/rdma_cma.h>
 #include <infiniband/verbs.h>
 
-/* Error Macro*/
-#define rdma_error(msg, args...) do {\
-	fprintf(stderr, "%s : %d : ERROR : "msg, __FILE__, __LINE__, ## args);\
-}while(0);
+#include "common.h"
 
-#define check_for_error(bool, ret, msg, args...)  \
-    if (bool) {                                   \
-        rdma_error(msg, args);                \
-        return ret;                      \
-    }
+/* Error Macro*/
+//#define error(msg, args...) do {\
+//    fprintf(stderr, "%s : %d : ERROR : "msg, __FILE__, __LINE__, ## args);\
+//}while(0);
+
+
 
 #ifdef ACN_RDMA_DEBUG
 /* Debug Macro */
@@ -74,8 +72,9 @@ struct __attribute((packed)) rdma_buffer_attr {
         uint32_t local_stag;
         /* if we receive, we call it remote stag */
         uint32_t remote_stag;
-    }stag;
+    } stag;
 };
+
 /* resolves a given destination name to sin_addr */
 int get_addr(char *dst, struct sockaddr *addr);
 
@@ -99,7 +98,7 @@ int process_rdma_cm_event(struct rdma_event_channel *echannel,
  * @length: Length of the buffer
  * @permission: OR of IBV_ACCESS_* permissions as defined for the enum ibv_access_flags
  */
-struct ibv_mr* rdma_buffer_alloc(struct ibv_pd *pd,
+struct ibv_mr *rdma_buffer_alloc(struct ibv_pd *pd,
                                  uint32_t length,
                                  enum ibv_access_flags permission);
 
@@ -120,6 +119,7 @@ struct ibv_mr *rdma_buffer_register(struct ibv_pd *pd,
                                     void *addr,
                                     uint32_t length,
                                     enum ibv_access_flags permission);
+
 /* Deregisters a previously register memory
  * @mr: Memory region to deregister
  */
@@ -139,6 +139,7 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel,
 void show_rdma_cmid(struct rdma_cm_id *id);
 
 int post_recieve(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf);
-int post_send (size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf);
+
+int post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf);
 
 #endif //RDMA_KV_STORE_RDMA_COMMON_H

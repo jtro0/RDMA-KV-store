@@ -2,6 +2,7 @@
 // Created by jtroo on 14-04-21.
 //
 #define _GNU_SOURCE
+
 #include <netinet/tcp.h>
 #include <signal.h>
 #include <dlfcn.h>
@@ -12,7 +13,7 @@
 
 int init_tcp_server(struct conn_info *connInfo) {
     int option = 1;
-    
+
     /* TCP connection */
     connInfo->tcp_listening_info->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (connInfo->tcp_listening_info->socket_fd == -1) {
@@ -21,28 +22,28 @@ int init_tcp_server(struct conn_info *connInfo) {
     }
 
     /* if the port is busy and in the TIME_WAIT state, reuse it anyway. */
-    if (setsockopt(connInfo->tcp_listening_info->socket_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&option,
+    if (setsockopt(connInfo->tcp_listening_info->socket_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &option,
                    sizeof(option)) < 0) {
         close(connInfo->tcp_listening_info->socket_fd);
         perror("setsockopt failed\n");
         exit(EXIT_FAILURE);
     }
 
-    if ((bind(connInfo->tcp_listening_info->socket_fd, (struct sockaddr *)&connInfo->addr,
+    if ((bind(connInfo->tcp_listening_info->socket_fd, (struct sockaddr *) &connInfo->addr,
               sizeof(connInfo->addr))) < 0) {
         perror("address and port binding failed\n");
         exit(EXIT_FAILURE);
     }
 
     socklen_t addr_len = sizeof(connInfo->addr);
-    if (getsockname(connInfo->tcp_listening_info->socket_fd, (struct sockaddr *)&connInfo->addr, &addr_len)
+    if (getsockname(connInfo->tcp_listening_info->socket_fd, (struct sockaddr *) &connInfo->addr, &addr_len)
         == -1) {
         perror("address and port binding failed\n");
         exit(EXIT_FAILURE);
     }
 
     pr_info("[%s] Pid:%d bind on socket:%d Port:%d\n", SERVER,
-            (int)getpid(), connInfo->tcp_listening_info->socket_fd, ntohs(connInfo->addr.sin_port));
+            (int) getpid(), connInfo->tcp_listening_info->socket_fd, ntohs(connInfo->addr.sin_port));
 
     if (listen(connInfo->tcp_listening_info->socket_fd, BACKLOG) < 0) {
         perror("Cannot listen on socket");
@@ -55,11 +56,10 @@ int init_tcp_server(struct conn_info *connInfo) {
     return connInfo->tcp_listening_info->socket_fd;
 }
 
-int tcp_accept(int sockfd, struct sockaddr *addr, socklen_t * addrlen)
-{
+int tcp_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
     pr_info("TCP Accept new connection\n");
 
-    static int (*_orig_accept) (int, struct sockaddr *, socklen_t *);
+    static int (*_orig_accept)(int, struct sockaddr *, socklen_t *);
     int ret;
     if (!_orig_accept)
         _orig_accept = dlsym(RTLD_NEXT, "accept");
@@ -78,14 +78,13 @@ int tcp_accept(int sockfd, struct sockaddr *addr, socklen_t * addrlen)
  * call accept() on the listening socket for incoming connections
  * @return 0 on success, -1 on error
  */
-int tcp_accept_new_connection(int listen_sock, struct conn_info *conn_info)
-{
+int tcp_accept_new_connection(int listen_sock, struct conn_info *conn_info) {
     int nodelay = 1;
     socklen_t addrlen = sizeof(conn_info->addr);
 
     if ((conn_info->tcp_listening_info->socket_fd =
                  /* accept(listen_sock, (struct sockaddr *)&conn_info->addr, &addrlen)) < 0) { */
-                 tcp_accept(listen_sock, (struct sockaddr *)&conn_info->addr,
+                 tcp_accept(listen_sock, (struct sockaddr *) &conn_info->addr,
                             &addrlen)) < 0) {
         error("Cannot accept new connection\n");
         return -1;
@@ -101,8 +100,7 @@ int tcp_accept_new_connection(int listen_sock, struct conn_info *conn_info)
     return 0;
 }
 
-int connection_ready(int socket)
-{
+int connection_ready(int socket) {
     struct timeval timeout;
     timeout.tv_sec = TIMEOUT;
     timeout.tv_usec = 0;

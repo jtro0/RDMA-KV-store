@@ -1,8 +1,7 @@
 #include <server/parser.h>
 #include "common.h"
 
-struct request *allocate_request()
-{
+struct request *allocate_request() {
     struct request *r = malloc(sizeof(struct request));
     if (r == NULL) {
         pr_debug("error in memory allocation");
@@ -13,8 +12,7 @@ struct request *allocate_request()
     return r;
 }
 
-enum method method_to_enum(const char *str)
-{
+enum method method_to_enum(const char *str) {
     const size_t nmethods = sizeof(method_conversion) /
                             sizeof(method_conversion[0]);
     size_t i;
@@ -26,8 +24,7 @@ enum method method_to_enum(const char *str)
     return UNK;
 }
 
-const char *method_to_str(enum method code)
-{
+const char *method_to_str(enum method code) {
     const size_t nmethods = sizeof(method_conversion) /
                             sizeof(method_conversion[0]);
     size_t i;
@@ -41,5 +38,6 @@ const char *method_to_str(enum method code)
 
 void print_request(struct request *request) {
     pr_info("Request:\nMethod: %s\nKey: %s\nKey_len: %zu\nMessage_len: %zu\nConnection_closed: %d\n",
-            method_to_str(request->method), request->key, request->key_len, request->msg_len, request->connection_close);
+            method_to_str(request->method), request->key, request->key_len, request->msg_len,
+            request->connection_close);
 }

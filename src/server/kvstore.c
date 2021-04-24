@@ -31,7 +31,7 @@ int set_request(struct conn_info *client, struct request *request) {
     }
     item->value = calloc(1, expected_len); // maybe +1 for \0
 
-    read_payload(client, request, expected_len-len, item->value+len);
+    read_payload(client, request, expected_len - len, item->value + len);
 
     if (request->connection_close || check_payload(client->tcp_listening_info->socket_fd, request, expected_len) < 0) {
         pthread_rwlock_unlock(&item->rwlock);
@@ -118,8 +118,7 @@ int main(int argc, char *argv[]) {
         if (init == -1) {
             pr_debug("at hashtable alloc\n");
             exit(EXIT_FAILURE);
-        }
-        else if (init == -2) {
+        } else if (init == -2) {
             pr_debug("at items alloc\n");
             exit(EXIT_FAILURE);
         }
@@ -130,22 +129,22 @@ int main(int argc, char *argv[]) {
     }
 
 //    for (;;) {
-        struct conn_info *new_conn_info =
-                calloc(1, sizeof(struct conn_info));
-        new_conn_info->type = server_connection->type;
-        new_conn_info->is_test = server_connection->is_test;
-        if (accept_new_connection(server_connection, server_connection) < 0) {
+    struct conn_info *new_conn_info =
+            calloc(1, sizeof(struct conn_info));
+    new_conn_info->type = server_connection->type;
+    new_conn_info->is_test = server_connection->is_test;
+    if (accept_new_connection(server_connection, server_connection) < 0) {
 //            continue;
-            pr_info("no new connection");
-            return 0;
-        }
-        pthread_t thread_id;
-        printf("Before Thread\n");
-        pthread_create(&thread_id, NULL, main_job, server_connection);
+        pr_info("no new connection");
+        return 0;
+    }
+    pthread_t thread_id;
+    printf("Before Thread\n");
+    pthread_create(&thread_id, NULL, main_job, server_connection);
 //        main_job(conn_info);
 //    }
-    void * ret;
-    if (pthread_join(thread_id, &ret) != 0){
+    void *ret;
+    if (pthread_join(thread_id, &ret) != 0) {
         pr_info("pthread join failed");
     }
 

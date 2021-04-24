@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+
 #define SERVER                          "EDU_OS_SERVER"
 
 #define PORT        35304
@@ -14,22 +15,34 @@
 #define KEY_SIZE 256
 
 // Request protocol methods
-enum method { UNK, SET, GET, DEL, PING, DUMP, RST, EXIT, SETOPT };
-enum connection_type { TCP, RC, UC, UD};
+enum method {
+    UNK, SET, GET, DEL, PING, DUMP, RST, EXIT, SETOPT
+};
+enum connection_type {
+    TCP, RC, UC, UD
+};
 
 static const struct {
     enum method val;
     const char *str;
 } method_conversion[] = {
         {
-                UNK, "UNK"}, {
-                SET, "SET"}, {
-                GET, "GET"}, {
-                DEL, "DEL"}, {
-                PING, "PING"}, {
-                DUMP, "DUMP"}, {
-                RST, "RESET"}, {
-                EXIT, "EXIT"}, {
+                UNK,    "UNK"},
+        {
+                SET,    "SET"},
+        {
+                GET,    "GET"},
+        {
+                DEL,    "DEL"},
+        {
+                PING,   "PING"},
+        {
+                DUMP,   "DUMP"},
+        {
+                RST,    "RESET"},
+        {
+                EXIT,   "EXIT"},
+        {
                 SETOPT, "SETOPT"},};
 
 // Error codes
@@ -61,11 +74,13 @@ struct request {
 };
 
 #if !defined(_GNU_SOURCE) || !defined(__GLIBC__) || __GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 30)
+
 #include <sys/syscall.h>
-static inline pid_t gettid(void)
-{
+
+static inline pid_t gettid(void) {
     return syscall(SYS_gettid);
 }
+
 #endif
 
 #define error(fmt, ...) \
@@ -89,10 +104,17 @@ do { \
                 ##__VA_ARGS__); \
 } while (0)
 
-#define check(A, M, ...) if(!(A)) {error(M, ##__VA_ARGS__); errno=0; goto error;}
+#define check(bool, ret, msg, args...)  \
+    if (bool) {                                   \
+        error(msg, args);                \
+        return ret;                      \
+    }
+struct request *allocate_request();
 
-struct request * allocate_request();
 enum method method_to_enum(const char *str);
+
 const char *method_to_str(enum method code);
+
 void print_request(struct request *request);
+
 #endif //RDMA_KV_STORE_COMMON_H

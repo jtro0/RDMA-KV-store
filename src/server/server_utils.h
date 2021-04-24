@@ -53,13 +53,20 @@ struct conn_info {
 };
 
 struct conn_info *server_init(int argc, char *arg[]);
+
 int accept_new_connection(struct conn_info *conn_info, struct conn_info *new_conn_info);
+
 int recv_request(struct conn_info *client, struct request *request);
+
 int connection_ready(int socket);
+
 int receive_header(struct conn_info *client, struct request *request);
+
 void close_connection(int socket);
+
 int read_payload(struct conn_info *client, struct request *request, size_t expected_len,
                  char *buf);
+
 int check_payload(int socket, struct request *request, size_t expected_len);
 
 #endif //RDMA_KV_STORE_SERVER_UTILS_H

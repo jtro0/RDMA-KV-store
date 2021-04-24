@@ -11,11 +11,11 @@
 
 enum connection_type connectionType;
 int debug = 0;
-int verbose = 1;
+int verbose = 0;
 
 void usage() {
     printf("Usage:\n");
-    printf("rdma_client: [-a <server_addr>] [-p <server_port>] -k <key> [-r <rc,uc,ud>]\n");
+    printf("rdma_client: [-a <server_addr>] [-p <server_port>] -k <key> [-r <rc,uc,ud>] -d -v\n");
     printf("(default IP is 127.0.0.1, using tcp, and port is %d)\n", PORT);
     exit(1);
 }
@@ -31,17 +31,17 @@ int main(int argc, char *argv[]) {
     connectionType = RC;
 
     const struct option long_options[] = {
-            {"help", no_argument, NULL, 'h'},
+            {"help", no_argument,       NULL, 'h'},
             {"port", required_argument, NULL, 'p'},
-            {"key", required_argument, NULL, 'k'},
+            {"key",  required_argument, NULL, 'k'},
             {"rdma", required_argument, NULL, 'r'},
-            {0, 0, 0, 0}
+            {0, 0, 0,                         0}
     };
 
     for (;;) {
         int option_index = 0;
         int c;
-        c = getopt_long(argc, argv, "a:p:k:r:h", long_options,
+        c = getopt_long(argc, argv, "a:p:k:r:hdv", long_options,
                         &option_index);
         if (c == -1)
             break;
@@ -49,9 +49,9 @@ int main(int argc, char *argv[]) {
         switch (c) {
             case 'a':
                 /* remember, this overwrites the port info */
-                ret = get_addr(optarg, (struct sockaddr*) &server_sockaddr);
+                ret = get_addr(optarg, (struct sockaddr *) &server_sockaddr);
                 if (ret) {
-                    rdma_error("Invalid IP \n");
+                    error("Invalid IP \n");
                     return ret;
                 }
                 break;
@@ -68,15 +68,19 @@ int main(int argc, char *argv[]) {
                 if (strncmp(optarg, "rc", 2) == 0) {
                     connectionType = RC;
                     break;
-                }
-                else if (strncmp(optarg, "uc", 2) == 0) {
+                } else if (strncmp(optarg, "uc", 2) == 0) {
                     connectionType = UC;
                     break;
-                }
-                else if (strncmp(optarg, "ud", 2) == 0) {
+                } else if (strncmp(optarg, "ud", 2) == 0) {
                     connectionType = UD;
                     break;
                 }
+                break;
+            case 'v':
+                verbose = 1;
+                break;
+            case 'd':
+                debug = 1;
                 break;
             case 'h':
             default:
