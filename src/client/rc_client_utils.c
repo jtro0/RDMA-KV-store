@@ -242,6 +242,17 @@ int rc_main(char *key, struct sockaddr_in *server_sockaddr) {
     print_request(server_conn->request);
     ret = send_request(server_conn, server_conn->request);
     check(ret, ret, "Failed to get send request, ret = %d \n", ret);
+    sleep(5);
+    server_conn->request = allocate_request();
+    bzero(server_conn->request, sizeof(struct request));
+    strncpy(server_conn->request->key, "BOO", KEY_SIZE);
+    server_conn->request->key_len = strlen(server_conn->request->key);
+    server_conn->request->method = SET;
+    server_conn->request->msg_len = strlen("nah");
+    print_request(server_conn->request);
+
+    ret = send_request(server_conn, server_conn->request);
+    check(ret, ret, "Failed to get send second request, ret = %d \n", ret);
 
     ret = client_disconnect_and_clean(server_conn);
     check(ret, ret, "Failed to cleanly disconnect and clean up resources \n", ret);

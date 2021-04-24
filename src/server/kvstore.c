@@ -74,7 +74,6 @@ void *main_job(void *arg) {
     int method;
     struct client_info *client = arg;
     client->request->connection_close = 0;
-
 //    pr_info("Starting new session from %s:%d\n",
 //            inet_ntoa(client->addr.sin_addr),
 //            ntohs(client->addr.sin_port));
@@ -96,7 +95,8 @@ void *main_job(void *arg) {
 //                send_response(server_info->tcp_server_info->socket_fd, OK, 0, NULL);
 //                break;
 //        }
-
+        bzero(client->request, sizeof(struct request));
+        ready_for_next_request(client);
     } while (!client->request->connection_close);
 
     close_connection(client->tcp_client->socket_fd);

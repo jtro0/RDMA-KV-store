@@ -155,7 +155,6 @@ int init_rc_server(struct server_info *server) {
 }
 
 int rc_accept_new_connection(struct server_info *server) {
-    pr_info("Going to accept\n");
     struct rdma_conn_param conn_param;
     struct rdma_cm_event *cm_event = NULL;
     struct sockaddr_in remote_sockaddr;
@@ -163,8 +162,7 @@ int rc_accept_new_connection(struct server_info *server) {
     check(!server->client->rc_client->cm_client_id || !server->client->rc_client->cm_client_id, -EINVAL,
           "Client resources are not properly setup\n", -EINVAL);
     /* we prepare the receive buffer in which we will receive the client request*/
-    pr_info("Going to alloc new request\n");
-    server->client->request = allocate_request();
+//    server->client->request = allocate_request();
     server->client->rc_client->request_mr = rdma_buffer_register(server->client->rc_client->pd /* which protection domain */,
                                                       server->client->request/* what memory */,
                                                       sizeof(struct request) /* what length */,
@@ -173,19 +171,7 @@ int rc_accept_new_connection(struct server_info *server) {
                                                   IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
     check(!server->client->rc_client->request_mr, -ENOMEM, "Failed to register client attr buffer\n", -ENOMEM);
 
-    // TODO Put these into single post recv
-    /* We pre-post this receive buffer on the QP. SGE credentials is where we
-     * receive the metadata from the client */
-    server->client->rc_client->client_recv_sge.addr = (uint64_t) server->client->rc_client->request_mr->addr; // same as &client_buffer_attr
-    server->client->rc_client->client_recv_sge.length = server->client->rc_client->request_mr->length;
-    server->client->rc_client->client_recv_sge.lkey = server->client->rc_client->request_mr->lkey;
-    /* Now we link this SGE to the work request (WR) */
-    bzero(&server->client->rc_client->client_recv_wr, sizeof(server->client->rc_client->client_recv_wr));
-    server->client->rc_client->client_recv_wr.sg_list = &server->client->rc_client->client_recv_sge;
-    server->client->rc_client->client_recv_wr.num_sge = 1; // only one SGE
-    ret = ibv_post_recv(server->client->rc_client->client_qp /* which QP */,
-                        &server->client->rc_client->client_recv_wr /* receive work request*/,
-                        &server->client->rc_client->bad_client_recv_wr /* error WRs */);
+    ret = rc_post_receive_request(server->client);
 
     check(ret, ret, "Failed to pre-post the receive buffer, errno: %d \n", ret);
 
@@ -227,5 +213,21 @@ int rc_receive_header(struct rc_client_connection *client) {
     struct ibv_wc wc;
     ret = process_work_completion_events(client->io_completion_channel, &wc, 1);
     check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
+    return ret;
+}
+
+int rc_post_receive_request(struct client_info *client) {
+    int ret = 0;
+
+    client->rc_client->client_recv_sge.addr = (uint64_t) client->rc_client->request_mr->addr;
+    client->rc_client->client_recv_sge.length = client->rc_client->request_mr->length;
+    client->rc_client->client_recv_sge.lkey = client->rc_client->request_mr->lkey;
+    /* Now we link this SGE to the work request (WR) */
+    bzero(&client->rc_client->client_recv_wr, sizeof(client->rc_client->client_recv_wr));
+    client->rc_client->client_recv_wr.sg_list = &client->rc_client->client_recv_sge;
+    client->rc_client->client_recv_wr.num_sge = 1; // only one SGE
+    ret = ibv_post_recv(client->rc_client->client_qp /* which QP */,
+                        &client->rc_client->client_recv_wr /* receive work request*/,
+                        &client->rc_client->bad_client_recv_wr /* error WRs */);
     return ret;
 }

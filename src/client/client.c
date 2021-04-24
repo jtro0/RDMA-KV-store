@@ -111,4 +111,6 @@ int main(int argc, char *argv[]) {
         case UD:
             break;
     }
+
+    return 0;
 }

@@ -147,6 +147,23 @@ void close_connection(int socket) {
 }
 
 
+// TODO Ask if it is better to have it wait for the prev request to be done or to alloc/reg new request
+int ready_for_next_request(struct client_info *client) {
+    int ret = 0;
+    switch (client->type) {
+        case TCP:
+            break;
+        case RC:
+            ret = rc_post_receive_request(client);
+            break;
+        case UC:
+            break;
+        case UD:
+            break;
+    }
+    return ret;
+}
+
 int receive_header(struct client_info *client) {
     int recved;
     // With strings
@@ -201,7 +218,9 @@ int recv_request(struct client_info *client) {
         pr_info("No header received\n");
         return -1;
     }
-    print_request(client->request);
+    struct request *test = malloc(sizeof(struct request));
+    memcpy(test, client->request, sizeof(struct request));
+    print_request(test);
     request_dispatcher(client);
     return client->request->method;
 }

@@ -75,6 +75,8 @@ int recv_request(struct client_info *client);
 
 int connection_ready(int socket);
 
+int ready_for_next_request(struct client_info *client);
+
 int receive_header(struct client_info *client);
 
 void close_connection(int socket);
