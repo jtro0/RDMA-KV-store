@@ -73,8 +73,7 @@ void del_request(struct server_info *client, struct request *pRequest) {
 void *main_job(void *arg) {
     int method;
     struct client_info *client = arg;
-    struct request *request = allocate_request();
-    request->connection_close = 0;
+    client->request->connection_close = 0;
 
 //    pr_info("Starting new session from %s:%d\n",
 //            inet_ntoa(client->addr.sin_addr),
@@ -82,7 +81,6 @@ void *main_job(void *arg) {
 
     do {
         method = recv_request(client);
-        print_request(request);
 //        switch (method) {
 //            case SET:
 //                set_request(server_info, request);
@@ -99,10 +97,10 @@ void *main_job(void *arg) {
 //                break;
 //        }
 
-    } while (!request->connection_close);
+    } while (!client->request->connection_close);
 
     close_connection(client->tcp_client->socket_fd);
-    free(request);
+    free(client->request);
     free(client);
     return (void *) NULL;
 }
