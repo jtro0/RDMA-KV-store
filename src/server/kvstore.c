@@ -6,7 +6,6 @@
 #include "request_dispatcher.h"
 #include "hash.h"
 #include "kvstore.h"
-#include "parser.h"
 
 #define HT_CAPACITY 256
 

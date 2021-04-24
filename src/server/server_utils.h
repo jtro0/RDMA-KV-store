@@ -23,24 +23,6 @@ struct tcp_conn_info {
     int socket_fd;
 };
 
-//struct rc_client_info {
-//    struct rdma_cm_id *cm_client_id;
-//    struct ibv_qp *client_qp;
-//    struct ibv_mr *client_metadata_mr;
-//    struct rdma_buffer_attr client_metadata_attr;
-//    struct ibv_sge client_recv_sge;
-//    struct ibv_recv_wr client_recv_wr;
-//    struct ibv_recv_wr *bad_client_recv_wr;
-//
-//    struct request *request;
-//    struct ibv_mr *request_mr, *request_attr_mr;
-//    struct rdma_buffer_attr request_attr;
-//    struct ibv_sge client_send_sge;
-//    struct ibv_send_wr client_send_wr;
-//    struct ibv_send_wr *bad_client_send_wr;
-//    struct ibv_wc *wc;
-//};
-
 struct rc_server_info {
     struct rdma_event_channel *cm_event_channel;
     struct rdma_cm_id *cm_server_id;
@@ -49,22 +31,14 @@ struct rc_server_info {
     struct ibv_cq *cq;
 //    struct rc_client_info *clientInfo;
 
-//    struct ibv_wc *wcs;
     struct rdma_cm_id *cm_client_id;
     struct ibv_qp *client_qp;
-//    struct ibv_mr *client_metadata_mr;
-//    struct rdma_buffer_attr client_metadata_attr;
     struct ibv_sge client_recv_sge;
     struct ibv_recv_wr client_recv_wr;
     struct ibv_recv_wr *bad_client_recv_wr;
 
     struct request *request;
     struct ibv_mr *request_mr, *request_attr_mr;
-    struct rdma_buffer_attr request_attr;
-    struct ibv_sge client_send_sge;
-    struct ibv_send_wr client_send_wr;
-    struct ibv_send_wr *bad_client_send_wr;
-    struct ibv_wc wc;
     struct ibv_qp_init_attr qp_init_attr;
 };
 

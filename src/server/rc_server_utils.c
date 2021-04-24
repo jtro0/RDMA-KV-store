@@ -170,25 +170,7 @@ int rc_accept_new_connection(struct rc_server_info *listening) {
     struct sockaddr_in remote_sockaddr;
     int ret = -1;
     check_for_error(!listening->cm_client_id || !listening->cm_client_id, -EINVAL, "Client resources are not properly setup\n", -EINVAL);
-    /* we prepare the receive buffer in which we will receive the client metadata*/
-//    listening->client_metadata_mr = rdma_buffer_register(listening->pd /* which protection domain */,
-//                                              &listening->client_metadata_attr /* what memory */,
-//                                              sizeof(listening->client_metadata_attr) /* what length */,
-//                                              (IBV_ACCESS_LOCAL_WRITE) /* access permissions */);
-//    check_for_error(!listening->client_metadata_mr, -ENOMEM, "Failed to register client attr buffer\n", -ENOMEM);
-//
-//    /* We pre-post this receive buffer on the QP. SGE credentials is where we
-//     * receive the metadata from the client */
-//    listening->client_recv_sge.addr = (uint64_t) listening->client_metadata_mr->addr; // same as &client_buffer_attr
-//    listening->client_recv_sge.length = listening->client_metadata_mr->length;
-//    listening->client_recv_sge.lkey = listening->client_metadata_mr->lkey;
-//    /* Now we link this SGE to the work request (WR) */
-//    bzero(&listening->client_recv_wr, sizeof(listening->client_recv_wr));
-//    listening->client_recv_wr.sg_list = &listening->client_recv_sge;
-//    listening->client_recv_wr.num_sge = 1; // only one SGE
-//    ret = ibv_post_recv(listening->client_qp /* which QP */,
-//                        &listening->client_recv_wr /* receive work request*/,
-//                        &listening->bad_client_recv_wr /* error WRs */);
+    /* we prepare the receive buffer in which we will receive the client request*/
     listening->request = allocate_request();
     listening->request_mr = rdma_buffer_register(listening->pd /* which protection domain */,
                                               listening->request/* what memory */,
@@ -198,6 +180,7 @@ int rc_accept_new_connection(struct rc_server_info *listening) {
                                                   IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
     check_for_error(!listening->request_mr, -ENOMEM, "Failed to register client attr buffer\n", -ENOMEM);
 
+    // TODO Put these into single post recv
     /* We pre-post this receive buffer on the QP. SGE credentials is where we
      * receive the metadata from the client */
     listening->client_recv_sge.addr = (uint64_t) listening->request_mr->addr; // same as &client_buffer_attr
@@ -246,113 +229,10 @@ int rc_accept_new_connection(struct rc_server_info *listening) {
     return ret;
 }
 
-//int send_buffer_meta(struct rc_server_info *server) {
-//    struct ibv_wc wc;
-//    int ret = -1;
-//    /* Now, we first wait for the client to start the communication by
-//     * sending the server its metadata info. The server does not use it
-//     * in our example. We will receive a work completion notification for
-//     * our pre-posted receive request.
-//     */
-////    ret = process_work_completion_events(server->io_completion_channel, &wc, 1);
-////    if (ret != 1) {
-////        rdma_error("Failed to receive , ret = %d \n", ret);
-////        return ret;
-////    }
-//    /* if all good, then we should have client's buffer information, lets see */
-////    printf("Client side buffer information is received...\n");
-////    show_rdma_buffer_attr(&server->client_metadata_attr);
-////    printf("The client has requested buffer length of : %u bytes \n",
-////           server->client_metadata_attr.length);
-//
-//    server->request = allocate_request();
-//    /* We need to setup requested memory buffer. This is where the client will
-//    * do RDMA READs and WRITEs. */
-//    server->request_mr = rdma_buffer_register(server->pd /* which protection domain */,
-//                                         server->request,
-//                                          sizeof(struct request) /* what size to allocate */,
-//                                         (IBV_ACCESS_LOCAL_WRITE|
-//                                          IBV_ACCESS_REMOTE_READ| // TODO Remove this permission?
-//                                          IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
-//    check_for_error(!server->request_mr, -ENOMEM, "Server failed to create a buffer \n", -ENOMEM);
-//
-//    /* This buffer is used to transmit information about the above
-// * buffer to the client. So this contains the metadata about the server
-// * buffer. Hence this is called metadata buffer. Since this is already
-// * on allocated, we just register it.
-//     * We need to prepare a send I/O operation that will tell the
-// * client the address of the server buffer.
-// */
-//    server->request_attr.address = (uint64_t) server->request_mr->addr;
-//    server->request_attr.length = (uint32_t) server->request_mr->length;
-//    server->request_attr.stag.local_stag = (uint32_t) server->request_mr->lkey;
-//    server->client_metadata_mr = rdma_buffer_register(server->pd /* which protection domain*/,
-//                                              &server->request_attr /* which memory to register */,
-//                                              sizeof(server->request_attr) /* what is the size of memory */,
-//                                              IBV_ACCESS_LOCAL_WRITE /* what access permission */);
-//    if(!server->client_metadata_mr){
-//        rdma_error("Server failed to create to hold server metadata \n");
-//        /* we assume that this is due to out of memory error */
-//        return -ENOMEM;
-//    }
-//    /* We need to transmit this buffer. So we create a send request.
-// * A send request consists of multiple SGE elements. In our case, we only
-// * have one
-// */
-//    server->client_send_sge.addr = (uint64_t) &server->request_attr;
-//    server->client_send_sge.length = sizeof(server->request_attr);
-//    server->client_send_sge.lkey = server->client_metadata_mr->lkey;
-//    /* now we link this sge to the send request */
-//    bzero(&server->client_send_wr, sizeof(server->client_send_wr));
-//    server->client_send_wr.sg_list = &server->client_send_sge;
-//    server->client_send_wr.num_sge = 1; // only 1 SGE element in the array
-//    server->client_send_wr.opcode = IBV_WR_SEND; // This is a send request
-//    server->client_send_wr.send_flags = IBV_SEND_SIGNALED; // We want to get notification
-//    /* This is a fast data path operation. Posting an I/O request */
-//    ret = ibv_post_send(server->client_qp /* which QP */,
-//                        &server->client_send_wr /* Send request that we prepared before */,
-//                        &server->bad_client_send_wr /* In case of error, this will contain failed requests */);
-//    if (ret) {
-//        rdma_error("Posting of server metdata failed, errno: %d \n",
-//                   -errno);
-//        return -errno;
-//    }
-//    /* We check for completion notification */
-//    ret = process_work_completion_events(server->io_completion_channel, &wc, 1);
-//    if (ret != 1) {
-//        rdma_error("Failed to send server metadata, ret = %d \n", ret);
-//        return ret;
-//    }
-//    debug("Local buffer metadata has been sent to the client \n");
-//    return 0;
-//}
-
 int rc_receive_header(struct rc_server_info *server) {
     int ret = 0, n = 0;
     struct ibv_wc wc;
-
-//    ret = post_recieve(sizeof(struct request), server->request_mr->lkey, wc.wr_id, server->client_qp,
-//                       server->request);
-
     ret = process_work_completion_events(server->io_completion_channel, &wc, 1);
-//    ret = post_recieve(sizeof(struct request), server->request_mr->lkey, wc.wr_id, server->client_qp,
-//                       server->request);
-
-
-//    do {
-//        n = ibv_poll_cq(server->cq, 1, &server->wc);
-//    } while (n < 1);
-//    if (server->wc.status != IBV_WC_SUCCESS) {
-//        if (server->wc.opcode == IBV_WC_RECV) {
-//            pr_debug("receive failed");
-//            return -1;
-//        }
-//    }
-//
-//    if (server->wc.opcode == IBV_WC_RECV) {
-//        pr_info("got recv\n");
-//        return sizeof(struct request);
-//    }
-
+    check_for_error(ret<0, -errno, "Failed to receive header: %d\n", ret);
     return ret;
 }

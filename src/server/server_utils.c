@@ -127,9 +127,7 @@ int accept_new_connection(struct conn_info *conn_info, struct conn_info *new_con
             ret = tcp_accept_new_connection(conn_info->tcp_listening_info->socket_fd, new_conn_info);
             break;
         case RC:
-//            conn_info->rc_connection->clientInfo = calloc(1, sizeof(struct rc_client_info));
             ret = rc_accept_new_connection(conn_info->rc_connection);
-//            send_buffer_meta(conn_info->rc_connection);
             break;
         case UC:
             break;
@@ -203,14 +201,11 @@ int recv_request(struct conn_info *client, struct request *request)
 {
     if (receive_header(client, request) == -1) {
         // Connection closed from client side or error occurred
-        pr_info("no header\n");
-//        free(request->key);
-//        request->key = NULL;
+        pr_info("No header received\n");
         return -1;
     }
     print_request(client->rc_connection->request);
-
-//    request_dispatcher(client, request);
+    request_dispatcher(client, request);
     return request->method;
 }
 
