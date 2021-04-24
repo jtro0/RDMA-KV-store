@@ -417,7 +417,7 @@ int send_request(struct rc_server_conn *server_conn, struct request *request) {
                                           IBV_ACCESS_REMOTE_WRITE));
 
     ret = post_send(sizeof(struct request), server_conn->client_request_mr->lkey, wc.wr_id, server_conn->client_qp, request);
-
+    pr_info("posted\n");
 //    server_conn->client_send_sge.addr = (uint64_t) server_conn->client_request_mr->addr;
 //    server_conn->client_send_sge.length = (uint32_t) server_conn->client_request_mr->length;
 //    server_conn->client_send_sge.lkey = server_conn->client_request_mr->lkey;
@@ -531,28 +531,31 @@ int rc_main(char *key, struct sockaddr_in *server_sockaddr) {
         rdma_error("Failed to setup client connection , ret = %d \n", ret);
         return ret;
     }
-    ret = client_pre_post_recv_buffer(server_conn);
-    if (ret) {
-        rdma_error("Failed to setup client connection , ret = %d \n", ret);
-        return ret;
-    }
+//    ret = client_pre_post_recv_buffer(server_conn);
+//    if (ret) {
+//        rdma_error("Failed to setup client connection , ret = %d \n", ret);
+//        return ret;
+//    }
     ret = client_connect_to_server(server_conn);
     if (ret) {
         rdma_error("Failed to setup client connection , ret = %d \n", ret);
         return ret;
     }
+    pr_info("connected\n");
 
-    ret = get_server_request_metadata(server_conn);
-    if (ret) {
-        rdma_error("Failed to get server request location , ret = %d \n", ret);
-        return ret;
-    }
+//    ret = get_server_request_metadata(server_conn);
+//    if (ret) {
+//        rdma_error("Failed to get server request location , ret = %d \n", ret);
+//        return ret;
+//    }
     server_conn->request = allocate_request();
     bzero(server_conn->request, sizeof(struct request));
     strncpy(server_conn->request->key, "testing", KEY_SIZE);
     server_conn->request->key_len = strlen(server_conn->request->key);
     server_conn->request->method = GET;
     server_conn->request->msg_len = strlen("hello server");
+    pr_info("going to send\n");
+    print_request(server_conn->request);
     ret = send_request(server_conn, server_conn->request);
     if (ret) {
         rdma_error("Failed to get send request, ret = %d \n", ret);

@@ -52,8 +52,8 @@ struct rc_server_info {
 //    struct ibv_wc *wcs;
     struct rdma_cm_id *cm_client_id;
     struct ibv_qp *client_qp;
-    struct ibv_mr *client_metadata_mr;
-    struct rdma_buffer_attr client_metadata_attr;
+//    struct ibv_mr *client_metadata_mr;
+//    struct rdma_buffer_attr client_metadata_attr;
     struct ibv_sge client_recv_sge;
     struct ibv_recv_wr client_recv_wr;
     struct ibv_recv_wr *bad_client_recv_wr;
