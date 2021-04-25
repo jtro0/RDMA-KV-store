@@ -17,4 +17,5 @@ int rc_receive_header(struct rc_client_connection *client);
 
 int rc_post_receive_request(struct client_info *client);
 
+int rc_send_response(struct client_info *client);
 #endif //RDMA_KV_STORE_RC_SERVER_UTILS_H

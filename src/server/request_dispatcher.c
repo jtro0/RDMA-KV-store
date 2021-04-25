@@ -53,14 +53,14 @@ int send_response(struct client_info *client, int code, int payload_len, char *p
         return 0;
     }
 
-    struct response *response = calloc(1, sizeof(response));
-
     int sent;
-    response->code = code;
-    memcpy(response->msg, payload, MSG_SIZE);
-    response->msg_len = payload_len;
 
-    sent = send_response_to_client(client, response);
+    bzero(client->response, sizeof(struct response));
+    client->response->code = code;
+    memcpy(client->response->msg, payload, MSG_SIZE);
+    client->response->msg_len = payload_len;
+
+    sent = send_response_to_client(client);
 
     if (sent < 0) {
         error("Cannot send response to client\n");
