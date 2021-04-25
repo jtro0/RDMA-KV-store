@@ -11,7 +11,7 @@
 
 hashtable_t *ht;
 
-int set_request(struct server_info *client, struct request *request) {
+int set_request(struct client_info *client, struct request *request) {
     size_t len = 0;
     size_t expected_len = request->msg_len;
 
@@ -23,8 +23,8 @@ int set_request(struct server_info *client, struct request *request) {
         pr_debug("this one\n");
         char *trash = malloc(expected_len);
         read_payload(client, request, expected_len, trash);
-        check_payload(client->tcp_server_info->socket_fd, request, expected_len);
-        send_response(client->tcp_server_info->socket_fd, KEY_ERROR, 0, NULL);
+        check_payload(client->tcp_client->socket_fd, request, expected_len);
+        send_response(client, KEY_ERROR, 0, NULL);
         free(trash);
 
         return -1;
@@ -33,41 +33,41 @@ int set_request(struct server_info *client, struct request *request) {
 
     read_payload(client, request, expected_len - len, item->value + len);
 
-    if (request->connection_close || check_payload(client->tcp_server_info->socket_fd, request, expected_len) < 0) {
+    if (request->connection_close || check_payload(client->tcp_client->socket_fd, request, expected_len) < 0) {
         pthread_rwlock_unlock(&item->rwlock);
         remove_item(request->key, request->key_len);
         return -1;
     }
 
     item->value_size = expected_len;
-    send_response(client->tcp_server_info->socket_fd, OK, 0, NULL);
+    send_response(client, OK, 0, NULL);
     pr_debug("Everything is good, sent response\n");
     pthread_rwlock_unlock(&item->rwlock);
 
     return 0;
 }
 
-void get_request(struct server_info *client, struct request *pRequest) {
+void get_request(struct client_info *client, struct request *pRequest) {
     hash_item_t *item = search(pRequest->key, pRequest->key_len);
     if (item == NULL) {
-        send_response(client->tcp_server_info->socket_fd, KEY_ERROR, 0, NULL);
+        send_response(client, KEY_ERROR, 0, NULL);
         return;
     }
     if (pthread_rwlock_tryrdlock(&item->rwlock) != 0) {
-        send_response(client->tcp_server_info->socket_fd, KEY_ERROR, 0, NULL);
+        send_response(client, KEY_ERROR, 0, NULL);
         return;
     }
-    send_response(client->tcp_server_info->socket_fd, OK, item->value_size, item->value);
+    send_response(client, OK, item->value_size, item->value);
     pthread_rwlock_unlock(&item->rwlock);
 }
 
-void del_request(struct server_info *client, struct request *pRequest) {
+void del_request(struct client_info *client, struct request *pRequest) {
     if (remove_item(pRequest->key, pRequest->key_len) < 0) {
-        send_response(client->tcp_server_info->socket_fd, KEY_ERROR, 0, NULL);
+        send_response(client, KEY_ERROR, 0, NULL);
         return;
     }
 
-    send_response(client->tcp_server_info->socket_fd, OK, 0, NULL);
+    send_response(client, OK, 0, NULL);
 }
 
 void *main_job(void *arg) {
@@ -80,21 +80,21 @@ void *main_job(void *arg) {
 
     do {
         method = recv_request(client);
-//        switch (method) {
-//            case SET:
-//                set_request(server_info, request);
-//                break;
-//            case GET:
-//                get_request(server_info, request);
-//                break;
-//            case DEL:
-//                del_request(server_info, request);
-//                break;
-//            case RST:
-//                init_hashtable(HT_CAPACITY);
-//                send_response(server_info->tcp_server_info->socket_fd, OK, 0, NULL);
-//                break;
-//        }
+        switch (method) {
+            case SET:
+                set_request(client, client->request);
+                break;
+            case GET:
+                get_request(client, client->request);
+                break;
+            case DEL:
+                del_request(client, client->request);
+                break;
+            case RST:
+                init_hashtable(HT_CAPACITY);
+                send_response(client, OK, 0, NULL);
+                break;
+        }
         bzero(client->request, sizeof(struct request));
         ready_for_next_request(client);
     } while (!client->request->connection_close);

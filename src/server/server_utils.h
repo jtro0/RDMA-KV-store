@@ -81,9 +81,11 @@ int receive_header(struct client_info *client);
 
 void close_connection(int socket);
 
-int read_payload(struct server_info *client, struct request *request, size_t expected_len,
+int read_payload(struct client_info *client, struct request *request, size_t expected_len,
                  char *buf);
 
 int check_payload(int socket, struct request *request, size_t expected_len);
+
+int send_response_to_client(struct client_info *client, struct response *response);
 
 #endif //RDMA_KV_STORE_SERVER_UTILS_H

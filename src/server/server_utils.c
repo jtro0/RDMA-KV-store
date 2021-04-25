@@ -180,7 +180,7 @@ int receive_header(struct client_info *client) {
             return -1;
         }
         if (recved == -2) {
-            send_response(client->tcp_client->socket_fd, PARSING_ERROR, 0, NULL);
+            send_response(client, PARSING_ERROR, 0, NULL);
             client->request->connection_close = 1;
             return -1;
         }
@@ -230,13 +230,13 @@ int recv_request(struct client_info *client) {
  * On error 'request->connection_close' is set to indicate that the connection
  * should be closed from the server side.
  */
-int read_payload(struct server_info *client, struct request *request, size_t expected_len,
+int read_payload(struct client_info *client, struct request *request, size_t expected_len,
                  char *buf) {
     char tmp;
     int recvd = 0;
     // Still read out the payload so we keep the stream consistent
     for (size_t i = 0; i < expected_len; i++) {
-        if (read(client->tcp_server_info->socket_fd, &tmp, 1) <= 0) {
+        if (read(client->tcp_client->socket_fd, &tmp, 1) <= 0) {
             request->connection_close = 1;
             return -1;
         }
@@ -264,4 +264,20 @@ int check_payload(int socket, struct request *request, size_t expected_len) {
         return -1;
     }
     return 0;
+}
+
+int send_response_to_client(struct client_info *client, struct response *response) {
+    int ret;
+    switch (client->type) {
+        case TCP:
+            ret = tcp_send_response(client->tcp_client, response);
+            break;
+        case RC:
+            break;
+        case UC:
+            break;
+        case UD:
+            break;
+    }
+    return ret;
 }

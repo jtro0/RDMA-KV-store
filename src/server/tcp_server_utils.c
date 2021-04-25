@@ -126,3 +126,11 @@ int tcp_read_header(int socket, struct request *request) {
     }
     return recved;
 }
+
+int tcp_send_response(struct tcp_client_info *client, struct response *response) {
+    int sent = write(client->socket_fd, response, sizeof(struct response));
+    if (sent < sizeof(struct response)) {
+        return -1;
+    }
+    return sent;
+}

@@ -15,4 +15,5 @@ int tcp_accept_new_connection(struct server_info *server, struct tcp_client_info
 
 int tcp_read_header(int socket, struct request *request);
 
+int tcp_send_response(struct tcp_client_info *client, struct response *response);
 #endif //RDMA_KV_STORE_TCP_SERVER_UTILS_H

@@ -11,8 +11,8 @@
 #define PORT        35304
 #define MAXLINE     128
 #define MSG_SIZE    4096
-#define DUMP_FILE   "dump.dat"
 #define KEY_SIZE 256
+#define DUMP_FILE   "dump.dat"
 
 // Request protocol methods
 enum method {
@@ -57,7 +57,7 @@ static const struct {
 #define RESPONSE_ENUM(ID, NAME, TEXT) NAME = ID,
 #define RESPONSE_TEXT(ID, NAME, TEXT) case ID: return TEXT;
 
-enum {
+enum response_code {
     RESPONSE_CODES(RESPONSE_ENUM)
 };
 
@@ -68,9 +68,16 @@ extern int debug;
 struct request {
     enum method method;
     char key[KEY_SIZE];
+    char msg[MSG_SIZE];
     size_t key_len;
     size_t msg_len;
     int connection_close;
+};
+
+struct response {
+    enum response_code code;
+    char msg[MSG_SIZE];
+    size_t msg_len;
 };
 
 #if !defined(_GNU_SOURCE) || !defined(__GLIBC__) || __GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 30)
