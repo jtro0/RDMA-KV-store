@@ -11,13 +11,6 @@
 #include "parser.h"
 #include "kvstore.h"
 
-const char *code_msg(int code) {
-    switch (code) {
-        RESPONSE_CODES(RESPONSE_TEXT)
-    }
-    return "Unknown error";
-}
-
 int send_response(struct client_info *client, int code, int payload_len, char *payload) {
     if (client->is_test) {
         char response[MSG_SIZE];

@@ -157,6 +157,29 @@ int send_request(struct rc_server_conn *server_conn, struct request *request) {
     return 0;
 }
 
+int receive_response(struct rc_server_conn *server_conn, struct response *response) {
+    int ret;
+    struct ibv_wc wc;
+    server_conn->client_response_mr = rdma_buffer_register(server_conn->pd,
+                                                          response,
+                                                          sizeof(struct response),
+                                                          (IBV_ACCESS_LOCAL_WRITE |
+                                                           IBV_ACCESS_REMOTE_READ |
+                                                           IBV_ACCESS_REMOTE_WRITE));
+
+    ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, wc.wr_id, server_conn->client_qp,
+                    response);
+
+    check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
+
+    /* at this point we are expecting 1 work completion for the write */
+    ret = process_work_completion_events(server_conn->io_completion_channel,
+                                         &wc, 1);
+    check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
+          ret);
+
+    return 0;
+}
 
 /* This function disconnects the RDMA connection from the server and cleans up
  * all the resources.
@@ -236,23 +259,36 @@ int rc_main(char *key, struct sockaddr_in *server_sockaddr) {
     bzero(server_conn->request, sizeof(struct request));
     strncpy(server_conn->request->key, "testing", KEY_SIZE);
     server_conn->request->key_len = strlen(server_conn->request->key);
-    server_conn->request->method = GET;
+    server_conn->request->method = SET;
     server_conn->request->msg_len = strlen("hello server");
+    strncpy(server_conn->request->msg, "hello server", MSG_SIZE);
 
     print_request(server_conn->request);
     ret = send_request(server_conn, server_conn->request);
     check(ret, ret, "Failed to get send request, ret = %d \n", ret);
+
+    server_conn->response = malloc(sizeof(struct response));
+    bzero(server_conn->response, sizeof(struct response));
+    ret = receive_response(server_conn, server_conn->response);
+    print_response(server_conn->response);
+    check(ret, ret, "Failed to receive response, ret = %d \n", ret);
+
     sleep(5);
+
     server_conn->request = allocate_request();
     bzero(server_conn->request, sizeof(struct request));
-    strncpy(server_conn->request->key, "BOO", KEY_SIZE);
+    strncpy(server_conn->request->key, "testing", KEY_SIZE);
     server_conn->request->key_len = strlen(server_conn->request->key);
-    server_conn->request->method = SET;
-    server_conn->request->msg_len = strlen("nah");
+    server_conn->request->method = GET;
     print_request(server_conn->request);
 
     ret = send_request(server_conn, server_conn->request);
     check(ret, ret, "Failed to get send second request, ret = %d \n", ret);
+
+    bzero(server_conn->response, sizeof(struct response));
+    ret = receive_response(server_conn, server_conn->response);
+    print_response(server_conn->response);
+    check(ret, ret, "Failed to receive second response ret = %d \n", ret);
 
     ret = client_disconnect_and_clean(server_conn);
     check(ret, ret, "Failed to cleanly disconnect and clean up resources \n", ret);
