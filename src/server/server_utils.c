@@ -97,6 +97,7 @@ struct server_info *server_init(int argc, char *argv[]) {
 
     connInfo->client = malloc(sizeof(struct client_info));
     connInfo->client->request = malloc(sizeof(struct request));
+    connInfo->client->response = malloc(sizeof(struct response));
 
     switch (connInfo->type) {
         case TCP:
@@ -266,13 +267,14 @@ int check_payload(int socket, struct request *request, size_t expected_len) {
     return 0;
 }
 
-int send_response_to_client(struct client_info *client, struct response *response) {
+int send_response_to_client(struct client_info *client) {
     int ret;
     switch (client->type) {
         case TCP:
-            ret = tcp_send_response(client->tcp_client, response);
+            ret = tcp_send_response(client);
             break;
         case RC:
+            ret = rc_send_response(client);
             break;
         case UC:
             break;

@@ -24,6 +24,13 @@ enum method method_to_enum(const char *str) {
     return UNK;
 }
 
+const char *code_msg(int code) {
+    switch (code) {
+        RESPONSE_CODES(RESPONSE_TEXT)
+    }
+    return "Unknown error";
+}
+
 const char *method_to_str(enum method code) {
     const size_t nmethods = sizeof(method_conversion) /
                             sizeof(method_conversion[0]);
@@ -40,4 +47,9 @@ void print_request(struct request *request) {
     pr_info("Request:\nMethod: %s\nKey: %s\nKey_len: %zu\nMessage_len: %zu\nConnection_closed: %d\n",
             method_to_str(request->method), request->key, request->key_len, request->msg_len,
             request->connection_close);
+}
+
+void print_response(struct response *response) {
+    pr_info("Response:\nCode: %s\nMsg: %s\nMsg_len: %zu\n",
+            code_msg(response->code), response->msg, response->msg_len);
 }

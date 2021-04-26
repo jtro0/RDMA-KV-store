@@ -119,9 +119,11 @@ do { \
 struct request *allocate_request();
 
 enum method method_to_enum(const char *str);
+const char *code_msg(int code);
 
 const char *method_to_str(enum method code);
 
 void print_request(struct request *request);
+void print_response(struct response *response);
 
 #endif //RDMA_KV_STORE_COMMON_H

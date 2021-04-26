@@ -21,8 +21,9 @@ struct rc_server_conn {
     struct ibv_qp_init_attr qp_init_attr;
     struct ibv_qp *client_qp;
 /* These are memory buffers related resources */
-    struct ibv_mr *client_request_mr;
+    struct ibv_mr *client_request_mr, *client_response_mr;
     struct request *request;
+    struct response *response;
 
     struct sockaddr_in *server_sockaddr;
 };

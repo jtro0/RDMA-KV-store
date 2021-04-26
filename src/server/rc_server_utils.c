@@ -175,6 +175,13 @@ int rc_accept_new_connection(struct server_info *server) {
 
     check(ret, ret, "Failed to pre-post the receive buffer, errno: %d \n", ret);
 
+    /* now we register the metadata memory */
+    server->client->rc_client->response_mr = rdma_buffer_register(server->client->rc_client->pd,
+                                                                  server->client->response,
+                                                          sizeof(struct response),
+                                                          IBV_ACCESS_LOCAL_WRITE);
+    check(!server->client->rc_client->response_mr, ret, "Failed to register the client metadata buffer, ret = %d \n", ret);
+
     pr_info("Receive buffer pre-posting is successful \n");
     /* Now we accept the connection. Recall we have not accepted the connection
      * yet because we have to do lots of resource pre-allocation */
@@ -229,5 +236,32 @@ int rc_post_receive_request(struct client_info *client) {
     ret = ibv_post_recv(client->rc_client->client_qp /* which QP */,
                         &client->rc_client->client_recv_wr /* receive work request*/,
                         &client->rc_client->bad_client_recv_wr /* error WRs */);
+    return ret;
+}
+
+int rc_send_response(struct client_info *client) {
+    int ret = -1;
+    struct ibv_wc wc;
+
+    bzero(&client->rc_client->client_send_sge, sizeof(client->rc_client->client_send_sge));
+    /* now we fill up SGE */
+    client->rc_client->client_send_sge.addr = (uint64_t) client->rc_client->response_mr->addr;
+    client->rc_client->client_send_sge.length = (uint32_t) client->rc_client->response_mr->length;
+    client->rc_client->client_send_sge.lkey = client->rc_client->response_mr->lkey;
+    /* now we link to the send work request */
+    bzero(&client->rc_client->client_send_wr, sizeof(client->rc_client->client_send_wr));
+    client->rc_client->client_send_wr.sg_list = &client->rc_client->client_send_sge;
+    client->rc_client->client_send_wr.num_sge = 1;
+    client->rc_client->client_send_wr.opcode = IBV_WR_SEND;
+    client->rc_client->client_send_wr.send_flags = IBV_SEND_SIGNALED;
+    /* Now we post it */
+    ret = ibv_post_send(client->rc_client->client_qp,
+                        &client->rc_client->client_send_wr,
+                        &client->rc_client->bad_client_send_wr);
+    check(ret, -errno, "Failed to send client metadata, errno: %d \n",
+          -errno);
+
+    ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1);
+    check(ret < 0, -errno, "Failed to send response: %d\n", ret);
     return ret;
 }

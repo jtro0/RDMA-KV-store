@@ -33,11 +33,13 @@ struct rc_client_connection {
     struct ibv_qp_init_attr qp_init_attr;
     struct rdma_cm_id *cm_client_id;
     struct ibv_qp *client_qp;
-    struct ibv_sge client_recv_sge;
+    struct ibv_sge client_recv_sge, client_send_sge;
     struct ibv_recv_wr client_recv_wr;
     struct ibv_recv_wr *bad_client_recv_wr;
+    struct ibv_send_wr client_send_wr;
+    struct ibv_send_wr *bad_client_send_wr;
 
-    struct ibv_mr *request_mr;//, *request_attr_mr;
+    struct ibv_mr *request_mr, *response_mr;//, *request_attr_mr;
 };
 
 
@@ -50,6 +52,7 @@ struct client_info {
     enum connection_type type;
     bool is_test;
     struct request *request;
+    struct response *response;
 
     struct tcp_client_info *tcp_client;
     struct rc_client_connection *rc_client;
@@ -86,6 +89,6 @@ int read_payload(struct client_info *client, struct request *request, size_t exp
 
 int check_payload(int socket, struct request *request, size_t expected_len);
 
-int send_response_to_client(struct client_info *client, struct response *response);
+int send_response_to_client(struct client_info *client);
 
 #endif //RDMA_KV_STORE_SERVER_UTILS_H
