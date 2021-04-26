@@ -48,19 +48,13 @@ int send_response(struct client_info *client, int code, int payload_len, char *p
 
     int sent;
 
-    pr_debug("bzero\n");
-//    bzero(client->response->msg, MSG_SIZE);
-    pr_debug("done bzero\n");
+    bzero(client->response->msg, MSG_SIZE);
     client->response->code = code;
-    pr_debug("memcpy msg\n");
     memcpy(client->response->msg, payload, payload_len);
-    pr_debug("done mecpy msg\n");
 
     client->response->msg_len = payload_len;
 
-    pr_debug("sending to client\n");
     sent = send_response_to_client(client);
-    pr_debug("sent to client\n");
 
     if (sent < 0) {
         error("Cannot send response to client\n");

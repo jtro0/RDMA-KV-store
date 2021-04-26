@@ -274,9 +274,7 @@ int send_response_to_client(struct client_info *client) {
             ret = tcp_send_response(client);
             break;
         case RC:
-            pr_debug("rc sending\n");
             ret = rc_send_response(client);
-            pr_debug("rc done sending\n");
             break;
         case UC:
             break;

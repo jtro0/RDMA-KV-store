@@ -243,9 +243,7 @@ int rc_send_response(struct client_info *client) {
     int ret = -1;
     struct ibv_wc wc;
 
-    pr_debug("bzero sge\n");
     bzero(&client->rc_client->client_send_sge, sizeof(client->rc_client->client_send_sge));
-    pr_debug("done bzero sge\n");
     /* now we fill up SGE */
     client->rc_client->client_send_sge.addr = (uint64_t) client->rc_client->response_mr->addr;
     client->rc_client->client_send_sge.length = (uint32_t) client->rc_client->response_mr->length;
