@@ -29,21 +29,30 @@ int set_request(struct client_info *client, struct request *request) {
 
         return -1;
     }
+    pr_debug("callocing\n");
     item->value = calloc(1, expected_len); // maybe +1 for \0
+    pr_debug("done calloc\n");
 
-    read_payload(client, request, expected_len - len, item->value + len);
+    if (client->is_test) {
+        read_payload(client, request, expected_len - len, item->value + len);
 
-    if (request->connection_close || check_payload(client->tcp_client->socket_fd, request, expected_len) < 0) {
-        pthread_rwlock_unlock(&item->rwlock);
-        remove_item(request->key, request->key_len);
-        return -1;
+        if (request->connection_close || check_payload(client->tcp_client->socket_fd, request, expected_len) < 0) {
+            pthread_rwlock_unlock(&item->rwlock);
+            remove_item(request->key, request->key_len);
+            return -1;
+        }
     }
+    else {
+        pr_debug("mem cpy\n");
+        memcpy(item->value, request->msg, request->msg_len);
+        pr_debug("done mem cpy\n");
 
-    item->value_size = expected_len;
-    send_response(client, OK, 0, NULL);
-    pr_debug("Everything is good, sent response\n");
-    pthread_rwlock_unlock(&item->rwlock);
-
+        item->value_size = expected_len;
+        pr_debug("sending response\n");
+        send_response(client, OK, 0, NULL);
+        pr_debug("Everything is good, sent response\n");
+        pthread_rwlock_unlock(&item->rwlock);
+    }
     return 0;
 }
 
@@ -80,17 +89,22 @@ void *main_job(void *arg) {
 
     do {
         method = recv_request(client);
+        pr_info("here\n");
         switch (method) {
             case SET:
+                pr_info("set\n");
                 set_request(client, client->request);
                 break;
             case GET:
+                pr_info("get\n");
                 get_request(client, client->request);
                 break;
             case DEL:
+                pr_info("del\n");
                 del_request(client, client->request);
                 break;
             case RST:
+                pr_info("rst\n");
                 init_hashtable(HT_CAPACITY);
                 send_response(client, OK, 0, NULL);
                 break;
