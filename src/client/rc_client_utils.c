@@ -109,7 +109,7 @@ int client_prepare_connection(struct rc_server_conn *server_conn) {
 }
 
 /* Connects to the RDMA server */
-static int client_connect_to_server(struct rc_server_conn *server_conn) {
+ int client_connect_to_server(struct rc_server_conn *server_conn) {
     struct rdma_conn_param conn_param;
     struct rdma_cm_event *cm_event = NULL;
     int ret = -1;
@@ -133,7 +133,7 @@ static int client_connect_to_server(struct rc_server_conn *server_conn) {
     return 0;
 }
 
-int send_request(struct rc_server_conn *server_conn, struct request *request) {
+int rc_send_request(struct rc_server_conn *server_conn, struct request *request) {
     int ret;
     struct ibv_wc wc;
     server_conn->client_request_mr = rdma_buffer_register(server_conn->pd,
@@ -153,11 +153,12 @@ int send_request(struct rc_server_conn *server_conn, struct request *request) {
                                          &wc, 1);
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
+    rdma_buffer_deregister(server_conn->client_request_mr);
 
     return 0;
 }
 
-int receive_response(struct rc_server_conn *server_conn, struct response *response) {
+int rc_receive_response(struct rc_server_conn *server_conn, struct response *response) {
     int ret;
     struct ibv_wc wc;
     server_conn->client_response_mr = rdma_buffer_register(server_conn->pd,
@@ -178,13 +179,14 @@ int receive_response(struct rc_server_conn *server_conn, struct response *respon
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 
+    rdma_buffer_deregister(server_conn->client_response_mr);
     return 0;
 }
 
 /* This function disconnects the RDMA connection from the server and cleans up
  * all the resources.
  */
-static int client_disconnect_and_clean(struct rc_server_conn *server_conn) {
+int client_disconnect_and_clean(struct rc_server_conn *server_conn) {
     struct rdma_cm_event *cm_event = NULL;
     int ret = -1;
     /* active disconnect from the client side */
@@ -264,12 +266,12 @@ int rc_main(char *key, struct sockaddr_in *server_sockaddr) {
     strncpy(server_conn->request->msg, "hello server", MSG_SIZE);
 
     print_request(server_conn->request);
-    ret = send_request(server_conn, server_conn->request);
+    ret = rc_send_request(server_conn, server_conn->request);
     check(ret, ret, "Failed to get send request, ret = %d \n", ret);
 
     server_conn->response = malloc(sizeof(struct response));
     bzero(server_conn->response, sizeof(struct response));
-    ret = receive_response(server_conn, server_conn->response);
+    ret = rc_receive_response(server_conn, server_conn->response);
     print_response(server_conn->response);
     check(ret, ret, "Failed to receive response, ret = %d \n", ret);
 
@@ -282,11 +284,11 @@ int rc_main(char *key, struct sockaddr_in *server_sockaddr) {
     server_conn->request->method = GET;
     print_request(server_conn->request);
 
-    ret = send_request(server_conn, server_conn->request);
+    ret = rc_send_request(server_conn, server_conn->request);
     check(ret, ret, "Failed to get send second request, ret = %d \n", ret);
 
     bzero(server_conn->response, sizeof(struct response));
-    ret = receive_response(server_conn, server_conn->response);
+    ret = rc_receive_response(server_conn, server_conn->response);
     print_response(server_conn->response);
     check(ret, ret, "Failed to receive second response ret = %d \n", ret);
 

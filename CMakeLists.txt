@@ -27,8 +27,12 @@ include_directories("/usr/include/infiniband")
 
 file(GLOB SERVER_SOURCE "src/server/*.h" "src/server/*.c")
 file(GLOB CLIENT_SOURCE "src/client/*.h" "src/client/*.c")
+list(REMOVE_ITEM ${CLIENT_SOURCE} "src/client/run_client.c")
+
+file(GLOB BENCHMARK_SOURCE "src/benchmarking/*.h" "src/benchmarking/*.c")
 
 add_executable(kv_server ${SERVER_SOURCE} src/common.h src/common.c src/rdma_common.c src/rdma_common.h)
-add_executable(client ${CLIENT_SOURCE} src/common.h src/common.c src/rdma_common.c src/rdma_common.h)
+add_executable(client src/client/run_client.c ${CLIENT_SOURCE} src/common.h src/common.c src/rdma_common.c src/rdma_common.h)
+add_executable(benchmark ${BENCHMARK_SOURCE} src/client/client.c src/client/client.h src/client/rc_client_utils.c src/client/rc_client_utils.h src/common.h src/common.c src/rdma_common.c src/rdma_common.h)
 
 set_property(TARGET kv_server PROPERTY C_STANDARD 99)
