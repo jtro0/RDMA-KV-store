@@ -165,15 +165,25 @@ int rc_accept_new_connection(struct server_info *server) {
 //    server->client->request = allocate_request();
     server->client->rc_client->request_mr = rdma_buffer_register(server->client->rc_client->pd /* which protection domain */,
                                                       server->client->request/* what memory */,
-                                                      sizeof(struct request) /* what length */,
+                                                      sizeof(struct request)*REQUEST_BACKLOG /* what length */,
                                                       (IBV_ACCESS_LOCAL_WRITE |
                                                   IBV_ACCESS_REMOTE_READ | // TODO Remove this permission?
                                                   IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
     check(!server->client->rc_client->request_mr, -ENOMEM, "Failed to register client attr buffer\n", -ENOMEM);
 
-    ret = rc_post_receive_request(server->client);
+    //ret = rc_post_receive_request(server->client);
+    for (int i = 0; i < REQUEST_BACKLOG; i++) {
+        pr_info("her\n");
+        ret = rc_post_receive_request(server->client);
+//        ret = post_recieve(sizeof(struct request), server->client->rc_client->response_mr->lkey, i, server->client->rc_client->client_qp,
+//                           &server->client->request[server->client->request_count]);
+        pr_info("recv\n");
+        check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", i, ret);
+        server->client->request_count = (server->client->request_count+1) % REQUEST_BACKLOG;
+        pr_info("next\n");
+    }
 
-    check(ret, ret, "Failed to pre-post the receive buffer, errno: %d \n", ret);
+    //check(ret, ret, "Failed to pre-post the receive buffer, errno: %d \n", ret);
 
     /* now we register the metadata memory */
     server->client->rc_client->response_mr = rdma_buffer_register(server->client->rc_client->pd,
@@ -226,16 +236,21 @@ int rc_receive_header(struct rc_client_connection *client) {
 int rc_post_receive_request(struct client_info *client) {
     int ret = 0;
 
-    client->rc_client->client_recv_sge.addr = (uint64_t) client->rc_client->request_mr->addr;
-    client->rc_client->client_recv_sge.length = client->rc_client->request_mr->length;
-    client->rc_client->client_recv_sge.lkey = client->rc_client->request_mr->lkey;
-    /* Now we link this SGE to the work request (WR) */
-    bzero(&client->rc_client->client_recv_wr, sizeof(client->rc_client->client_recv_wr));
-    client->rc_client->client_recv_wr.sg_list = &client->rc_client->client_recv_sge;
-    client->rc_client->client_recv_wr.num_sge = 1; // only one SGE
-    ret = ibv_post_recv(client->rc_client->client_qp /* which QP */,
-                        &client->rc_client->client_recv_wr /* receive work request*/,
-                        &client->rc_client->bad_client_recv_wr /* error WRs */);
+//    client->rc_client->client_recv_sge.addr = (uint64_t) client->rc_client->request_mr->addr;
+//    client->rc_client->client_recv_sge.length = client->rc_client->request_mr->length;
+//    client->rc_client->client_recv_sge.lkey = client->rc_client->request_mr->lkey;
+//    /* Now we link this SGE to the work request (WR) */
+//    bzero(&client->rc_client->client_recv_wr, sizeof(client->rc_client->client_recv_wr));
+//    client->rc_client->client_recv_wr.sg_list = &client->rc_client->client_recv_sge;
+//    client->rc_client->client_recv_wr.num_sge = 1; // only one SGE
+//    ret = ibv_post_recv(client->rc_client->client_qp /* which QP */,
+//                        &client->rc_client->client_recv_wr /* receive work request*/,
+//                        &client->rc_client->bad_client_recv_wr /* error WRs */);
+
+    ret = post_recieve(sizeof(struct request), client->rc_client->response_mr->lkey, client->request_count, client->rc_client->client_qp,
+                       &client->request[client->request_count]);
+    check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", client->request_count, ret);
+
     return ret;
 }
 

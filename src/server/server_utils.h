@@ -18,6 +18,7 @@
 #define BACKLOG     10
 #define TIMEOUT     60
 
+#define REQUEST_BACKLOG 10
 struct tcp_client_info {
     int socket_fd;
 };
@@ -40,6 +41,7 @@ struct rc_client_connection {
     struct ibv_send_wr *bad_client_send_wr;
 
     struct ibv_mr *request_mr, *response_mr;//, *request_attr_mr;
+    struct ibv_wc *wcs;
 };
 
 
@@ -52,6 +54,7 @@ struct client_info {
     enum connection_type type;
     bool is_test;
     struct request *request;
+    unsigned int request_count;
     struct response *response;
 
     struct tcp_client_info *tcp_client;
@@ -74,7 +77,7 @@ struct server_info *server_init(int argc, char *arg[]);
 
 int accept_new_connection(struct server_info *server, struct client_info *client);
 
-int recv_request(struct client_info *client);
+struct request* recv_request(struct client_info *client);
 
 int connection_ready(int socket);
 

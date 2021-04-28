@@ -88,20 +88,22 @@ void *main_job(void *arg) {
 //            ntohs(client->addr.sin_port));
 
     do {
-        method = recv_request(client);
+        struct request* request = recv_request(client);
+        ready_for_next_request(client);
+
         pr_info("here\n");
-        switch (method) {
+        switch (request->method) {
             case SET:
                 pr_info("set\n");
-                set_request(client, client->request);
+                set_request(client, request);
                 break;
             case GET:
                 pr_info("get\n");
-                get_request(client, client->request);
+                get_request(client, request);
                 break;
             case DEL:
                 pr_info("del\n");
-                del_request(client, client->request);
+                del_request(client, request);
                 break;
             case RST:
                 pr_info("rst\n");
@@ -109,8 +111,8 @@ void *main_job(void *arg) {
                 send_response(client, OK, 0, NULL);
                 break;
         }
-        bzero(client->request, sizeof(struct request));
-        ready_for_next_request(client);
+//        bzero(client->request, sizeof(struct request));
+//        ready_for_next_request(client);
     } while (!client->request->connection_close);
 
     close_connection(client->tcp_client->socket_fd);
