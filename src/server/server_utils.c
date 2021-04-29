@@ -96,8 +96,10 @@ struct server_info *server_init(int argc, char *argv[]) {
     connInfo->addr.sin_port = htons(connInfo->port);
 
     connInfo->client = malloc(sizeof(struct client_info));
-    connInfo->client->request = malloc(sizeof(struct request));
+    connInfo->client->request = calloc(REQUEST_BACKLOG, sizeof(struct request));
+//    connInfo->client->request = malloc(sizeof(struct request));
     connInfo->client->response = malloc(sizeof(struct response));
+    connInfo->client->request_count = 0;
 
     switch (connInfo->type) {
         case TCP:
@@ -149,6 +151,9 @@ void close_connection(int socket) {
 
 // TODO Ask if it is better to have it wait for the prev request to be done or to alloc/reg new request
 int ready_for_next_request(struct client_info *client) {
+    client->request_count = (client->request_count+1)%REQUEST_BACKLOG;
+    bzero(&client->request[client->request_count], sizeof(struct request));
+
     int ret = 0;
     switch (client->type) {
         case TCP:
@@ -173,16 +178,16 @@ int receive_header(struct client_info *client) {
             return -1;
         }
 
-        recved = parse_header(client->tcp_client->socket_fd, client->request);
+        recved = parse_header(client->tcp_client->socket_fd, &client->request[client->request_count]);
         if (recved == 0)
             return 0;
         if (recved == -1) {
-            client->request->connection_close = 1;
+            client->request[client->request_count].connection_close = 1;
             return -1;
         }
         if (recved == -2) {
             send_response(client, PARSING_ERROR, 0, NULL);
-            client->request->connection_close = 1;
+            client->request[client->request_count].connection_close = 1;
             return -1;
         }
         return 1;
@@ -192,7 +197,7 @@ int receive_header(struct client_info *client) {
             if (connection_ready(client->tcp_client->socket_fd) == -1) {
                 return -1;
             }
-            recved = tcp_read_header(client->tcp_client->socket_fd, client->request);
+            recved = tcp_read_header(client->tcp_client->socket_fd, &client->request[client->request_count]);
             break;
         case RC:
             pr_info("rc going to receive\n");
@@ -212,17 +217,17 @@ int receive_header(struct client_info *client) {
  * an error can be caused by the socket not ready for I/O or
  * a bad request which cannot be parsed
  */
-int recv_request(struct client_info *client) {
+struct request *recv_request(struct client_info *client) {
     if (receive_header(client) == -1) {
         // Connection closed from client side or error occurred
         pr_info("No header received\n");
-        return -1;
+        return NULL;
     }
     struct request *test = malloc(sizeof(struct request));
-    memcpy(test, client->request, sizeof(struct request));
+    memcpy(test, &client->request[client->request_count], sizeof(struct request));
     print_request(test);
     request_dispatcher(client);
-    return client->request->method;
+    return &client->request[client->request_count];
 }
 
 /**
