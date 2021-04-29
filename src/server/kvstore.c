@@ -11,7 +11,7 @@
 
 hashtable_t *ht;
 
-int set_request(struct client_info *client, struct request *request) {
+int set_request(struct client_info *client, struct request *request, struct response *response) {
     size_t len = 0;
     size_t expected_len = request->msg_len;
 
@@ -20,18 +20,16 @@ int set_request(struct client_info *client, struct request *request) {
     hash_item_t *item = get_key_entry(request->key, request->key_len);
 
     if (pthread_rwlock_trywrlock(&item->rwlock) != 0) {
-        pr_debug("this one\n");
         char *trash = malloc(expected_len);
         read_payload(client, request, expected_len, trash);
         check_payload(client->tcp_client->socket_fd, request, expected_len);
-        send_response(client, KEY_ERROR, 0, NULL);
+        //send_response(client, KEY_ERROR, 0, NULL);
+        response->code = KEY_ERROR;
         free(trash);
 
         return -1;
     }
-    pr_debug("callocing\n");
     item->value = calloc(1, expected_len); // maybe +1 for \0
-    pr_debug("done calloc\n");
 
     if (client->is_test) {
         read_payload(client, request, expected_len - len, item->value + len);
@@ -43,40 +41,46 @@ int set_request(struct client_info *client, struct request *request) {
         }
     }
     else {
-        pr_debug("mem cpy\n");
         memcpy(item->value, request->msg, request->msg_len);
-        pr_debug("done mem cpy\n");
 
         item->value_size = expected_len;
-        pr_debug("sending response\n");
-        send_response(client, OK, 0, NULL);
+        response->code = OK;
+//        send_response(client, OK, 0, NULL);
         pr_debug("Everything is good, sent response\n");
         pthread_rwlock_unlock(&item->rwlock);
     }
     return 0;
 }
 
-void get_request(struct client_info *client, struct request *pRequest) {
+void get_request(struct client_info *client, struct request *pRequest, struct response *response) {
     hash_item_t *item = search(pRequest->key, pRequest->key_len);
     if (item == NULL) {
-        send_response(client, KEY_ERROR, 0, NULL);
+//        send_response(client, KEY_ERROR, 0, NULL);
+        response->code = KEY_ERROR;
         return;
     }
     if (pthread_rwlock_tryrdlock(&item->rwlock) != 0) {
-        send_response(client, KEY_ERROR, 0, NULL);
+//        send_response(client, KEY_ERROR, 0, NULL);
+        response->code = KEY_ERROR;
         return;
     }
-    send_response(client, OK, item->value_size, item->value);
+//    send_response(client, OK, item->value_size, item->value);
+    response->code = OK;
+    memcpy(response->msg, item->value, item->value_size);
+    response->msg_len = item->value_size;
+
     pthread_rwlock_unlock(&item->rwlock);
 }
 
-void del_request(struct client_info *client, struct request *pRequest) {
+void del_request(struct client_info *client, struct request *pRequest, struct response *response) {
     if (remove_item(pRequest->key, pRequest->key_len) < 0) {
-        send_response(client, KEY_ERROR, 0, NULL);
+//        send_response(client, KEY_ERROR, 0, NULL);
+        response->code = KEY_ERROR;
         return;
     }
 
-    send_response(client, OK, 0, NULL);
+//    send_response(client, OK, 0, NULL);
+    response->code = OK;
 }
 
 void *main_job(void *arg) {
@@ -88,29 +92,33 @@ void *main_job(void *arg) {
 //            ntohs(client->addr.sin_port));
 
     do {
-        method = recv_request(client);
+        struct request* request = recv_request(client);
+        bzero(client->response, sizeof(struct response));
+
         pr_info("here\n");
-        switch (method) {
+        switch (request->method) {
             case SET:
                 pr_info("set\n");
-                set_request(client, client->request);
+                set_request(client, request, client->response);
                 break;
             case GET:
                 pr_info("get\n");
-                get_request(client, client->request);
+                get_request(client, request, client->response);
                 break;
             case DEL:
                 pr_info("del\n");
-                del_request(client, client->request);
+                del_request(client, request, client->response);
                 break;
             case RST:
                 pr_info("rst\n");
                 init_hashtable(HT_CAPACITY);
-                send_response(client, OK, 0, NULL);
+//                send_response(client, OK, 0, NULL);
+                client->response->code = OK;
                 break;
         }
         bzero(client->request, sizeof(struct request));
         ready_for_next_request(client);
+        send_response_to_client(client);
     } while (!client->request->connection_close);
 
     close_connection(client->tcp_client->socket_fd);
