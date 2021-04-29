@@ -173,14 +173,11 @@ int rc_accept_new_connection(struct server_info *server) {
 
     //ret = rc_post_receive_request(server->client);
     for (int i = 0; i < REQUEST_BACKLOG; i++) {
-        pr_info("her\n");
         ret = rc_post_receive_request(server->client);
 //        ret = post_recieve(sizeof(struct request), server->client->rc_client->response_mr->lkey, i, server->client->rc_client->client_qp,
 //                           &server->client->request[server->client->request_count]);
-        pr_info("recv\n");
         check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", i, ret);
         server->client->request_count = (server->client->request_count+1) % REQUEST_BACKLOG;
-        pr_info("next\n");
     }
 
     //check(ret, ret, "Failed to pre-post the receive buffer, errno: %d \n", ret);
@@ -246,11 +243,8 @@ int rc_post_receive_request(struct client_info *client) {
 //    ret = ibv_post_recv(client->rc_client->client_qp /* which QP */,
 //                        &client->rc_client->client_recv_wr /* receive work request*/,
 //                        &client->rc_client->bad_client_recv_wr /* error WRs */);
-
-    ret = post_recieve(sizeof(struct request), client->rc_client->response_mr->lkey, client->request_count, client->rc_client->client_qp,
+    ret = post_recieve(sizeof(struct request), client->rc_client->request_mr->lkey, client->request_count, client->rc_client->client_qp,
                        &client->request[client->request_count]);
-    check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", client->request_count, ret);
-
     return ret;
 }
 
