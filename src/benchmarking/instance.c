@@ -120,7 +120,7 @@ void* start_instance(void *arguments) {
 //        }
 //        pr_info("equal\n");
 
-        usleep(5000);
+//        usleep(5000);
         count++;
 //        pr_info("next\n");
 
