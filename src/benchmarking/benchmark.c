@@ -102,8 +102,11 @@ int main(int argc, char *argv[]) {
 
     for (int i=0; i<clients; i++) {
 //        void *ops_ret;
+        printf("before?\n");
         pthread_join(threads[i], NULL);
 //        printf("pointer returned %p\n", ops_ret);
+        printf("after?\n");
+
         if (args.ops != NULL) {
             printf("%ld.%06ld\n", args.ops[0].start->tv_sec, args.ops[0].start->tv_usec);
             printf("%ld.%06ld\n", args.ops[0].end->tv_sec, args.ops[0].end->tv_usec);
