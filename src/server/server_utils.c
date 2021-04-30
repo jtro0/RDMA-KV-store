@@ -151,14 +151,8 @@ void close_connection(int socket) {
 
 // TODO Ask if it is better to have it wait for the prev request to be done or to alloc/reg new request
 int ready_for_next_request(struct client_info *client) {
-    client->request_count = (client->request_count+1)%REQUEST_BACKLOG;
     pr_info("ready to receive request %d\n", client->request_count);
-//    bzero(&client->request[client->request_count], sizeof(struct request));
-    client->request[client->request_count].msg_len = 0;
-    client->request[client->request_count].key_len = 0;
-    client->request[client->request_count].method = 0;
-    bzero(client->request[client->request_count].msg, MSG_SIZE);
-    bzero(client->request[client->request_count].key, KEY_SIZE);
+
 
     int ret = 0;
     switch (client->type) {
@@ -172,6 +166,9 @@ int ready_for_next_request(struct client_info *client) {
         case UD:
             break;
     }
+    check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", client->request_count, ret);
+    client->request_count = (client->request_count+1)%REQUEST_BACKLOG;
+
     return ret;
 }
 
@@ -224,14 +221,22 @@ int receive_header(struct client_info *client) {
  * a bad request which cannot be parsed
  */
 struct request *recv_request(struct client_info *client) {
+    bzero(&client->request[client->request_count], sizeof(struct request));
+    strncpy(client->request[client->request_count].msg, "LOL", MSG_SIZE);
+    client->request[client->request_count].msg_len = 0;
+    client->request[client->request_count].key_len = 0;
+    client->request[client->request_count].method = 0;
+//    bzero(client->request[client->request_count].msg, MSG_SIZE);
+    bzero(client->request[client->request_count].key, KEY_SIZE);
+
     if (receive_header(client) == -1) {
         // Connection closed from client side or error occurred
         pr_info("No header received\n");
         return NULL;
     }
-//    struct request *test = malloc(sizeof(struct request));
-//    memcpy(test, &client->request[client->request_count], sizeof(struct request));
-//    print_request(test);
+    struct request *test = malloc(sizeof(struct request));
+    memcpy(test, &client->request[client->request_count], sizeof(struct request));
+    print_request(test);
     request_dispatcher(client);
     return &client->request[client->request_count];
 }

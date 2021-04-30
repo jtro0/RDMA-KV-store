@@ -10,7 +10,7 @@
 
 #define PORT        35304
 #define MAXLINE     128
-#define MSG_SIZE    4096
+#define MSG_SIZE    1024
 #define KEY_SIZE 256
 #define DUMP_FILE   "dump.dat"
 

@@ -108,19 +108,19 @@ void* start_instance(void *arguments) {
 
 //        pr_info("getting time\n");
         gettimeofday(current.end, NULL);
-        pr_info("got time\n");
-        pr_info("doing memcmp\n");
+//        pr_info("got time\n");
+//        pr_info("doing memcmp\n");
+//
+//        if (memcmp(current.response, current.expected_response, sizeof(struct response)) != 0) {
+//            pr_info("not equal, got:\n");
+//            print_response(current.response);
+//            pr_info("expected:\n");
+//            print_response(current.expected_response);
+//            return NULL;
+//        }
+//        pr_info("equal\n");
 
-        if (memcmp(current.response, current.expected_response, sizeof(struct response)) != 0) {
-            pr_info("not equal, got:\n");
-            print_response(current.response);
-            pr_info("expected:\n");
-            print_response(current.expected_response);
-            return NULL;
-        }
-        pr_info("equal\n");
-
-        sleep(1);
+        usleep(5000);
         count++;
 //        pr_info("next\n");
 

@@ -44,9 +44,9 @@ const char *method_to_str(enum method code) {
 }
 
 void print_request(struct request *request) {
-    pr_info("Request:\nMethod: %s\nKey: %s\nKey_len: %zu\nMessage_len: %zu\nConnection_closed: %d\n",
+    pr_info("Request:\nMethod: %s\nKey: %s\nKey_len: %zu\nMessage_len: %zu\nConnection_closed: %d\nMsg: %s\n",
             method_to_str(request->method), request->key, request->key_len, request->msg_len,
-            request->connection_close);
+            request->connection_close, request->msg);
 }
 
 void print_response(struct response *response) {

@@ -173,14 +173,15 @@ int rc_accept_new_connection(struct server_info *server) {
 
     //ret = rc_post_receive_request(server->client);
     for (int i = 0; i < REQUEST_BACKLOG; i++) {
+        server->client->request_count = i;
         ret = rc_post_receive_request(server->client);
 //        ret = post_recieve(sizeof(struct request), server->client->rc_client->response_mr->lkey, i, server->client->rc_client->client_qp,
 //                           &server->client->request[server->client->request_count]);
         check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", i, ret);
-        server->client->request_count = (server->client->request_count+1) % REQUEST_BACKLOG;
+//        server->client->request_count = (server->client->request_count+1) % REQUEST_BACKLOG;
         pr_info("request count = %d\n", server->client->request_count);
     }
-
+    server->client->request_count = 0;
     //check(ret, ret, "Failed to pre-post the receive buffer, errno: %d \n", ret);
 
     /* now we register the metadata memory */
