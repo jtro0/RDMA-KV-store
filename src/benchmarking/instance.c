@@ -121,5 +121,5 @@ void* start_instance(void *arguments) {
 
     } while (count < num_ops);
     printf("what the pointer should be %p\n", ops);
-    pthread_exit(ops);
+    pthread_exit((void*)num_ops);
 }
