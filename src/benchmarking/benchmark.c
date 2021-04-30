@@ -102,8 +102,9 @@ int main(int argc, char *argv[]) {
         printf("pointer returned %p\n", ops_ret);
         if (ops_ret != NULL) {
             struct operation *ops = ops_ret;
-            print_request(ops[0].request);
-            print_response(ops[0].response);
+            printf("type %d msg len %zu\n", ops[0].request->method, ops[0].request->msg_len);
+//            print_request(ops[0].request);
+//            print_response(ops[0].response);
         }
     }
 }
