@@ -117,5 +117,6 @@ void* start_instance(void *arguments) {
         count++;
 
     } while (count < num_ops);
+    printf("what the pointer should be %p\n", ops);
     return ops;
 }
