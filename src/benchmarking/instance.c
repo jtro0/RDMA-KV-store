@@ -112,13 +112,15 @@ void* start_instance(void *arguments) {
         pr_info("doing memcmp\n");
 
         if (memcmp(current.response, current.expected_response, sizeof(struct response)) != 0) {
-            pr_info("not equal\n");
-
-            return ops;
+            pr_info("not equal, got:\n");
+            print_response(current.response);
+            pr_info("expected:\n");
+            print_response(current.expected_response);
+            return NULL;
         }
         pr_info("equal\n");
 
-//        sleep(1);
+        sleep(1);
         count++;
 //        pr_info("next\n");
 
