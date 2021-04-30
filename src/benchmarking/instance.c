@@ -56,6 +56,7 @@ void* start_instance(void *arguments) {
     enum connection_type conn_t = args->conn_t;
     struct sockaddr_in *server_addr = args->server_addr;
     unsigned int num_ops = args->num_ops;
+    struct operation *ops = args->ops;
 
     int returned;
     struct client_to_server_conn conn;
@@ -80,7 +81,6 @@ void* start_instance(void *arguments) {
             break;
     }
 
-    struct operation *ops = calloc(num_ops, sizeof(struct operation));
     int count = 0;
     do {
         struct operation current = ops[count];

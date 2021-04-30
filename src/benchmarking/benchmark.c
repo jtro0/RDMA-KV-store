@@ -87,23 +87,26 @@ int main(int argc, char *argv[]) {
         /* no port provided, use the default port */
         server_sockaddr.sin_port = htons(PORT);
     }
+    struct thread_args args;
+    args.conn_t = connectionType;
+    args.server_addr = &server_sockaddr;
+    args.num_ops = num_ops;
+    args.ops = calloc(num_ops, sizeof(struct operation));
+
     pthread_t *threads = calloc(clients, sizeof(pthread_t));
     for (int i=0; i<clients; i++) {
-        struct thread_args args;
-        args.conn_t = connectionType;
-        args.server_addr = &server_sockaddr;
-        args.num_ops = num_ops;
+
+
         pthread_create(&threads[i], NULL, start_instance, &args);
     }
 
     for (int i=0; i<clients; i++) {
-        void *ops_ret;
-        pthread_join(threads[i], &ops_ret);
-        printf("pointer returned %p\n", ops_ret);
-        if (ops_ret != NULL) {
-            struct operation *ops = ops_ret;
-            printf("%ld.%06ld\n", ops[0].start->tv_sec, ops[0].start->tv_usec);
-            printf("%ld.%06ld\n", ops[0].end->tv_sec, ops[0].end->tv_usec);
+//        void *ops_ret;
+        pthread_join(threads[i], NULL);
+//        printf("pointer returned %p\n", ops_ret);
+        if (args.ops != NULL) {
+            printf("%ld.%06ld\n", args.ops[0].start->tv_sec, args.ops[0].start->tv_usec);
+            printf("%ld.%06ld\n", args.ops[0].end->tv_sec, args.ops[0].end->tv_usec);
 //            printf("type %d msg len %zu\n", ops[0].start, ops[0].request->msg_len);
 //            print_request(ops[0].request);
 //            print_response(ops[0].response);

@@ -10,6 +10,7 @@ struct thread_args {
     enum connection_type conn_t;
     struct sockaddr_in *server_addr;
     unsigned int num_ops;
+    struct operation *ops;
 };
 
 void * start_instance(void *args);
