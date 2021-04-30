@@ -84,6 +84,9 @@ void* start_instance(void *arguments) {
     int count = 0;
     do {
         struct operation current = ops[count];
+        current.start = malloc(sizeof(struct timeval));
+        current.end = malloc(sizeof(struct timeval));
+
         gettimeofday(current.start, NULL);
 
         current.request = calloc(1, sizeof(struct request));
