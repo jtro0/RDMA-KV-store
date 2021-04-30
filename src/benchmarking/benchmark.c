@@ -99,6 +99,7 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<clients; i++) {
         void *ops_ret;
         pthread_join(threads[i], &ops_ret);
+        printf("pointer returned %p\n", ops_ret);
         if (ops_ret != NULL) {
             struct operation *ops = ops_ret;
             print_request(ops[0].request);
