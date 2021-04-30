@@ -56,7 +56,7 @@ void* start_instance(void *arguments) {
     enum connection_type conn_t = args->conn_t;
     struct sockaddr_in *server_addr = args->server_addr;
     unsigned int num_ops = args->num_ops;
-    struct operation *ops = args->ops;
+//    struct operation *ops = args->ops;
 
     int returned;
     struct client_to_server_conn conn;
@@ -80,6 +80,7 @@ void* start_instance(void *arguments) {
         case UD:
             break;
     }
+    struct operation *ops = calloc(num_ops, sizeof(struct operation));
 
     int count = 0;
     do {
@@ -121,5 +122,5 @@ void* start_instance(void *arguments) {
 
     } while (count < num_ops);
     printf("what the pointer should be %p\n", ops);
-    pthread_exit((void*)num_ops);
+    pthread_exit((void*)ops);
 }

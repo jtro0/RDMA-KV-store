@@ -91,7 +91,6 @@ int main(int argc, char *argv[]) {
     args.conn_t = connectionType;
     args.server_addr = &server_sockaddr;
     args.num_ops = num_ops;
-    args.ops = calloc(num_ops, sizeof(struct operation));
 
     pthread_t *threads = calloc(clients, sizeof(pthread_t));
     for (int i=0; i<clients; i++) {
@@ -106,9 +105,9 @@ int main(int argc, char *argv[]) {
         pthread_join(threads[i], &ops_ret);
         printf("pointer returned %p\n", ops_ret);
 
-        int ops = (int) ops_ret;
+        struct operation *ops = (struct operation*) ops_ret;
         if (args.ops != NULL) {
-            printf("%d\n", ops);
+            printf("%d\n", ops[0].request->method);
 //            printf("type %d msg len %zu\n", ops[0].start, ops[0].request->msg_len);
 //            print_request(ops[0].request);
 //            print_response(ops[0].response);
