@@ -18,7 +18,7 @@
 #define BACKLOG     10
 #define TIMEOUT     60
 
-#define REQUEST_BACKLOG 5
+#define REQUEST_BACKLOG 1
 struct tcp_client_info {
     int socket_fd;
 };

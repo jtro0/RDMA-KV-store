@@ -152,7 +152,13 @@ void close_connection(int socket) {
 // TODO Ask if it is better to have it wait for the prev request to be done or to alloc/reg new request
 int ready_for_next_request(struct client_info *client) {
     client->request_count = (client->request_count+1)%REQUEST_BACKLOG;
-    bzero(&client->request[client->request_count], sizeof(struct request));
+    pr_info("ready to receive request %d\n", client->request_count);
+//    bzero(&client->request[client->request_count], sizeof(struct request));
+//    client->request[client->request_count].msg_len = 0;
+//    client->request[client->request_count].key_len = 0;
+//    client->request[client->request_count].method = 0;
+//    bzero(client->request[client->request_count].msg, MSG_SIZE);
+//    bzero(client->request[client->request_count].key, KEY_SIZE);
 
     int ret = 0;
     switch (client->type) {

@@ -66,7 +66,8 @@ int client_prepare_connection(struct rc_server_conn *server_conn) {
      * use cm_client_id->verbs.
      */
     server_conn->io_completion_channel = ibv_create_comp_channel(server_conn->cm_client_id->verbs);
-    check(!server_conn->io_completion_channel, -errno, "Failed to create IO completion event channel, errno: %d\n", -errno);
+    check(!server_conn->io_completion_channel, -errno, "Failed to create IO completion event channel, errno: %d\n",
+          -errno);
     pr_debug("completion event channel created at : %p \n", server_conn->io_completion_channel);
     /* Now we create a completion queue (CQ) where actual I/O
      * completion metadata is placed. The metadata is packed into a structure
@@ -109,7 +110,7 @@ int client_prepare_connection(struct rc_server_conn *server_conn) {
 }
 
 /* Connects to the RDMA server */
- int client_connect_to_server(struct rc_server_conn *server_conn) {
+int client_connect_to_server(struct rc_server_conn *server_conn) {
     struct rdma_conn_param conn_param;
     struct rdma_cm_event *cm_event = NULL;
     int ret = -1;
@@ -158,20 +159,37 @@ int rc_send_request(struct rc_server_conn *server_conn, struct request *request)
     return 0;
 }
 
+int rc_pre_post_receive_response(struct rc_server_conn *server_conn, struct response *response) {
+    int ret;
+    struct ibv_wc wc;
+
+    server_conn->client_response_mr = rdma_buffer_register(server_conn->pd,
+                                                           response,
+                                                           sizeof(struct response),
+                                                           (IBV_ACCESS_LOCAL_WRITE |
+                                                            IBV_ACCESS_REMOTE_READ |
+                                                            IBV_ACCESS_REMOTE_WRITE));
+
+    ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, wc.wr_id, server_conn->client_qp,
+                       response);
+
+    check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
+}
+
 int rc_receive_response(struct rc_server_conn *server_conn, struct response *response) {
     int ret;
     struct ibv_wc wc;
-    server_conn->client_response_mr = rdma_buffer_register(server_conn->pd,
-                                                          response,
-                                                          sizeof(struct response),
-                                                          (IBV_ACCESS_LOCAL_WRITE |
-                                                           IBV_ACCESS_REMOTE_READ |
-                                                           IBV_ACCESS_REMOTE_WRITE));
+//    server_conn->client_response_mr = rdma_buffer_register(server_conn->pd,
+//                                                           response,
+//                                                           sizeof(struct response),
+//                                                           (IBV_ACCESS_LOCAL_WRITE |
+//                                                            IBV_ACCESS_REMOTE_READ |
+//                                                            IBV_ACCESS_REMOTE_WRITE));
 
-    ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, wc.wr_id, server_conn->client_qp,
-                    response);
+//    ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, wc.wr_id, server_conn->client_qp,
+//                       response);
 
-    check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
+//    check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
 
     /* at this point we are expecting 1 work completion for the write */
     ret = process_work_completion_events(server_conn->io_completion_channel,

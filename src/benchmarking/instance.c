@@ -97,19 +97,31 @@ void* start_instance(void *arguments) {
         else {
             make_get_request(current.request, count-1);
         }
+        make_expected_response(current.expected_response, current.request, count);
+        returned = rc_pre_post_receive_response(conn.rc_server_conn, current.response);
+        check(returned, ops, "Failed to receive response, returned = %d \n", returned);
+
         returned = send_request(&conn, current.request);
         check(returned, ops, "Failed to get send request, returned = %d \n", returned);
 
-        make_expected_response(current.expected_response, current.request, count);
         returned = receive_response(&conn, current.response);
-        check(returned, ops, "Failed to receive response, returned = %d \n", returned);
 
+//        pr_info("getting time\n");
         gettimeofday(current.end, NULL);
+        pr_info("got time\n");
+        pr_info("doing memcmp\n");
 
         if (memcmp(current.response, current.expected_response, sizeof(struct response)) != 0) {
+            pr_info("not equal\n");
+
             return ops;
         }
+        pr_info("equal\n");
+
+//        sleep(1);
         count++;
+//        pr_info("next\n");
+
     } while (count < num_ops);
     return ops;
 }

@@ -32,6 +32,7 @@ int rc_main(char *key, struct sockaddr_in *server_sockaddr);
 int client_prepare_connection(struct rc_server_conn *server_conn);
 int client_connect_to_server(struct rc_server_conn *server_conn);
 int rc_send_request(struct rc_server_conn *server_conn, struct request *request);
+int rc_pre_post_receive_response(struct rc_server_conn *server_conn, struct response *response);
 int rc_receive_response(struct rc_server_conn *server_conn, struct response *response);
 int client_disconnect_and_clean(struct rc_server_conn *server_conn);
 #endif //RDMA_KV_STORE_RC_CLIENT_UTILS_H

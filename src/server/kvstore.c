@@ -93,9 +93,10 @@ void *main_job(void *arg) {
 
     do {
         struct request* request = recv_request(client);
+//        bzero(client->request, sizeof(struct request));
+        ready_for_next_request(client);
         bzero(client->response, sizeof(struct response));
-
-        pr_info("here\n");
+        pr_info("request count %d\n", client->request_count);
         switch (request->method) {
             case SET:
                 pr_info("set\n");
@@ -116,8 +117,7 @@ void *main_job(void *arg) {
                 client->response->code = OK;
                 break;
         }
-        bzero(client->request, sizeof(struct request));
-        ready_for_next_request(client);
+
         send_response_to_client(client);
     } while (!client->request->connection_close);
 
