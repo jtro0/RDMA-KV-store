@@ -153,6 +153,7 @@ void request_dispatcher(struct client_info *client) {
             break;
         case UNK:
             send_response(client, PARSING_ERROR, 0, NULL);
+            exit(-1);
             break;
         default:
             return;
