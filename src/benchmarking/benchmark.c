@@ -27,8 +27,8 @@ int data_processing(struct operation **ops) {
         last = op;
     }
 
-//    long time_taken = ((last->end->tv_sec - first->start->tv_sec)*1000000L+last->end->tv_usec) - first->start->tv_usec;
-//    pr_info("Time in microseconds: %ld microseconds\n", time_taken);
+    long time_taken_usec = ((last->end->tv_sec - first->start->tv_sec)*1000000L+last->end->tv_usec) - first->start->tv_usec;
+    pr_info("Time in microseconds: %ld microseconds\n", time_taken_usec);
     struct timeval *time_taken = malloc(sizeof(struct timeval));
     timersub(last->end, first->start, time_taken);
 
