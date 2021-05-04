@@ -46,7 +46,7 @@ int data_processing(struct operation **ops) {
 }
 
 int main(int argc, char *argv[]) {
-    int ret, clients = 1, num_ops = 1000;
+    int ret, clients = 1, num_ops = 1000000;
     struct sockaddr_in server_sockaddr;
     bzero(&server_sockaddr, sizeof server_sockaddr);
     server_sockaddr.sin_family = AF_INET;
