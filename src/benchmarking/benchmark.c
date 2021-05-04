@@ -5,6 +5,7 @@
 #include "benchmark.h"
 #include "client/client.h"
 #include "instance.h"
+#include <sys/time.h>
 
 enum connection_type connectionType;
 int debug = 0;
@@ -26,11 +27,13 @@ int data_processing(struct operation **ops) {
         last = op;
     }
 
-    long time_taken = ((last->end->tv_sec - first->start->tv_sec)*1000000L+last->end->tv_usec) - first->start->tv_usec;
-    pr_info("Time in microseconds: %ld microseconds\n", time_taken);
+//    long time_taken = ((last->end->tv_sec - first->start->tv_sec)*1000000L+last->end->tv_usec) - first->start->tv_usec;
+//    pr_info("Time in microseconds: %ld microseconds\n", time_taken);
+    struct timeval *time_taken = malloc(sizeof(struct timeval));
+    timersub(last->end, first->start, time_taken);
 
-    long time_taken_sec = time_taken/1000000L;
-    long ops_per_sec = count / time_taken_sec;
+    long time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000L;
+    long ops_per_sec = (long)count / time_taken_sec;
     pr_info("Time taken %ld", ops_per_sec);
 
     return 0;
