@@ -10,8 +10,8 @@
 
 #define PORT        35304
 #define MAXLINE     128
-#define MSG_SIZE    1024
-#define KEY_SIZE 256
+#define MSG_SIZE    256
+#define KEY_SIZE 64
 #define DUMP_FILE   "dump.dat"
 
 // Request protocol methods
