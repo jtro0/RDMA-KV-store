@@ -80,6 +80,8 @@ void* start_instance(void *arguments) {
         case UD:
             break;
     }
+    sleep(1);
+
     struct operation **ops = calloc(num_ops, sizeof(struct operation*));
 
     int count = 0;
@@ -118,7 +120,7 @@ void* start_instance(void *arguments) {
             return NULL;
         }
 
-//        usleep(5000);
+        usleep(1000);
 //        sleep(1);
         count++;
 
