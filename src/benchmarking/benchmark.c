@@ -36,7 +36,7 @@ int data_processing(struct operation **ops) {
     pr_info("Time taken in seconds: %f seconds\n", time_taken_sec);
     if (time_taken_sec > 0) {
         double ops_per_sec = count / time_taken_sec;
-        pr_info("Time taken %f", ops_per_sec);
+        pr_info("Time taken %f\n", ops_per_sec);
     }
     else {
         pr_info("Something went wrong, time take sec: %ld usec: %ld\n", time_taken->tv_sec, time_taken->tv_usec);
