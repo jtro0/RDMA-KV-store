@@ -121,7 +121,7 @@ void* start_instance(void *arguments) {
 //        usleep(5000);
 //        sleep(1);
         count++;
-        pr_info("next");
+
     } while (count < num_ops);
     printf("what the pointer should be %p\n", ops);
     pthread_exit((void*)ops);
