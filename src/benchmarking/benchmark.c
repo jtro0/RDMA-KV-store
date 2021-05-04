@@ -34,8 +34,13 @@ int data_processing(struct operation **ops) {
 
     long time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000L;
     pr_info("Time taken in seconds: %ld seconds\n", time_taken_sec);
-    long ops_per_sec = (long)count / time_taken_sec;
-    pr_info("Time taken %ld", ops_per_sec);
+    if (time_taken_sec > 0) {
+        long ops_per_sec = (long)count / time_taken_sec;
+        pr_info("Time taken %ld", ops_per_sec);
+    }
+    else {
+        pr_info("Something went wrong, time take sec: %ld usec: %ld\n", time_taken->tv_sec, time_taken->tv_usec);
+    }
 
     return 0;
 }
