@@ -27,16 +27,16 @@ int data_processing(struct operation **ops) {
         last = op;
     }
 
-    long time_taken_usec = ((last->end->tv_sec - first->start->tv_sec)*1000000L+last->end->tv_usec) - first->start->tv_usec;
-    pr_info("Time in microseconds: %ld microseconds\n", time_taken_usec);
+    double time_taken_usec = ((last->end->tv_sec - first->start->tv_sec)*1000000.0+last->end->tv_usec) - first->start->tv_usec;
+    pr_info("Time in microseconds: %f microseconds\n", time_taken_usec);
     struct timeval *time_taken = malloc(sizeof(struct timeval));
     timersub(last->end, first->start, time_taken);
 
-    long time_taken_sec = time_taken->tv_sec + (long)time_taken->tv_usec/1000000L;
-    pr_info("Time taken in seconds: %ld seconds\n", time_taken_sec);
+    double time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000.0;
+    pr_info("Time taken in seconds: %f seconds\n", time_taken_sec);
     if (time_taken_sec > 0) {
-        long ops_per_sec = (long)count / time_taken_sec;
-        pr_info("Time taken %ld", ops_per_sec);
+        double ops_per_sec = count / time_taken_sec;
+        pr_info("Time taken %f", ops_per_sec);
     }
     else {
         pr_info("Something went wrong, time take sec: %ld usec: %ld\n", time_taken->tv_sec, time_taken->tv_usec);
