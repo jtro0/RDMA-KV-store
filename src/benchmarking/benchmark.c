@@ -17,6 +17,24 @@ void usage() {
     exit(1);
 }
 
+int data_processing(struct operation **ops) {
+    int count = 0;
+    struct operation *first = ops[count];
+    struct operation *last = first;
+    while (ops[count]) {
+        struct operation *op = ops[count++];
+        last = op;
+    }
+
+    long time_taken = ((last->end->tv_sec - first->start->tv_sec)*1000000L+last->end->tv_usec) - first->start->tv_usec;
+    pr_info("Time in microseconds: %ld microseconds\n", time_taken);
+
+    long time_taken_sec = time_taken/1000000;
+    long ops_per_sec = count / time_taken_sec;
+    pr_info("Time taken %ld", ops_per_sec);
+
+    return 0;
+}
 
 int main(int argc, char *argv[]) {
     int ret, clients = 1, num_ops = 1000;
@@ -108,11 +126,7 @@ int main(int argc, char *argv[]) {
         printf("pointer returned %p\n", ops);
 
         if (ops != NULL) {
-            printf("request %p response %p expected response %p start %p end %p", ops[0]->request, ops[0]->response, ops[0]->expected_response, ops[0]->start, ops[0]->end);
-            printf("%d\n", ops[0]->request->method);
-//            printf("type %d msg len %zu\n", ops[0]->start, ops[0]->request->msg_len);
-            print_request(ops[0]->request);
-            print_response(ops[0]->response);
+            data_processing(ops);
         }
     }
     sleep(1);
