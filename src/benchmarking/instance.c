@@ -80,46 +80,48 @@ void* start_instance(void *arguments) {
         case UD:
             break;
     }
-    struct operation *ops = calloc(num_ops, sizeof(struct operation));
+    struct operation **ops = calloc(num_ops, sizeof(struct operation*));
 
     int count = 0;
     do {
-        struct operation current = ops[count];
-        current.start = malloc(sizeof(struct timeval));
-        current.end = malloc(sizeof(struct timeval));
+        ops[count] = malloc(sizeof(struct operation));
+        struct operation *current = ops[count];
+        current->start = malloc(sizeof(struct timeval));
+        current->end = malloc(sizeof(struct timeval));
 
-        gettimeofday(current.start, NULL);
+        gettimeofday(current->start, NULL);
 
-        current.request = calloc(1, sizeof(struct request));
-        current.response = calloc(1, sizeof(struct response));
-        current.expected_response = calloc(1, sizeof(struct response));
+        current->request = calloc(1, sizeof(struct request));
+        current->response = calloc(1, sizeof(struct response));
+        current->expected_response = calloc(1, sizeof(struct response));
 
         if (count % 2 == 0) {
-            make_set_request(current.request, count);
+            make_set_request(current->request, count);
         }
         else {
-            make_get_request(current.request, count-1);
+            make_get_request(current->request, count-1);
         }
-        make_expected_response(current.expected_response, current.request, count);
-        returned = rc_pre_post_receive_response(conn.rc_server_conn, current.response);
+        make_expected_response(current->expected_response, current->request, count);
+        returned = rc_pre_post_receive_response(conn.rc_server_conn, current->response);
         check(returned, ops, "Failed to receive response, returned = %d \n", returned);
 
-        returned = send_request(&conn, current.request);
+        returned = send_request(&conn, current->request);
         check(returned, ops, "Failed to get send request, returned = %d \n", returned);
 
-        returned = receive_response(&conn, current.response);
+        returned = receive_response(&conn, current->response);
 
-        gettimeofday(current.end, NULL);
+        gettimeofday(current->end, NULL);
 
-        if (memcmp(current.response, current.expected_response, sizeof(struct response)) != 0) {
-            print_response(current.response);
-            print_response(current.expected_response);
+        if (memcmp(current->response, current->expected_response, sizeof(struct response)) != 0) {
+            print_response(current->response);
+            print_response(current->expected_response);
             return NULL;
         }
 
-//        usleep(5000);
+        usleep(5000);
+//        sleep(1);
         count++;
-
+        pr_info("next");
     } while (count < num_ops);
     printf("what the pointer should be %p\n", ops);
     pthread_exit((void*)ops);

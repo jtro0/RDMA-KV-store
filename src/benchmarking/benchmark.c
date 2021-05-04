@@ -94,23 +94,26 @@ int main(int argc, char *argv[]) {
 
     pthread_t *threads = calloc(clients, sizeof(pthread_t));
     for (int i=0; i<clients; i++) {
-
-
-        pthread_create(&threads[i], NULL, start_instance, &args);
+        ret = pthread_create(&threads[i], NULL, &start_instance, &args);
+        if (ret != 0) {
+            pr_info("pthread create failed %d\n", ret);
+            exit(EXIT_FAILURE);
+        }
     }
 
     for (int i=0; i<clients; i++) {
-        void *ops_ret;
+        struct operation **ops;
         printf("before?\n");
-        pthread_join(threads[i], &ops_ret);
-        printf("pointer returned %p\n", ops_ret);
+        pthread_join(threads[i], (void**)&ops);
+        printf("pointer returned %p\n", ops);
 
-        struct operation *ops = (struct operation*) ops_ret;
         if (ops != NULL) {
-            printf("%d\n", ops[0].request->method);
-//            printf("type %d msg len %zu\n", ops[0].start, ops[0].request->msg_len);
-//            print_request(ops[0].request);
-//            print_response(ops[0].response);
+            printf("request %p response %p expected response %p start %p end %p", ops[0]->request, ops[0]->response, ops[0]->expected_response, ops[0]->start, ops[0]->end);
+            printf("%d\n", ops[0]->request->method);
+//            printf("type %d msg len %zu\n", ops[0]->start, ops[0]->request->msg_len);
+            print_request(ops[0]->request);
+            print_response(ops[0]->response);
         }
     }
+    sleep(1);
 }
