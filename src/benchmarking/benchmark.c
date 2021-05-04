@@ -29,7 +29,7 @@ int data_processing(struct operation **ops) {
     long time_taken = ((last->end->tv_sec - first->start->tv_sec)*1000000L+last->end->tv_usec) - first->start->tv_usec;
     pr_info("Time in microseconds: %ld microseconds\n", time_taken);
 
-    long time_taken_sec = time_taken/1000000;
+    long time_taken_sec = time_taken/1000000L;
     long ops_per_sec = count / time_taken_sec;
     pr_info("Time taken %ld", ops_per_sec);
 
