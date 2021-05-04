@@ -32,7 +32,7 @@ int data_processing(struct operation **ops) {
     struct timeval *time_taken = malloc(sizeof(struct timeval));
     timersub(last->end, first->start, time_taken);
 
-    long time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000L;
+    long time_taken_sec = time_taken->tv_sec + (long)time_taken->tv_usec/1000000L;
     pr_info("Time taken in seconds: %ld seconds\n", time_taken_sec);
     if (time_taken_sec > 0) {
         long ops_per_sec = (long)count / time_taken_sec;
