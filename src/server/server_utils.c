@@ -210,7 +210,6 @@ int receive_header(struct client_info *client) {
         case UD:
             break;
     }
-    client->request_count = (client->request_count+1)%REQUEST_BACKLOG;
 
     return recved;
 }
