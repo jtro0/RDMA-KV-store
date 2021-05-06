@@ -122,7 +122,7 @@ void* start_instance(void *arguments) {
             return NULL;
         }
 
-        usleep(100);
+        usleep(250);
 //        sleep(1);
         count++;
 
