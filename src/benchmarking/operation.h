@@ -10,8 +10,8 @@ struct operation {
 
     struct timeval *start;
     struct timeval *end;
-    struct request *request;
-    struct response *response;
-    struct response *expected_response;
+//    struct request *request;
+//    struct response *response;
+//    struct response *expected_response;
 };
 #endif //RDMA_KV_STORE_OPERATION_H

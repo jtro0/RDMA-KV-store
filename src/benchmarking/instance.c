@@ -63,15 +63,18 @@ void* start_instance(void *arguments) {
     conn.conn_t = conn_t;
     conn.server_addr = server_addr;
 
+
     switch (conn_t) {
         case TCP:
             break;
         case RC:
             conn.rc_server_conn = malloc(sizeof(struct rc_server_conn));
             conn.rc_server_conn->server_sockaddr = server_addr;
+            conn.rc_server_conn->request = calloc(1, sizeof(struct request));
+            conn.rc_server_conn->response = calloc(1, sizeof(struct response));
             returned = client_prepare_connection(conn.rc_server_conn);
             check(returned, NULL, "Failed to setup client connection , returned = %d \n", returned);
-
+            pr_debug("prepared\n");
             returned = client_connect_to_server(conn.rc_server_conn);
             check(returned, NULL, "Failed to setup client connection , returned = %d \n", returned);
             break;
@@ -81,7 +84,6 @@ void* start_instance(void *arguments) {
             break;
     }
     sleep(1);
-
     struct operation **ops = calloc(num_ops, sizeof(struct operation*));
 
     int count = 0;
@@ -93,30 +95,30 @@ void* start_instance(void *arguments) {
 
         gettimeofday(current->start, NULL);
 
-        current->request = calloc(1, sizeof(struct request));
-        current->response = calloc(1, sizeof(struct response));
-        current->expected_response = calloc(1, sizeof(struct response));
+//        current->request = calloc(1, sizeof(struct request));
+//        current->response = calloc(1, sizeof(struct response));
+        struct response *expected_response = calloc(1, sizeof(struct response));
 
         if (count % 2 == 0) {
-            make_set_request(current->request, count);
+            make_set_request(conn.rc_server_conn->request, count);
         }
         else {
-            make_get_request(current->request, count-1);
+            make_get_request(conn.rc_server_conn->request, count-1);
         }
-        make_expected_response(current->expected_response, current->request, count);
-        returned = rc_pre_post_receive_response(conn.rc_server_conn, current->response);
+        make_expected_response(expected_response, conn.rc_server_conn->request, count);
+//        returned = rc_pre_post_receive_response(conn.rc_server_conn, current->response);
         check(returned, ops, "Failed to receive response, returned = %d \n", returned);
 
-        returned = send_request(&conn, current->request);
+        returned = send_request(&conn, conn.rc_server_conn->request);
         check(returned, ops, "Failed to get send request, returned = %d \n", returned);
 
-        returned = receive_response(&conn, current->response);
+        returned = receive_response(&conn, conn.rc_server_conn->response);
 
         gettimeofday(current->end, NULL);
 
-        if (memcmp(current->response, current->expected_response, sizeof(struct response)) != 0) {
-            print_response(current->response);
-            print_response(current->expected_response);
+        if (memcmp(conn.rc_server_conn->response, expected_response, sizeof(struct response)) != 0) {
+            print_response(conn.rc_server_conn->response);
+            print_response(expected_response);
             return NULL;
         }
 

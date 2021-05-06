@@ -59,12 +59,15 @@ int client_prepare_connection(struct rc_server_conn *server_conn) {
     server_conn->pd = ibv_alloc_pd(server_conn->cm_client_id->verbs);
     check(!server_conn->pd, -errno, "Failed to alloc pd, errno: %d \n", -errno);
     pr_debug("pd allocated at %p \n", server_conn->pd);
-    /* Now we need a completion channel, were the I/O completion
-     * notifications are sent. Remember, this is different from connection
-     * management (CM) event notifications.
-     * A completion channel is also tied to an RDMA device, hence we will
-     * use cm_client_id->verbs.
-     */
+
+
+    pr_debug("here\n");
+        /* Now we need a completion channel, were the I/O completion
+         * notifications are sent. Remember, this is different from connection
+         * management (CM) event notifications.
+         * A completion channel is also tied to an RDMA device, hence we will
+         * use cm_client_id->verbs.
+         */
     server_conn->io_completion_channel = ibv_create_comp_channel(server_conn->cm_client_id->verbs);
     check(!server_conn->io_completion_channel, -errno, "Failed to create IO completion event channel, errno: %d\n",
           -errno);
@@ -106,6 +109,15 @@ int client_prepare_connection(struct rc_server_conn *server_conn) {
 
     server_conn->client_qp = server_conn->cm_client_id->qp;
     pr_debug("QP created at %p \n", server_conn->client_qp);
+
+    server_conn->client_request_mr = rdma_buffer_register(server_conn->pd,
+                                                          server_conn->request,
+                                                          sizeof(struct request),
+                                                          (IBV_ACCESS_LOCAL_WRITE |
+                                                           IBV_ACCESS_REMOTE_READ |
+                                                           IBV_ACCESS_REMOTE_WRITE));
+    rc_pre_post_receive_response(server_conn, server_conn->response);
+
     return 0;
 }
 
@@ -137,12 +149,7 @@ int client_connect_to_server(struct rc_server_conn *server_conn) {
 int rc_send_request(struct rc_server_conn *server_conn, struct request *request) {
     int ret;
     struct ibv_wc wc;
-    server_conn->client_request_mr = rdma_buffer_register(server_conn->pd,
-                                                          request,
-                                                          sizeof(struct request),
-                                                          (IBV_ACCESS_LOCAL_WRITE |
-                                                           IBV_ACCESS_REMOTE_READ |
-                                                           IBV_ACCESS_REMOTE_WRITE));
+
 
     ret = post_send(sizeof(struct request), server_conn->client_request_mr->lkey, wc.wr_id, server_conn->client_qp,
                     request);
@@ -154,7 +161,7 @@ int rc_send_request(struct rc_server_conn *server_conn, struct request *request)
                                          &wc, 1);
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
-    rdma_buffer_deregister(server_conn->client_request_mr);
+//    rdma_buffer_deregister(server_conn->client_request_mr);
 
     return 0;
 }
@@ -164,14 +171,14 @@ int rc_pre_post_receive_response(struct rc_server_conn *server_conn, struct resp
     struct ibv_wc wc;
 
     server_conn->client_response_mr = rdma_buffer_register(server_conn->pd,
-                                                           response,
+                                                           server_conn->response,
                                                            sizeof(struct response),
                                                            (IBV_ACCESS_LOCAL_WRITE |
                                                             IBV_ACCESS_REMOTE_READ |
                                                             IBV_ACCESS_REMOTE_WRITE));
 
     ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, wc.wr_id, server_conn->client_qp,
-                       response);
+                       server_conn->response);
 
     check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
 }
@@ -197,7 +204,11 @@ int rc_receive_response(struct rc_server_conn *server_conn, struct response *res
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 
-    rdma_buffer_deregister(server_conn->client_response_mr);
+    ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, wc.wr_id, server_conn->client_qp,
+                       server_conn->response);
+    check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
+
+//    rdma_buffer_deregister(server_conn->client_response_mr);
     return 0;
 }
 

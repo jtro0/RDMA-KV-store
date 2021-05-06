@@ -11,6 +11,8 @@
 struct client_to_server_conn {
     enum connection_type conn_t;
     struct sockaddr_in *server_addr;
+    struct request *request;
+    struct response *response;
 
     struct rc_server_conn *rc_server_conn;
 };
