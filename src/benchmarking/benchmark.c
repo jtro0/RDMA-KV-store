@@ -21,16 +21,16 @@ void usage() {
 int data_processing(struct operation **ops) {
     int count = 0;
     struct operation *first = ops[count];
-    struct operation *last = first;
-    while (ops[count]) {
-        struct operation *op = ops[count++];
-        last = op;
-    }
+//    struct operation *last = first;
+//    while (ops[count]) {
+//        struct operation *op = ops[count++];
+//        last = op;
+//    }
 
-    double time_taken_usec = ((last->end->tv_sec - first->start->tv_sec)*1000000.0+last->end->tv_usec) - first->start->tv_usec;
+    double time_taken_usec = ((first->end->tv_sec - first->start->tv_sec)*1000000.0+first->end->tv_usec) - first->start->tv_usec;
     pr_info("Time in microseconds: %f microseconds\n", time_taken_usec);
     struct timeval *time_taken = malloc(sizeof(struct timeval));
-    timersub(last->end, first->start, time_taken);
+    timersub(first->end, first->start, time_taken);
 
     double time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000.0;
     pr_info("Time taken in seconds: %f seconds\n", time_taken_sec);

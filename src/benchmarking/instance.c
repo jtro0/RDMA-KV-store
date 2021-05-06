@@ -87,13 +87,18 @@ void* start_instance(void *arguments) {
     struct operation **ops = calloc(num_ops, sizeof(struct operation*));
 
     int count = 0;
-    do {
-        ops[count] = malloc(sizeof(struct operation));
-        struct operation *current = ops[count];
-        current->start = malloc(sizeof(struct timeval));
-        current->end = malloc(sizeof(struct timeval));
+    ops[count] = malloc(sizeof(struct operation));
+    ops[count]->start = malloc(sizeof(struct timeval));
+    ops[count]->end = malloc(sizeof(struct timeval));
 
-        gettimeofday(current->start, NULL);
+    gettimeofday(ops[count]->start, NULL);
+    do {
+//        ops[count] = malloc(sizeof(struct operation));
+//        struct operation *current = ops[count];
+//        current->start = malloc(sizeof(struct timeval));
+//        current->end = malloc(sizeof(struct timeval));
+//
+//        gettimeofday(current->start, NULL);
 
 //        current->request = calloc(1, sizeof(struct request));
 //        current->response = calloc(1, sizeof(struct response));
@@ -114,7 +119,7 @@ void* start_instance(void *arguments) {
 
         returned = receive_response(&conn, conn.rc_server_conn->response);
 
-        gettimeofday(current->end, NULL);
+//        gettimeofday(current->end, NULL);
 
         if (memcmp(conn.rc_server_conn->response, expected_response, sizeof(struct response)) != 0) {
             print_response(conn.rc_server_conn->response);
@@ -127,6 +132,8 @@ void* start_instance(void *arguments) {
         count++;
 
     } while (count < num_ops);
+    gettimeofday(ops[0]->end, NULL);
+
     printf("what the pointer should be %p\n", ops);
     pthread_exit((void*)ops);
 }
