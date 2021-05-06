@@ -235,9 +235,9 @@ struct request *recv_request(struct client_info *client) {
         pr_info("No header received\n");
         return NULL;
     }
-//    struct request *test = malloc(sizeof(struct request));
-//    memcpy(test, &client->request[client->request_count], sizeof(struct request));
-//    print_request(test);
+    struct request *test = malloc(sizeof(struct request));
+    memcpy(test, &client->request[client->request_count], sizeof(struct request));
+    print_request(test);
     request_dispatcher(client);
     return &client->request[client->request_count];
 }
