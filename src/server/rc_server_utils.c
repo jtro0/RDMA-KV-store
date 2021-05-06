@@ -235,19 +235,19 @@ int rc_receive_header(struct rc_client_connection *client) {
 int rc_post_receive_request(struct client_info *client) {
     int ret = 0;
 
-    client->rc_client->client_recv_sge.addr = (uint64_t) client->rc_client->request_mr->addr + (sizeof(struct request)*client->request_count);
-    client->rc_client->client_recv_sge.length = sizeof(struct request);
-    client->rc_client->client_recv_sge.lkey = client->rc_client->request_mr->lkey;
-    /* Now we link this SGE to the work request (WR) */
-    bzero(&client->rc_client->client_recv_wr, sizeof(client->rc_client->client_recv_wr));
-    client->rc_client->client_recv_wr.sg_list = &client->rc_client->client_recv_sge;
-    client->rc_client->client_recv_wr.num_sge = 1; // only one SGE
-    ret = ibv_post_recv(client->rc_client->client_qp /* which QP */,
-                        &client->rc_client->client_recv_wr /* receive work request*/,
-                        &client->rc_client->bad_client_recv_wr /* error WRs */);
+//    client->rc_client->client_recv_sge.addr = (uint64_t) client->rc_client->request_mr->addr + (sizeof(struct request)*client->request_count);
+//    client->rc_client->client_recv_sge.length = sizeof(struct request);
+//    client->rc_client->client_recv_sge.lkey = client->rc_client->request_mr->lkey;
+//    /* Now we link this SGE to the work request (WR) */
+//    bzero(&client->rc_client->client_recv_wr, sizeof(client->rc_client->client_recv_wr));
+//    client->rc_client->client_recv_wr.sg_list = &client->rc_client->client_recv_sge;
+//    client->rc_client->client_recv_wr.num_sge = 1; // only one SGE
+//    ret = ibv_post_recv(client->rc_client->client_qp /* which QP */,
+//                        &client->rc_client->client_recv_wr /* receive work request*/,
+//                        &client->rc_client->bad_client_recv_wr /* error WRs */);
     pr_info("receiving %d\n", client->request_count);
-//    ret = post_recieve(sizeof(struct request), client->rc_client->request_mr->lkey, client->request_count, client->rc_client->client_qp,
-//                       &client->request[client->request_count]);
+    ret = post_recieve(sizeof(struct request), client->rc_client->request_mr->lkey, client->request_count, client->rc_client->client_qp,
+                       &client->request[client->request_count]);
     return ret;
 }
 

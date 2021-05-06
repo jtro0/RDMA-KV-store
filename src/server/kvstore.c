@@ -92,9 +92,9 @@ void *main_job(void *arg) {
 //            ntohs(client->addr.sin_port));
 
     do {
+        ready_for_next_request(client);
         struct request* request = recv_request(client);
 //        bzero(client->request, sizeof(struct request));
-        ready_for_next_request(client);
         bzero(client->response, sizeof(struct response));
         pr_info("request count %d\n", client->request_count);
         switch (request->method) {

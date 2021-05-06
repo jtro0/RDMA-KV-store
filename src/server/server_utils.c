@@ -167,7 +167,6 @@ int ready_for_next_request(struct client_info *client) {
             break;
     }
     check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", client->request_count, ret);
-    client->request_count = (client->request_count+1)%REQUEST_BACKLOG;
 
     return ret;
 }
@@ -211,6 +210,8 @@ int receive_header(struct client_info *client) {
         case UD:
             break;
     }
+    client->request_count = (client->request_count+1)%REQUEST_BACKLOG;
+
     return recved;
 }
 
@@ -234,9 +235,9 @@ struct request *recv_request(struct client_info *client) {
         pr_info("No header received\n");
         return NULL;
     }
-    struct request *test = malloc(sizeof(struct request));
-    memcpy(test, &client->request[client->request_count], sizeof(struct request));
-    print_request(test);
+//    struct request *test = malloc(sizeof(struct request));
+//    memcpy(test, &client->request[client->request_count], sizeof(struct request));
+//    print_request(test);
     request_dispatcher(client);
     return &client->request[client->request_count];
 }
