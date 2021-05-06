@@ -197,6 +197,9 @@ int rc_receive_response(struct rc_server_conn *server_conn, struct response *res
 //                       response);
 
 //    check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
+    ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, wc.wr_id, server_conn->client_qp,
+                       server_conn->response);
+    check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
 
     /* at this point we are expecting 1 work completion for the write */
     ret = process_work_completion_events(server_conn->io_completion_channel,
@@ -204,9 +207,6 @@ int rc_receive_response(struct rc_server_conn *server_conn, struct response *res
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 
-    ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, wc.wr_id, server_conn->client_qp,
-                       server_conn->response);
-    check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
 
 //    rdma_buffer_deregister(server_conn->client_response_mr);
     return 0;
