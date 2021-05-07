@@ -82,8 +82,9 @@ void* start_instance(void *arguments) {
         case UD:
             break;
     }
-    sleep(1);
     struct operation *ops = calloc(num_ops, sizeof(struct operation));
+
+    sleep(1);
 
     int count = 0;
 //    ops[count] = malloc(sizeof(struct operation));
