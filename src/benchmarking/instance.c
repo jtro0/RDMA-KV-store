@@ -103,6 +103,8 @@ void* start_instance(void *arguments) {
 
 //        current->request = calloc(1, sizeof(struct request));
 //        current->response = calloc(1, sizeof(struct response));
+        struct timeval start, end;
+        gettimeofday(&start, NULL);
 
         if (count % 2 == 0) {
             make_set_request(conn.rc_server_conn->request, count);
@@ -110,6 +112,8 @@ void* start_instance(void *arguments) {
         else {
             make_get_request(conn.rc_server_conn->request, count-1);
         }
+
+
 //        make_expected_response(conn.rc_server_conn->expected_response, conn.rc_server_conn->request, count);
 //        returned = rc_pre_post_receive_response(conn.rc_server_conn, current->response);
 //        check(returned, ops, "Failed to receive response, returned = %d \n", returned);
@@ -131,6 +135,17 @@ void* start_instance(void *arguments) {
 //        sleep(1);
         count++;
         bzero(conn.rc_server_conn->expected_response, sizeof(struct response));
+
+        gettimeofday(&end, NULL);
+
+        double time_taken_usec = ((end.tv_sec - start.tv_sec)*1000000.0+end.tv_usec) - start.tv_usec;
+        printf("Time in microseconds: %f microseconds\n", time_taken_usec);
+        struct timeval *time_taken = malloc(sizeof(struct timeval));
+        timersub(&end, &start, time_taken);
+
+        double time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000.0;
+        printf("Time taken in seconds: %f seconds\n", time_taken_sec);
+
     } while (count < num_ops);
     gettimeofday(ops[0]->end, NULL);
 
