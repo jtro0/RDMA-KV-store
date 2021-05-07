@@ -29,18 +29,18 @@ int data_processing(struct operation **ops) {
 //    }
 
     double time_taken_usec = ((first->end->tv_sec - first->start->tv_sec)*1000000.0+first->end->tv_usec) - first->start->tv_usec;
-    pr_info("Time in microseconds: %f microseconds\n", time_taken_usec);
+    printf("Time in microseconds: %f microseconds\n", time_taken_usec);
     struct timeval *time_taken = malloc(sizeof(struct timeval));
     timersub(first->end, first->start, time_taken);
 
     double time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000.0;
-    pr_info("Time taken in seconds: %f seconds\n", time_taken_sec);
+    printf("Time taken in seconds: %f seconds\n", time_taken_sec);
     if (time_taken_sec > 0) {
         double ops_per_sec = num_ops / time_taken_sec;
-        pr_info("Operations per second: %f\n", ops_per_sec);
+        printf("Operations per second: %f\n", ops_per_sec);
     }
     else {
-        pr_info("Something went wrong, time take sec: %ld usec: %ld\n", time_taken->tv_sec, time_taken->tv_usec);
+        printf("Something went wrong, time take sec: %ld usec: %ld\n", time_taken->tv_sec, time_taken->tv_usec);
     }
 
     return 0;
@@ -131,9 +131,7 @@ int main(int argc, char *argv[]) {
 
     for (int i=0; i<clients; i++) {
         struct operation **ops;
-        printf("before?\n");
         pthread_join(threads[i], (void**)&ops);
-        printf("pointer returned %p\n", ops);
 
         if (ops != NULL) {
             data_processing(ops);

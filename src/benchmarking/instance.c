@@ -56,13 +56,11 @@ void* start_instance(void *arguments) {
     enum connection_type conn_t = args->conn_t;
     struct sockaddr_in *server_addr = args->server_addr;
     unsigned int num_ops = args->num_ops;
-//    struct operation *ops = args->ops;
 
     int returned;
     struct client_to_server_conn conn;
     conn.conn_t = conn_t;
     conn.server_addr = server_addr;
-
 
     switch (conn_t) {
         case TCP:
@@ -94,17 +92,6 @@ void* start_instance(void *arguments) {
 
     gettimeofday(ops[count]->start, NULL);
     do {
-//        ops[count] = malloc(sizeof(struct operation));
-//        struct operation *current = ops[count];
-//        current->start = malloc(sizeof(struct timeval));
-//        current->end = malloc(sizeof(struct timeval));
-//
-//        gettimeofday(current->start, NULL);
-
-//        current->request = calloc(1, sizeof(struct request));
-//        current->response = calloc(1, sizeof(struct response));
-//        struct timeval start, end;
-//        gettimeofday(&start, NULL);
 
         if (count == 0) {
             make_set_request(conn.rc_server_conn->request, count);
@@ -113,42 +100,16 @@ void* start_instance(void *arguments) {
             make_get_request(conn.rc_server_conn->request, 0);
         }
 
-
-//        make_expected_response(conn.rc_server_conn->expected_response, conn.rc_server_conn->request, count);
-//        returned = rc_pre_post_receive_response(conn.rc_server_conn, current->response);
-//        check(returned, ops, "Failed to receive response, returned = %d \n", returned);
-
         returned = send_request(&conn, conn.rc_server_conn->request);
         check(returned, ops, "Failed to get send request, returned = %d \n", returned);
 
         returned = receive_response(&conn, conn.rc_server_conn->response);
+        check(returned, ops, "Failed to get receive response, returned = %d \n", returned);
 
-//        gettimeofday(current->end, NULL);
-
-//        if (memcmp(conn.rc_server_conn->response, conn.rc_server_conn->expected_response, sizeof(struct response)) != 0) {
-//            print_response(conn.rc_server_conn->response);
-//            print_response(conn.rc_server_conn->expected_response);
-//            return NULL;
-//        }
-
-//        usleep(250);
-//        sleep(1);
         count++;
         bzero(conn.rc_server_conn->expected_response, sizeof(struct response));
-
-//        gettimeofday(&end, NULL);
-//
-//        double time_taken_usec = ((end.tv_sec - start.tv_sec)*1000000.0+end.tv_usec) - start.tv_usec;
-//        printf("Time in microseconds: %f microseconds\n", time_taken_usec);
-//        struct timeval *time_taken = malloc(sizeof(struct timeval));
-//        timersub(&end, &start, time_taken);
-//
-//        double time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000.0;
-//        printf("Time taken in seconds: %f seconds\n", time_taken_sec);
-
     } while (count < num_ops);
     gettimeofday(ops[0]->end, NULL);
 
-    printf("what the pointer should be %p\n", ops);
     pthread_exit((void*)ops);
 }
