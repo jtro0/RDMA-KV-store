@@ -1,10 +1,6 @@
 //
 // Created by jtroo on 23-04-21.
 //
-#include <getopt.h>
-#include <netinet/in.h>
-#include <string.h>
-
 #include "client.h"
 
 int send_request(struct client_to_server_conn *conn, struct request *request) {

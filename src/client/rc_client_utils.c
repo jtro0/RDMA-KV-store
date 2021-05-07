@@ -161,14 +161,12 @@ int rc_send_request(struct rc_server_conn *server_conn, struct request *request)
                                          &wc, 1, server_conn->client_cq);
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
-//    rdma_buffer_deregister(server_conn->client_request_mr);
 
     return 0;
 }
 
 int rc_pre_post_receive_response(struct rc_server_conn *server_conn, struct response *response) {
     int ret;
-    struct ibv_wc wc;
 
     server_conn->client_response_mr = rdma_buffer_register(server_conn->pd,
                                                            server_conn->response,
@@ -186,17 +184,7 @@ int rc_pre_post_receive_response(struct rc_server_conn *server_conn, struct resp
 int rc_receive_response(struct rc_server_conn *server_conn, struct response *response) {
     int ret;
     struct ibv_wc wc;
-//    server_conn->client_response_mr = rdma_buffer_register(server_conn->pd,
-//                                                           response,
-//                                                           sizeof(struct response),
-//                                                           (IBV_ACCESS_LOCAL_WRITE |
-//                                                            IBV_ACCESS_REMOTE_READ |
-//                                                            IBV_ACCESS_REMOTE_WRITE));
 
-//    ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, wc.wr_id, server_conn->client_qp,
-//                       response);
-
-//    check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
     ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, 0, server_conn->client_qp,
                        server_conn->response);
     check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
@@ -207,8 +195,6 @@ int rc_receive_response(struct rc_server_conn *server_conn, struct response *res
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 
-
-//    rdma_buffer_deregister(server_conn->client_response_mr);
     return 0;
 }
 
