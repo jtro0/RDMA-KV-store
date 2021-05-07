@@ -103,8 +103,8 @@ void* start_instance(void *arguments) {
 
 //        current->request = calloc(1, sizeof(struct request));
 //        current->response = calloc(1, sizeof(struct response));
-        struct timeval start, end;
-        gettimeofday(&start, NULL);
+//        struct timeval start, end;
+//        gettimeofday(&start, NULL);
 
         if (count == 0) {
             make_set_request(conn.rc_server_conn->request, count);
@@ -136,15 +136,15 @@ void* start_instance(void *arguments) {
         count++;
         bzero(conn.rc_server_conn->expected_response, sizeof(struct response));
 
-        gettimeofday(&end, NULL);
-
-        double time_taken_usec = ((end.tv_sec - start.tv_sec)*1000000.0+end.tv_usec) - start.tv_usec;
-        printf("Time in microseconds: %f microseconds\n", time_taken_usec);
-        struct timeval *time_taken = malloc(sizeof(struct timeval));
-        timersub(&end, &start, time_taken);
-
-        double time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000.0;
-        printf("Time taken in seconds: %f seconds\n", time_taken_sec);
+//        gettimeofday(&end, NULL);
+//
+//        double time_taken_usec = ((end.tv_sec - start.tv_sec)*1000000.0+end.tv_usec) - start.tv_usec;
+//        printf("Time in microseconds: %f microseconds\n", time_taken_usec);
+//        struct timeval *time_taken = malloc(sizeof(struct timeval));
+//        timersub(&end, &start, time_taken);
+//
+//        double time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000.0;
+//        printf("Time taken in seconds: %f seconds\n", time_taken_sec);
 
     } while (count < num_ops);
     gettimeofday(ops[0]->end, NULL);
