@@ -13,7 +13,7 @@ int init_rc_server(struct server_info *server);
 
 int rc_accept_new_connection(struct server_info *server);
 
-int rc_receive_header(struct rc_client_connection *client);
+int rc_receive_header(struct client_info *client);
 
 int rc_post_receive_request(struct client_info *client);
 

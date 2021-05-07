@@ -224,11 +224,12 @@ int rc_accept_new_connection(struct server_info *server) {
     return ret;
 }
 
-int rc_receive_header(struct rc_client_connection *client) {
+int rc_receive_header(struct client_info *client) {
     int ret = 0, n = 0;
     struct ibv_wc wc;
-    ret = process_work_completion_events(client->io_completion_channel, &wc, 1);
+    ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1);
     check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
+    pr_info("wc wr id: %lu, request count: %d\n", wc.wr_id, client->request_count);
     return ret;
 }
 

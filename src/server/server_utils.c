@@ -203,7 +203,7 @@ int receive_header(struct client_info *client) {
             break;
         case RC:
             pr_info("rc going to receive\n");
-            recved = rc_receive_header(client->rc_client);
+            recved = rc_receive_header(client);
             break;
         case UC:
             break;
@@ -221,13 +221,13 @@ int receive_header(struct client_info *client) {
  * a bad request which cannot be parsed
  */
 struct request *recv_request(struct client_info *client) {
-    bzero(&client->request[client->request_count], sizeof(struct request));
-    strncpy(client->request[client->request_count].msg, "LOL", MSG_SIZE);
-    client->request[client->request_count].msg_len = 0;
-    client->request[client->request_count].key_len = 0;
-    client->request[client->request_count].method = 0;
-//    bzero(client->request[client->request_count].msg, MSG_SIZE);
-    bzero(client->request[client->request_count].key, KEY_SIZE);
+//    bzero(&client->request[client->request_count], sizeof(struct request));
+//    strncpy(client->request[client->request_count].msg, "LOL", MSG_SIZE);
+//    client->request[client->request_count].msg_len = 0;
+//    client->request[client->request_count].key_len = 0;
+//    client->request[client->request_count].method = 0;
+////    bzero(client->request[client->request_count].msg, MSG_SIZE);
+//    bzero(client->request[client->request_count].key, KEY_SIZE);
 
     if (receive_header(client) == -1) {
         // Connection closed from client side or error occurred
