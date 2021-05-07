@@ -87,19 +87,18 @@ void* start_instance(void *arguments) {
     sleep(1);
 
     int count = 0;
-//    ops[count] = malloc(sizeof(struct operation));
-    ops[count].start = malloc(sizeof(struct timeval));
-    ops[count].end = malloc(sizeof(struct timeval));
 
-    gettimeofday(ops[count].start, NULL);
     do {
-
         if (count == 0) {
             make_set_request(conn.rc_server_conn->request, count);
         }
         else {
             make_get_request(conn.rc_server_conn->request, 0);
         }
+        ops[count].start = malloc(sizeof(struct timeval));
+        ops[count].end = malloc(sizeof(struct timeval));
+
+        gettimeofday(ops[count].start, NULL);
 
         returned = send_request(&conn, conn.rc_server_conn->request);
         check(returned, ops, "Failed to get send request, returned = %d \n", returned);
@@ -107,10 +106,11 @@ void* start_instance(void *arguments) {
         returned = receive_response(&conn, conn.rc_server_conn->response);
         check(returned, ops, "Failed to get receive response, returned = %d \n", returned);
 
+        gettimeofday(ops[count].end, NULL);
+
         count++;
         bzero(conn.rc_server_conn->expected_response, sizeof(struct response));
     } while (count < num_ops);
-    gettimeofday(ops[0].end, NULL);
 
     pthread_exit((void*)ops);
 }
