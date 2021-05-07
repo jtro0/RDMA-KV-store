@@ -110,9 +110,9 @@ void* start_instance(void *arguments) {
         else {
             make_get_request(conn.rc_server_conn->request, count-1);
         }
-        make_expected_response(conn.rc_server_conn->expected_response, conn.rc_server_conn->request, count);
+//        make_expected_response(conn.rc_server_conn->expected_response, conn.rc_server_conn->request, count);
 //        returned = rc_pre_post_receive_response(conn.rc_server_conn, current->response);
-        check(returned, ops, "Failed to receive response, returned = %d \n", returned);
+//        check(returned, ops, "Failed to receive response, returned = %d \n", returned);
 
         returned = send_request(&conn, conn.rc_server_conn->request);
         check(returned, ops, "Failed to get send request, returned = %d \n", returned);
@@ -121,11 +121,11 @@ void* start_instance(void *arguments) {
 
 //        gettimeofday(current->end, NULL);
 
-        if (memcmp(conn.rc_server_conn->response, conn.rc_server_conn->expected_response, sizeof(struct response)) != 0) {
-            print_response(conn.rc_server_conn->response);
-            print_response(conn.rc_server_conn->expected_response);
-            return NULL;
-        }
+//        if (memcmp(conn.rc_server_conn->response, conn.rc_server_conn->expected_response, sizeof(struct response)) != 0) {
+//            print_response(conn.rc_server_conn->response);
+//            print_response(conn.rc_server_conn->expected_response);
+//            return NULL;
+//        }
 
 //        usleep(250);
 //        sleep(1);
