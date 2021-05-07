@@ -72,6 +72,7 @@ void* start_instance(void *arguments) {
             conn.rc_server_conn->server_sockaddr = server_addr;
             conn.rc_server_conn->request = calloc(1, sizeof(struct request));
             conn.rc_server_conn->response = calloc(1, sizeof(struct response));
+            conn.rc_server_conn->expected_response = calloc(1, sizeof(struct response));
             returned = client_prepare_connection(conn.rc_server_conn);
             check(returned, NULL, "Failed to setup client connection , returned = %d \n", returned);
             pr_debug("prepared\n");
@@ -102,7 +103,6 @@ void* start_instance(void *arguments) {
 
 //        current->request = calloc(1, sizeof(struct request));
 //        current->response = calloc(1, sizeof(struct response));
-        struct response *expected_response = calloc(1, sizeof(struct response));
 
         if (count % 2 == 0) {
             make_set_request(conn.rc_server_conn->request, count);
@@ -110,7 +110,7 @@ void* start_instance(void *arguments) {
         else {
             make_get_request(conn.rc_server_conn->request, count-1);
         }
-        make_expected_response(expected_response, conn.rc_server_conn->request, count);
+        make_expected_response(conn.rc_server_conn->expected_response, conn.rc_server_conn->request, count);
 //        returned = rc_pre_post_receive_response(conn.rc_server_conn, current->response);
         check(returned, ops, "Failed to receive response, returned = %d \n", returned);
 
@@ -121,16 +121,16 @@ void* start_instance(void *arguments) {
 
 //        gettimeofday(current->end, NULL);
 
-        if (memcmp(conn.rc_server_conn->response, expected_response, sizeof(struct response)) != 0) {
+        if (memcmp(conn.rc_server_conn->response, conn.rc_server_conn->expected_response, sizeof(struct response)) != 0) {
             print_response(conn.rc_server_conn->response);
-            print_response(expected_response);
+            print_response(conn.rc_server_conn->expected_response);
             return NULL;
         }
 
 //        usleep(250);
 //        sleep(1);
         count++;
-
+        bzero(conn.rc_server_conn->expected_response, sizeof(struct response));
     } while (count < num_ops);
     gettimeofday(ops[0]->end, NULL);
 

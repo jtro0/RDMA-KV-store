@@ -256,24 +256,25 @@ int rc_send_response(struct client_info *client) {
     int ret = -1;
     struct ibv_wc wc;
 
-    bzero(&client->rc_client->client_send_sge, sizeof(client->rc_client->client_send_sge));
-    /* now we fill up SGE */
-    client->rc_client->client_send_sge.addr = (uint64_t) client->rc_client->response_mr->addr;
-    client->rc_client->client_send_sge.length = (uint32_t) client->rc_client->response_mr->length;
-    client->rc_client->client_send_sge.lkey = client->rc_client->response_mr->lkey;
-    /* now we link to the send work request */
-    bzero(&client->rc_client->client_send_wr, sizeof(client->rc_client->client_send_wr));
-    client->rc_client->client_send_wr.sg_list = &client->rc_client->client_send_sge;
-    client->rc_client->client_send_wr.num_sge = 1;
-    client->rc_client->client_send_wr.opcode = IBV_WR_SEND;
-    client->rc_client->client_send_wr.send_flags = IBV_SEND_SIGNALED;
-    /* Now we post it */
-    ret = ibv_post_send(client->rc_client->client_qp,
-                        &client->rc_client->client_send_wr,
-                        &client->rc_client->bad_client_send_wr);
-    check(ret, -errno, "Failed to send client metadata, errno: %d \n",
-          -errno);
-
+//    bzero(&client->rc_client->client_send_sge, sizeof(client->rc_client->client_send_sge));
+//    /* now we fill up SGE */
+//    client->rc_client->client_send_sge.addr = (uint64_t) client->rc_client->response_mr->addr;
+//    client->rc_client->client_send_sge.length = (uint32_t) client->rc_client->response_mr->length;
+//    client->rc_client->client_send_sge.lkey = client->rc_client->response_mr->lkey;
+//    /* now we link to the send work request */
+//    bzero(&client->rc_client->client_send_wr, sizeof(client->rc_client->client_send_wr));
+//    client->rc_client->client_send_wr.sg_list = &client->rc_client->client_send_sge;
+//    client->rc_client->client_send_wr.num_sge = 1;
+//    client->rc_client->client_send_wr.opcode = IBV_WR_SEND;
+//    client->rc_client->client_send_wr.send_flags = IBV_SEND_SIGNALED;
+//    /* Now we post it */
+//    ret = ibv_post_send(client->rc_client->client_qp,
+//                        &client->rc_client->client_send_wr,
+//                        &client->rc_client->bad_client_send_wr);
+//    check(ret, -errno, "Failed to send client metadata, errno: %d \n",
+//          -errno);
+//
+    ret = post_send(sizeof(struct response), client->rc_client->response_mr->lkey, 0, client->rc_client->client_qp, client->response);
     ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1, client->rc_client->cq);
     check(ret < 0, -errno, "Failed to send response: %d\n", ret);
     return ret;

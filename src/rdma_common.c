@@ -162,9 +162,9 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
         }
     }
     /* Similar to connection management events, we need to acknowledge CQ events */
-    ibv_ack_cq_events(cq_ptr,
-                      1 /* we received one event notification. This is not
-		       number of WC elements */);
+//    ibv_ack_cq_events(cq_ptr,
+//                      1 /* we received one event notification. This is not
+//		       number of WC elements */);
     return total_wc;
 }
 
