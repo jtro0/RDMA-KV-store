@@ -32,8 +32,7 @@ int init_hashtable(size_t capacity) {
  * Hash function by
  * http://www.cse.yorku.ca/~oz/hash.html
  */
-unsigned int hash(char *str)
-{
+unsigned int hash(char *str) {
     unsigned int hash = 5381;
     int c;
     while ((c = *str++) != 0)
@@ -97,10 +96,17 @@ int remove_item(char *key, size_t key_len) {
 }
 
 hash_item_t *get_key_entry(char *key, size_t key_len) {
+    pr_debug("getting key entry\n");
     unsigned int bucket = get_bucket(key);
+    pr_debug("got bucket %d\n", bucket);
+
     pthread_mutex_lock(&ht->locks[bucket]);
+    pr_debug("got lock\n");
+
     hash_item_t *item_head = ht->items[bucket];
     hash_item_t *entry = search(key, key_len);
+    pr_debug("found entry\n");
+
     if (entry == NULL) {
         entry = calloc(1, sizeof(hash_item_t));
         entry->key = malloc(key_len + 1); // maybe freed?
@@ -118,6 +124,7 @@ hash_item_t *get_key_entry(char *key, size_t key_len) {
         ht->items[bucket] = entry;
     }
     pthread_mutex_unlock(&ht->locks[bucket]);
+    pr_debug("unlocking\n");
 
     return entry;
 }

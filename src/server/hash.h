@@ -10,7 +10,7 @@ typedef struct hash_item_t {
     char *key;      // items'key
     char *value;        // items's value
     size_t value_size;  // items's value length
-    pthread_rwlock_t  rwlock; // item lock
+    pthread_rwlock_t rwlock; // item lock
 } hash_item_t;
 
 typedef struct {

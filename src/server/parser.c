@@ -11,8 +11,7 @@
  * @param maxlen max size for line's length
  * @return On success the number of read bytes, -1 on error
  */
-int read_line(int fd, char *buf, int maxlen)
-{
+int read_line(int fd, char *buf, int maxlen) {
     int i;
     char c;
 
@@ -35,8 +34,7 @@ int read_line(int fd, char *buf, int maxlen)
     return i;
 }
 
-ssize_t send_on_socket(int fd, const void *buf, size_t n)
-{
+ssize_t send_on_socket(int fd, const void *buf, size_t n) {
     size_t nleft;
     ssize_t nwritten;
     const char *ptr;
@@ -56,41 +54,16 @@ ssize_t send_on_socket(int fd, const void *buf, size_t n)
     return (n - nleft);
 }
 
-enum method method_to_enum(const char *str)
-{
-    const size_t nmethods = sizeof(method_conversion) /
-                            sizeof(method_conversion[0]);
-    size_t i;
-    for (i = 0; i < nmethods; i++) {
-        if (!strcmp(str, method_conversion[i].str)) {
-            return method_conversion[i].val;
-        }
-    }
-    return UNK;
-}
 
-const char *method_to_str(enum method code)
-{
-    const size_t nmethods = sizeof(method_conversion) /
-                            sizeof(method_conversion[0]);
-    size_t i;
-    for (i = 0; i < nmethods; i++) {
-        if (method_conversion[i].val == code) {
-            return method_conversion[i].str;
-        }
-    }
-    return "UNK";
-}
-
-int parse_header(int fd, struct request *request)
-{
+int parse_header(int fd, struct request *request) {
     int nread;
     char line[MSG_SIZE], *token;
     char *saveptr;
     char delim[] = " ";
 
     request->method = UNK;
-    request->key = NULL;
+//    request->key = NULL;
+    bzero(request->key, KEY_SIZE);
     request->key_len = 0;
     request->msg_len = 0;
 
@@ -111,7 +84,6 @@ int parse_header(int fd, struct request *request)
         return nread;
 
     request->key_len = strlen(token);
-    request->key = malloc(request->key_len + 1);
     strcpy(request->key, token);
 
     // Payload len (optional)

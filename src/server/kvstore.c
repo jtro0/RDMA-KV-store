@@ -1,5 +1,6 @@
 #include <semaphore.h>
 #include <pthread.h>
+#include <sys/time.h>
 
 #include "server_utils.h"
 #include "common.h"
@@ -11,7 +12,7 @@
 
 hashtable_t *ht;
 
-int set_request(int socket, struct request *request) {
+int set_request(struct client_info *client, struct request *request, struct response *response) {
     size_t len = 0;
     size_t expected_len = request->msg_len;
 
@@ -20,99 +21,108 @@ int set_request(int socket, struct request *request) {
     hash_item_t *item = get_key_entry(request->key, request->key_len);
 
     if (pthread_rwlock_trywrlock(&item->rwlock) != 0) {
-        pr_debug("this one\n");
         char *trash = malloc(expected_len);
-        read_payload(socket, request, expected_len, trash);
-        check_payload(socket, request, expected_len);
-        send_response(socket, KEY_ERROR, 0, NULL);
+        read_payload(client, request, expected_len, trash);
+        check_payload(client->tcp_client->socket_fd, request, expected_len);
+        response->code = KEY_ERROR;
         free(trash);
 
         return -1;
     }
     item->value = calloc(1, expected_len); // maybe +1 for \0
 
-    read_payload(socket, request, expected_len-len, item->value+len);
+    if (client->is_test) {
+        read_payload(client, request, expected_len - len, item->value + len);
 
-    if (request->connection_close || check_payload(socket, request, expected_len) < 0) {
-        pthread_rwlock_unlock(&item->rwlock);
-        remove_item(request->key, request->key_len);
-        return -1;
+        if (request->connection_close || check_payload(client->tcp_client->socket_fd, request, expected_len) < 0) {
+            pthread_rwlock_unlock(&item->rwlock);
+            remove_item(request->key, request->key_len);
+            return -1;
+        }
     }
+    else {
+        memcpy(item->value, request->msg, request->msg_len);
 
-    item->value_size = expected_len;
-    send_response(socket, OK, 0, NULL);
-    pr_debug("Everything is good, sent response\n");
-    pthread_rwlock_unlock(&item->rwlock);
-
+        item->value_size = expected_len;
+        response->code = OK;
+        pr_debug("Everything is good, sent response\n");
+        pthread_rwlock_unlock(&item->rwlock);
+    }
     return 0;
 }
 
-void get_request(int fd, struct request *pRequest) {
+void get_request(struct client_info *client, struct request *pRequest, struct response *response) {
     hash_item_t *item = search(pRequest->key, pRequest->key_len);
     if (item == NULL) {
-        send_response(fd, KEY_ERROR, 0, NULL);
+        response->code = KEY_ERROR;
         return;
     }
     if (pthread_rwlock_tryrdlock(&item->rwlock) != 0) {
-        send_response(fd, KEY_ERROR, 0, NULL);
+        response->code = KEY_ERROR;
         return;
     }
-    send_response(fd, OK, item->value_size, item->value);
+    response->code = OK;
+    memcpy(response->msg, item->value, item->value_size);
+    response->msg_len = item->value_size;
+
     pthread_rwlock_unlock(&item->rwlock);
 }
 
-void del_request(int fd, struct request *pRequest) {
+void del_request(struct client_info *client, struct request *pRequest, struct response *response) {
     if (remove_item(pRequest->key, pRequest->key_len) < 0) {
-        send_response(fd, KEY_ERROR, 0, NULL);
+        response->code = KEY_ERROR;
         return;
     }
-
-    send_response(fd, OK, 0, NULL);
+    response->code = OK;
 }
 
 void *main_job(void *arg) {
     int method;
-    struct conn_info *conn_info = arg;
-    struct request *request = allocate_request();
-    request->connection_close = 0;
-
-    pr_info("Starting new session from %s:%d\n",
-            inet_ntoa(conn_info->addr.sin_addr),
-            ntohs(conn_info->addr.sin_port));
-
+    struct client_info *client = arg;
+    client->request->connection_close = 0;
+//    pr_info("Starting new session from %s:%d\n",
+//            inet_ntoa(client->addr.sin_addr),
+//            ntohs(client->addr.sin_port));
     do {
-        method = recv_request(conn_info->socket_fd, request);
-        switch (method) {
+        ready_for_next_request(client);
+        struct request* request = recv_request(client);
+        client->request_count = (client->request_count+1)%REQUEST_BACKLOG;
+
+        bzero(client->response, sizeof(struct response));
+        pr_info("request count %d\n", client->request_count);
+        switch (request->method) {
             case SET:
-                set_request(conn_info->socket_fd, request);
+                pr_info("set\n");
+                set_request(client, request, client->response);
                 break;
             case GET:
-                get_request(conn_info->socket_fd, request);
+                pr_info("get\n");
+                get_request(client, request, client->response);
                 break;
             case DEL:
-                del_request(conn_info->socket_fd, request);
+                pr_info("del\n");
+                del_request(client, request, client->response);
                 break;
             case RST:
+                pr_info("rst\n");
                 init_hashtable(HT_CAPACITY);
-                send_response(conn_info->socket_fd, OK, 0, NULL);
+                client->response->code = OK;
                 break;
         }
 
-        if (request->key) {
-        }
+        send_response_to_client(client);
+    } while (!client->request->connection_close);
 
-    } while (!request->connection_close);
-
-    close_connection(conn_info->socket_fd);
-    free(request);
-    free(conn_info);
+    close_connection(client->tcp_client->socket_fd);
+    free(client->request);
+    free(client);
     return (void *) NULL;
 }
 
 int main(int argc, char *argv[]) {
-    int listen_sock, init;
+    int init;
 
-    listen_sock = server_init(argc, argv);
+    struct server_info *server_connection = server_init(argc, argv);
 
     pr_debug("Initializing table\n");
     if ((init = init_hashtable(HT_CAPACITY)) < 0) {
@@ -120,8 +130,7 @@ int main(int argc, char *argv[]) {
         if (init == -1) {
             pr_debug("at hashtable alloc\n");
             exit(EXIT_FAILURE);
-        }
-        else if (init == -2) {
+        } else if (init == -2) {
             pr_debug("at items alloc\n");
             exit(EXIT_FAILURE);
         }
@@ -131,19 +140,26 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    for (;;) {
-        struct conn_info *conn_info =
-                calloc(1, sizeof(struct conn_info));
-        if (accept_new_connection(listen_sock, conn_info) < 0) {
-            error("Cannot accept new connection");
-            free(conn_info);
-            continue;
-        }
-        pthread_t thread_id;
-        printf("Before Thread\n");
-        pthread_create(&thread_id, NULL, main_job, conn_info);
-//        main_job(conn_info);
+//    for (;;) {
+//    struct client_info *new_client =
+//            calloc(1, sizeof(struct client_info));
+    server_connection->client->type = server_connection->type;
+    server_connection->client->is_test = server_connection->is_test;
+    if (accept_new_connection(server_connection, server_connection->client) < 0) {
+//            continue;
+        pr_info("no new connection");
+        return 0;
     }
+    pthread_t thread_id;
+    printf("Before Thread\n");
+    pthread_create(&thread_id, NULL, main_job, server_connection->client);
+//        main_job(server_info);
+//    }
+    void *ret;
+    if (pthread_join(thread_id, &ret) != 0) {
+        pr_info("pthread join failed");
+    }
+
 
     return 0;
 }
