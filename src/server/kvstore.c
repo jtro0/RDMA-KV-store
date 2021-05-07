@@ -92,10 +92,10 @@ void *main_job(void *arg) {
 //            inet_ntoa(client->addr.sin_addr),
 //            ntohs(client->addr.sin_port));
 
-    struct timeval start, end;
-
+//    struct timeval start, end;
+W
     do {
-        gettimeofday(&start, NULL);
+//        gettimeofday(&start, NULL);
 
         ready_for_next_request(client);
         struct request* request = recv_request(client);
@@ -132,15 +132,15 @@ void *main_job(void *arg) {
 
         send_response_to_client(client);
 
-        gettimeofday(&end, NULL);
-
-        double time_taken_usec = ((end.tv_sec - start.tv_sec)*1000000.0+end.tv_usec) - start.tv_usec;
-        printf("Time in microseconds: %f microseconds\n", time_taken_usec);
-        struct timeval *time_taken = malloc(sizeof(struct timeval));
-        timersub(&end, &start, time_taken);
-
-        double time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000.0;
-        printf("Time taken in seconds: %f seconds\n", time_taken_sec);
+//        gettimeofday(&end, NULL);
+//
+//        double time_taken_usec = ((end.tv_sec - start.tv_sec)*1000000.0+end.tv_usec) - start.tv_usec;
+//        printf("Time in microseconds: %f microseconds\n", time_taken_usec);
+//        struct timeval *time_taken = malloc(sizeof(struct timeval));
+//        timersub(&end, &start, time_taken);
+//
+//        double time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000.0;
+//        printf("Time taken in seconds: %f seconds\n", time_taken_sec);
     } while (!client->request->connection_close);
 
     close_connection(client->tcp_client->socket_fd);
