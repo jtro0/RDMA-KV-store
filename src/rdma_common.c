@@ -123,20 +123,20 @@ int process_rdma_cm_event(struct rdma_event_channel *echannel,
 }
 
 
-int process_work_completion_events(struct ibv_comp_channel *comp_channel,
-                                   struct ibv_wc *wc, int max_wc) {
-    struct ibv_cq *cq_ptr = NULL;
+int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct ibv_wc *wc, int max_wc,
+                                   struct ibv_cq *cq_ptr) {
+//    struct ibv_cq *cq_ptr = NULL;
     void *context = NULL;
     int ret = -1, i, total_wc = 0;
     /* We wait for the notification on the CQ channel */
-    ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
-                           &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
-                           &context); /* Associated CQ user context, which we did set */
-    check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
-
-    /* Request for more notifications. */
-    ret = ibv_req_notify_cq(cq_ptr, 0);
-    check(ret, -errno, "Failed to request further notifications %d \n", -errno);
+//    ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
+//                           &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
+//                           &context); /* Associated CQ user context, which we did set */
+//    check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
+//
+//    /* Request for more notifications. */
+//    ret = ibv_req_notify_cq(cq_ptr, 0);
+//    check(ret, -errno, "Failed to request further notifications %d \n", -errno);
 
     /* We got notification. We reap the work completion (WC) element. It is
  * unlikely but a good practice it write the CQ polling code that

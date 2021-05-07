@@ -227,7 +227,7 @@ int rc_accept_new_connection(struct server_info *server) {
 int rc_receive_header(struct client_info *client) {
     int ret = 0, n = 0;
     struct ibv_wc wc;
-    ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1);
+    ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1, client->rc_client->cq);
     check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
     pr_info("wc wr id: %lu, request count: %d\n", wc.wr_id, client->request_count);
     return ret;
@@ -274,7 +274,7 @@ int rc_send_response(struct client_info *client) {
     check(ret, -errno, "Failed to send client metadata, errno: %d \n",
           -errno);
 
-    ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1);
+    ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1, client->rc_client->cq);
     check(ret < 0, -errno, "Failed to send response: %d\n", ret);
     return ret;
 }

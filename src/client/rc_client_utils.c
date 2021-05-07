@@ -203,7 +203,7 @@ int rc_receive_response(struct rc_server_conn *server_conn, struct response *res
 
     /* at this point we are expecting 1 work completion for the write */
     ret = process_work_completion_events(server_conn->io_completion_channel,
-                                         wc, 2);
+                                         wc, 2, server_conn->client_cq);
     check(ret != 2, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 
