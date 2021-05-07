@@ -10,6 +10,7 @@
 enum connection_type connectionType;
 int debug = 0;
 int verbose = 0;
+int num_ops = 1000000;
 
 void usage() {
     printf("Usage:\n");
@@ -35,7 +36,7 @@ int data_processing(struct operation **ops) {
     double time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000.0;
     pr_info("Time taken in seconds: %f seconds\n", time_taken_sec);
     if (time_taken_sec > 0) {
-        double ops_per_sec = count / time_taken_sec;
+        double ops_per_sec = num_ops / time_taken_sec;
         pr_info("Operations per second: %f\n", ops_per_sec);
     }
     else {
@@ -46,7 +47,7 @@ int data_processing(struct operation **ops) {
 }
 
 int main(int argc, char *argv[]) {
-    int ret, clients = 1, num_ops = 1000000;
+    int ret, clients = 1;
     struct sockaddr_in server_sockaddr;
     bzero(&server_sockaddr, sizeof server_sockaddr);
     server_sockaddr.sin_family = AF_INET;
