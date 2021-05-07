@@ -83,14 +83,14 @@ void* start_instance(void *arguments) {
             break;
     }
     sleep(1);
-    struct operation **ops = calloc(num_ops, sizeof(struct operation*));
+    struct operation *ops = calloc(num_ops, sizeof(struct operation));
 
     int count = 0;
-    ops[count] = malloc(sizeof(struct operation));
-    ops[count]->start = malloc(sizeof(struct timeval));
-    ops[count]->end = malloc(sizeof(struct timeval));
+//    ops[count] = malloc(sizeof(struct operation));
+    ops[count].start = malloc(sizeof(struct timeval));
+    ops[count].end = malloc(sizeof(struct timeval));
 
-    gettimeofday(ops[count]->start, NULL);
+    gettimeofday(ops[count].start, NULL);
     do {
 
         if (count == 0) {
@@ -109,7 +109,7 @@ void* start_instance(void *arguments) {
         count++;
         bzero(conn.rc_server_conn->expected_response, sizeof(struct response));
     } while (count < num_ops);
-    gettimeofday(ops[0]->end, NULL);
+    gettimeofday(ops[0].end, NULL);
 
     pthread_exit((void*)ops);
 }
