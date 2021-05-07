@@ -106,11 +106,11 @@ void* start_instance(void *arguments) {
         struct timeval start, end;
         gettimeofday(&start, NULL);
 
-        if (count % 2 == 0) {
+        if (count == 0) {
             make_set_request(conn.rc_server_conn->request, count);
         }
         else {
-            make_get_request(conn.rc_server_conn->request, count-1);
+            make_get_request(conn.rc_server_conn->request, 0);
         }
 
 
