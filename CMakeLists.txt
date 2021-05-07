@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_CXX_COMPILER g++)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Ofast -ffast-math -funroll-loops -march=native -Og -ggdb -Wall -Wextra -fsanitize=address \
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Ofast -ffast-math -funroll-loops -march=native -Og -ggdb -Wall -Wextra -fsanitize=address \
 		 -fno-omit-frame-pointer -pthread")
 
 find_library(IBVERBS_LIBRARY ibverbs HINTS /home/jtroo/Downloads/rdma-core/build/lib)
