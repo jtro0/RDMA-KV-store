@@ -7,7 +7,6 @@ struct request *allocate_request() {
         pr_debug("error in memory allocation");
         return NULL;
     }
-//    r->key = malloc(KEY_SIZE);
 
     return r;
 }

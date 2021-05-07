@@ -84,7 +84,6 @@ int parse_header(int fd, struct request *request) {
         return nread;
 
     request->key_len = strlen(token);
-//    request->key = malloc(request->key_len + 1);
     strcpy(request->key, token);
 
     // Payload len (optional)

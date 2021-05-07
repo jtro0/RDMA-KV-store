@@ -162,7 +162,6 @@ int rc_accept_new_connection(struct server_info *server) {
     check(!server->client->rc_client->cm_client_id || !server->client->rc_client->cm_client_id, -EINVAL,
           "Client resources are not properly setup\n", -EINVAL);
     /* we prepare the receive buffer in which we will receive the client request*/
-//    server->client->request = allocate_request();
     server->client->rc_client->request_mr = rdma_buffer_register(server->client->rc_client->pd /* which protection domain */,
                                                       server->client->request/* what memory */,
                                                       sizeof(struct request)*REQUEST_BACKLOG /* what length */,
@@ -171,18 +170,12 @@ int rc_accept_new_connection(struct server_info *server) {
                                                   IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
     check(!server->client->rc_client->request_mr, -ENOMEM, "Failed to register client attr buffer\n", -ENOMEM);
 
-    //ret = rc_post_receive_request(server->client);
     for (int i = 0; i < REQUEST_BACKLOG; i++) {
         server->client->request_count = i;
         ret = rc_post_receive_request(server->client);
-//        ret = post_recieve(sizeof(struct request), server->client->rc_client->response_mr->lkey, i, server->client->rc_client->client_qp,
-//                           &server->client->request[server->client->request_count]);
         check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", i, ret);
-//        server->client->request_count = (server->client->request_count+1) % REQUEST_BACKLOG;
-        pr_info("request count = %d\n", server->client->request_count);
     }
     server->client->request_count = 0;
-    //check(ret, ret, "Failed to pre-post the receive buffer, errno: %d \n", ret);
 
     /* now we register the metadata memory */
     server->client->rc_client->response_mr = rdma_buffer_register(server->client->rc_client->pd,
@@ -225,7 +218,7 @@ int rc_accept_new_connection(struct server_info *server) {
 }
 
 int rc_receive_header(struct client_info *client) {
-    int ret = 0, n = 0;
+    int ret = 0;
     struct ibv_wc wc;
     ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1, client->rc_client->cq);
     check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
@@ -235,17 +228,6 @@ int rc_receive_header(struct client_info *client) {
 
 int rc_post_receive_request(struct client_info *client) {
     int ret = 0;
-
-//    client->rc_client->client_recv_sge.addr = (uint64_t) client->rc_client->request_mr->addr + (sizeof(struct request)*client->request_count);
-//    client->rc_client->client_recv_sge.length = sizeof(struct request);
-//    client->rc_client->client_recv_sge.lkey = client->rc_client->request_mr->lkey;
-//    /* Now we link this SGE to the work request (WR) */
-//    bzero(&client->rc_client->client_recv_wr, sizeof(client->rc_client->client_recv_wr));
-//    client->rc_client->client_recv_wr.sg_list = &client->rc_client->client_recv_sge;
-//    client->rc_client->client_recv_wr.num_sge = 1; // only one SGE
-//    ret = ibv_post_recv(client->rc_client->client_qp /* which QP */,
-//                        &client->rc_client->client_recv_wr /* receive work request*/,
-//                        &client->rc_client->bad_client_recv_wr /* error WRs */);
     pr_info("receiving %d\n", client->request_count);
     ret = post_recieve(sizeof(struct request), client->rc_client->request_mr->lkey, client->request_count, client->rc_client->client_qp,
                        &client->request[client->request_count]);
@@ -256,24 +238,6 @@ int rc_send_response(struct client_info *client) {
     int ret = -1;
     struct ibv_wc wc;
 
-//    bzero(&client->rc_client->client_send_sge, sizeof(client->rc_client->client_send_sge));
-//    /* now we fill up SGE */
-//    client->rc_client->client_send_sge.addr = (uint64_t) client->rc_client->response_mr->addr;
-//    client->rc_client->client_send_sge.length = (uint32_t) client->rc_client->response_mr->length;
-//    client->rc_client->client_send_sge.lkey = client->rc_client->response_mr->lkey;
-//    /* now we link to the send work request */
-//    bzero(&client->rc_client->client_send_wr, sizeof(client->rc_client->client_send_wr));
-//    client->rc_client->client_send_wr.sg_list = &client->rc_client->client_send_sge;
-//    client->rc_client->client_send_wr.num_sge = 1;
-//    client->rc_client->client_send_wr.opcode = IBV_WR_SEND;
-//    client->rc_client->client_send_wr.send_flags = IBV_SEND_SIGNALED;
-//    /* Now we post it */
-//    ret = ibv_post_send(client->rc_client->client_qp,
-//                        &client->rc_client->client_send_wr,
-//                        &client->rc_client->bad_client_send_wr);
-//    check(ret, -errno, "Failed to send client metadata, errno: %d \n",
-//          -errno);
-//
     ret = post_send(sizeof(struct response), client->rc_client->response_mr->lkey, 0, client->rc_client->client_qp, client->response);
     ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1, client->rc_client->cq);
     check(ret < 0, -errno, "Failed to send response: %d\n", ret);

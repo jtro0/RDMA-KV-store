@@ -24,7 +24,6 @@ int set_request(struct client_info *client, struct request *request, struct resp
         char *trash = malloc(expected_len);
         read_payload(client, request, expected_len, trash);
         check_payload(client->tcp_client->socket_fd, request, expected_len);
-        //send_response(client, KEY_ERROR, 0, NULL);
         response->code = KEY_ERROR;
         free(trash);
 
@@ -46,7 +45,6 @@ int set_request(struct client_info *client, struct request *request, struct resp
 
         item->value_size = expected_len;
         response->code = OK;
-//        send_response(client, OK, 0, NULL);
         pr_debug("Everything is good, sent response\n");
         pthread_rwlock_unlock(&item->rwlock);
     }
@@ -56,16 +54,13 @@ int set_request(struct client_info *client, struct request *request, struct resp
 void get_request(struct client_info *client, struct request *pRequest, struct response *response) {
     hash_item_t *item = search(pRequest->key, pRequest->key_len);
     if (item == NULL) {
-//        send_response(client, KEY_ERROR, 0, NULL);
         response->code = KEY_ERROR;
         return;
     }
     if (pthread_rwlock_tryrdlock(&item->rwlock) != 0) {
-//        send_response(client, KEY_ERROR, 0, NULL);
         response->code = KEY_ERROR;
         return;
     }
-//    send_response(client, OK, item->value_size, item->value);
     response->code = OK;
     memcpy(response->msg, item->value, item->value_size);
     response->msg_len = item->value_size;
@@ -75,12 +70,9 @@ void get_request(struct client_info *client, struct request *pRequest, struct re
 
 void del_request(struct client_info *client, struct request *pRequest, struct response *response) {
     if (remove_item(pRequest->key, pRequest->key_len) < 0) {
-//        send_response(client, KEY_ERROR, 0, NULL);
         response->code = KEY_ERROR;
         return;
     }
-
-//    send_response(client, OK, 0, NULL);
     response->code = OK;
 }
 
@@ -91,32 +83,21 @@ void *main_job(void *arg) {
 //    pr_info("Starting new session from %s:%d\n",
 //            inet_ntoa(client->addr.sin_addr),
 //            ntohs(client->addr.sin_port));
-
-//    struct timeval start, end;
-
     do {
-//        gettimeofday(&start, NULL);
-
         ready_for_next_request(client);
         struct request* request = recv_request(client);
         client->request_count = (client->request_count+1)%REQUEST_BACKLOG;
 
-//        bzero(client->request, sizeof(struct request));
         bzero(client->response, sizeof(struct response));
         pr_info("request count %d\n", client->request_count);
         switch (request->method) {
             case SET:
                 pr_info("set\n");
-//                gettimeofday(&start, NULL);
                 set_request(client, request, client->response);
-//                gettimeofday(&end, NULL);
                 break;
             case GET:
                 pr_info("get\n");
-//                gettimeofday(&start, NULL);
                 get_request(client, request, client->response);
-//                gettimeofday(&end, NULL);
-
                 break;
             case DEL:
                 pr_info("del\n");
@@ -125,22 +106,11 @@ void *main_job(void *arg) {
             case RST:
                 pr_info("rst\n");
                 init_hashtable(HT_CAPACITY);
-//                send_response(client, OK, 0, NULL);
                 client->response->code = OK;
                 break;
         }
 
         send_response_to_client(client);
-
-//        gettimeofday(&end, NULL);
-//
-//        double time_taken_usec = ((end.tv_sec - start.tv_sec)*1000000.0+end.tv_usec) - start.tv_usec;
-//        printf("Time in microseconds: %f microseconds\n", time_taken_usec);
-//        struct timeval *time_taken = malloc(sizeof(struct timeval));
-//        timersub(&end, &start, time_taken);
-//
-//        double time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000.0;
-//        printf("Time taken in seconds: %f seconds\n", time_taken_sec);
     } while (!client->request->connection_close);
 
     close_connection(client->tcp_client->socket_fd);

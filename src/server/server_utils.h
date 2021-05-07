@@ -34,14 +34,7 @@ struct rc_client_connection {
     struct ibv_qp_init_attr qp_init_attr;
     struct rdma_cm_id *cm_client_id;
     struct ibv_qp *client_qp;
-    struct ibv_sge client_recv_sge, client_send_sge;
-    struct ibv_recv_wr client_recv_wr;
-    struct ibv_recv_wr *bad_client_recv_wr;
-    struct ibv_send_wr client_send_wr;
-    struct ibv_send_wr *bad_client_send_wr;
-
-    struct ibv_mr *request_mr, *response_mr;//, *request_attr_mr;
-    struct ibv_wc *wcs;
+    struct ibv_mr *request_mr, *response_mr;
 };
 
 
