@@ -11,7 +11,7 @@ int setup_client_resources(struct rc_client_connection *client);
 
 int init_rc_server(struct server_info *server);
 
-int rc_accept_new_connection(struct server_info *server);
+int rc_accept_new_connection(struct server_info *server, struct client_info *client);
 
 int rc_receive_header(struct client_info *client);
 

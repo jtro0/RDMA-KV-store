@@ -63,7 +63,7 @@ struct server_info {
     struct tcp_conn_info *tcp_server_info;
     struct rc_server_info *rc_server_info;
 
-    struct client_info *client;// Make array when doing multi clients
+//    struct client_info *client;// Make array when doing multi clients
 };
 
 struct server_info *server_init(int argc, char *arg[]);

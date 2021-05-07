@@ -88,7 +88,6 @@ int setup_client_resources(struct rc_client_connection *client) {
 }
 
 int init_rc_server(struct server_info *server) {
-    struct rdma_cm_event *cmEvent = NULL;
     int ret = -1;
 
     /*  Open a channel used to report asynchronous communication event */
@@ -114,7 +113,6 @@ int init_rc_server(struct server_info *server) {
 
     pr_info("Server RDMA CM id is successfully bound \n");
 
-    server->client->rc_client = malloc(sizeof(struct rc_client_connection));
     // TODO put this into accept? for multiple clients?
     /* Now we start to listen on the passed IP and port. However unlike
      * normal TCP listen, this is a non-blocking call. When a new client is
@@ -128,38 +126,41 @@ int init_rc_server(struct server_info *server) {
     printf("Server is listening successfully at: %s , port: %d \n",
            inet_ntoa(server->addr.sin_addr),
            ntohs(server->addr.sin_port));
+
+    return ret;
+}
+
+int rc_accept_new_connection(struct server_info *server, struct client_info *client) {
+    struct rdma_conn_param conn_param;
+    struct rdma_cm_event *cm_event = NULL;
+    struct sockaddr_in remote_sockaddr;
+    int ret = -1;
+
     /* now, we expect a client to connect and generate a RDMA_CM_EVNET_CONNECT_REQUEST
      * We wait (block) on the connection management event channel for
      * the connect event.
      */
     ret = process_rdma_cm_event(server->rc_server_info->cm_event_channel,
                                 RDMA_CM_EVENT_CONNECT_REQUEST,
-                                &cmEvent);
+                                &cm_event);
     check(ret, ret, "Failed to get cm event, ret = %d \n", ret);
 
     /* Much like TCP connection, listening returns a new connection identifier
      * for newly connected client. In the case of RDMA, this is stored in id
      * field. For more details: man rdma_get_cm_event
      */
-    server->client->rc_client->cm_client_id = cmEvent->id;
+    client->rc_client->cm_client_id = cm_event->id;
     /* now we acknowledge the event. Acknowledging the event free the resources
      * associated with the event structure. Hence any reference to the event
      * must be made before acknowledgment. Like, we have already saved the
      * client id from "id" field before acknowledging the event.
      */
-    ret = rdma_ack_cm_event(cmEvent);
+    ret = rdma_ack_cm_event(cm_event);
     check(ret, -errno, "Failed to acknowledge the cm event errno: %d \n", -errno);
 
     pr_info("A new RDMA client connection id is stored at %p\n", server->client->rc_client->cm_client_id);
-    return ret;
-}
 
-int rc_accept_new_connection(struct server_info *server) {
-    struct rdma_conn_param conn_param;
-    struct rdma_cm_event *cm_event = NULL;
-    struct sockaddr_in remote_sockaddr;
-    int ret = -1;
-    check(!server->client->rc_client->cm_client_id || !server->client->rc_client->cm_client_id, -EINVAL,
+    check(!client->rc_client->cm_client_id || !client->rc_client->cm_client_id, -EINVAL,
           "Client resources are not properly setup\n", -EINVAL);
     /* we prepare the receive buffer in which we will receive the client request*/
     server->client->rc_client->request_mr = rdma_buffer_register(server->client->rc_client->pd /* which protection domain */,

@@ -39,8 +39,7 @@ int set_request(struct client_info *client, struct request *request, struct resp
             remove_item(request->key, request->key_len);
             return -1;
         }
-    }
-    else {
+    } else {
         memcpy(item->value, request->msg, request->msg_len);
 
         item->value_size = expected_len;
@@ -85,8 +84,8 @@ void *main_job(void *arg) {
 //            ntohs(client->addr.sin_port));
     do {
         ready_for_next_request(client);
-        struct request* request = recv_request(client);
-        client->request_count = (client->request_count+1)%REQUEST_BACKLOG;
+        struct request *request = recv_request(client);
+        client->request_count = (client->request_count + 1) % REQUEST_BACKLOG;
 
         bzero(client->response, sizeof(struct response));
         pr_info("request count %d\n", client->request_count);
@@ -140,21 +139,26 @@ int main(int argc, char *argv[]) {
         }
     }
 
-//    for (;;) {
+    for (;;) {
 //    struct client_info *new_client =
 //            calloc(1, sizeof(struct client_info));
-    server_connection->client->type = server_connection->type;
-    server_connection->client->is_test = server_connection->is_test;
-    if (accept_new_connection(server_connection, server_connection->client) < 0) {
-//            continue;
-        pr_info("no new connection");
-        return 0;
-    }
-    pthread_t thread_id;
-    printf("Before Thread\n");
-    pthread_create(&thread_id, NULL, main_job, server_connection->client);
+        struct client_info *client = malloc(sizeof(struct client_info));
+        client = malloc(sizeof(struct client_info));
+        client->request = calloc(REQUEST_BACKLOG, sizeof(struct request));
+        client->response = malloc(sizeof(struct response));
+        client->request_count = 0;
+        client->type = server_connection->type;
+        client->is_test = server_connection->is_test;
+        if (accept_new_connection(server_connection, client) < 0) {
+            continue;
+            pr_info("no new connection");
+            return 0;
+        }
+        pthread_t thread_id;
+        printf("Before Thread\n");
+        pthread_create(&thread_id, NULL, main_job, server_connection->client);
 //        main_job(server_info);
-//    }
+    }
     void *ret;
     if (pthread_join(thread_id, &ret) != 0) {
         pr_info("pthread join failed");
