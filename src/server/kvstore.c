@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
 //    struct client_info *new_client =
 //            calloc(1, sizeof(struct client_info));
         struct client_info *client = malloc(sizeof(struct client_info));
-        client = malloc(sizeof(struct client_info));
+//        client = malloc(sizeof(struct client_info));
         client->request = calloc(REQUEST_BACKLOG, sizeof(struct request));
         client->response = malloc(sizeof(struct response));
         client->request_count = 0;
