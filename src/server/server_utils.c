@@ -123,7 +123,6 @@ int accept_new_connection(struct server_info *server, struct client_info *client
             break;
         case RC:
             pr_debug("setting up new resources\n");
-            setup_client_resources(client->rc_client);
             pr_debug("set up new resources\n");
             ret = rc_accept_new_connection(server, NULL);
             pr_debug("accepted new connection\n");

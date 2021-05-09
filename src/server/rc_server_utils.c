@@ -19,6 +19,7 @@ int setup_client_resources(struct rc_client_connection *client) {
      * in the operating system. All resources are tied to a particular PD.
      * And accessing recourses across PD will result in a protection fault.
      */
+    pr_debug("allocating pd\n");
     client->pd = ibv_alloc_pd(client->cm_client_id->verbs
             /* verbs defines a verb's provider,
              * i.e an RDMA device where the incoming
@@ -150,6 +151,9 @@ int rc_accept_new_connection(struct server_info *server, struct client_info *cli
      * field. For more details: man rdma_get_cm_event
      */
     client->rc_client->cm_client_id = cm_event->id;
+
+    setup_client_resources(client->rc_client);
+
     /* now we acknowledge the event. Acknowledging the event free the resources
      * associated with the event structure. Hence any reference to the event
      * must be made before acknowledgment. Like, we have already saved the
