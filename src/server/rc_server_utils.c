@@ -158,32 +158,32 @@ int rc_accept_new_connection(struct server_info *server, struct client_info *cli
     ret = rdma_ack_cm_event(cm_event);
     check(ret, -errno, "Failed to acknowledge the cm event errno: %d \n", -errno);
 
-    pr_info("A new RDMA client connection id is stored at %p\n", server->client->rc_client->cm_client_id);
+    pr_info("A new RDMA client connection id is stored at %p\n", client->rc_client->cm_client_id);
 
     check(!client->rc_client->cm_client_id || !client->rc_client->cm_client_id, -EINVAL,
           "Client resources are not properly setup\n", -EINVAL);
     /* we prepare the receive buffer in which we will receive the client request*/
-    server->client->rc_client->request_mr = rdma_buffer_register(server->client->rc_client->pd /* which protection domain */,
-                                                      server->client->request/* what memory */,
+    client->rc_client->request_mr = rdma_buffer_register(client->rc_client->pd /* which protection domain */,
+                                                      client->request/* what memory */,
                                                       sizeof(struct request)*REQUEST_BACKLOG /* what length */,
                                                       (IBV_ACCESS_LOCAL_WRITE |
                                                   IBV_ACCESS_REMOTE_READ | // TODO Remove this permission?
                                                   IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
-    check(!server->client->rc_client->request_mr, -ENOMEM, "Failed to register client attr buffer\n", -ENOMEM);
+    check(!client->rc_client->request_mr, -ENOMEM, "Failed to register client attr buffer\n", -ENOMEM);
 
     for (int i = 0; i < REQUEST_BACKLOG; i++) {
-        server->client->request_count = i;
-        ret = rc_post_receive_request(server->client);
+        client->request_count = i;
+        ret = rc_post_receive_request(client);
         check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", i, ret);
     }
-    server->client->request_count = 0;
+    client->request_count = 0;
 
     /* now we register the metadata memory */
-    server->client->rc_client->response_mr = rdma_buffer_register(server->client->rc_client->pd,
-                                                                  server->client->response,
+    client->rc_client->response_mr = rdma_buffer_register(client->rc_client->pd,
+                                                                  client->response,
                                                           sizeof(struct response),
                                                           IBV_ACCESS_LOCAL_WRITE);
-    check(!server->client->rc_client->response_mr, ret, "Failed to register the client metadata buffer, ret = %d \n", ret);
+    check(!client->rc_client->response_mr, ret, "Failed to register the client metadata buffer, ret = %d \n", ret);
 
     pr_info("Receive buffer pre-posting is successful \n");
     /* Now we accept the connection. Recall we have not accepted the connection
@@ -193,7 +193,7 @@ int rc_accept_new_connection(struct server_info *server, struct client_info *cli
     conn_param.initiator_depth = 3; /* For this exercise, we put a small number here */
     /* This tell how many outstanding requests we expect other side to handle */
     conn_param.responder_resources = 3; /* For this exercise, we put a small number */
-    ret = rdma_accept(server->client->rc_client->cm_client_id, &conn_param);
+    ret = rdma_accept(client->rc_client->cm_client_id, &conn_param);
 
     check(ret, -errno, "Failed to accept the connection, errno: %d \n", -errno);
 
@@ -211,7 +211,7 @@ int rc_accept_new_connection(struct server_info *server, struct client_info *cli
     check(ret, -errno, "Failed to acknowledge the cm event %d\n", -errno);
     /* Just FYI: How to extract connection information */
     memcpy(&remote_sockaddr /* where to save */,
-           rdma_get_peer_addr(server->client->rc_client->cm_client_id) /* gives you remote sockaddr */,
+           rdma_get_peer_addr(client->rc_client->cm_client_id) /* gives you remote sockaddr */,
            sizeof(struct sockaddr_in) /* max size */);
     printf("A new connection is accepted from %s \n",
            inet_ntoa(remote_sockaddr.sin_addr));

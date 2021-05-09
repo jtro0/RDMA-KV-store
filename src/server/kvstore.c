@@ -156,14 +156,13 @@ int main(int argc, char *argv[]) {
         }
         pthread_t thread_id;
         printf("Before Thread\n");
-        pthread_create(&thread_id, NULL, main_job, server_connection->client);
+        pthread_create(&thread_id, NULL, main_job, client);
 //        main_job(server_info);
     }
-    void *ret;
-    if (pthread_join(thread_id, &ret) != 0) {
-        pr_info("pthread join failed");
-    }
-
+//    void *ret;
+//    if (pthread_join(thread_id, &ret) != 0) {
+//        pr_info("pthread join failed");
+//    }
 
     return 0;
 }
