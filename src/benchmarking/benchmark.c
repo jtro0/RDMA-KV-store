@@ -19,7 +19,26 @@ void usage() {
     exit(1);
 }
 
-int data_processing(struct operation *ops) {
+double process_ops_sec(struct timeval *start, struct timeval *end, unsigned int num_ops_in_time_frame) {
+//    double time_taken_usec = ((end->tv_sec - start->tv_sec)*1000000.0+end->tv_usec) - start->tv_usec;
+//    printf("Time in microseconds: %f microseconds\n", time_taken_usec);
+    struct timeval *time_taken = malloc(sizeof(struct timeval));
+    timersub(end, start, time_taken);
+
+    double time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000.0;
+    printf("Time taken in seconds: %f seconds\n", time_taken_sec);
+    double ops_per_sec = 0.0;
+    if (time_taken_sec > 0) {
+        ops_per_sec = num_ops_in_time_frame / time_taken_sec;
+    }
+    else {
+        printf("Something went wrong, time take sec: %ld usec: %ld\n", time_taken->tv_sec, time_taken->tv_usec);
+    }
+
+    return ops_per_sec;
+}
+
+int data_processing(struct operation *ops, int client_number) {
     int count = 0;
     struct operation first = ops[count];
     struct operation last = first;
@@ -28,20 +47,8 @@ int data_processing(struct operation *ops) {
         last = op;
     }
 
-    double time_taken_usec = ((last.end->tv_sec - first.start->tv_sec)*1000000.0+last.end->tv_usec) - first.start->tv_usec;
-    printf("Time in microseconds: %f microseconds\n", time_taken_usec);
-    struct timeval *time_taken = malloc(sizeof(struct timeval));
-    timersub(last.end, first.start, time_taken);
-
-    double time_taken_sec = time_taken->tv_sec + time_taken->tv_usec/1000000.0;
-    printf("Time taken in seconds: %f seconds\n", time_taken_sec);
-    if (time_taken_sec > 0) {
-        double ops_per_sec = num_ops / time_taken_sec;
-        printf("Operations per second: %f\n", ops_per_sec);
-    }
-    else {
-        printf("Something went wrong, time take sec: %ld usec: %ld\n", time_taken->tv_sec, time_taken->tv_usec);
-    }
+    double ops_sec = process_ops_sec(first.start, last.end, num_ops);
+    printf("Client %d did %d operations at a speed of %f ops/sec\n", client_number, num_ops, ops_sec);
 
     return 0;
 }
@@ -118,6 +125,9 @@ int main(int argc, char *argv[]) {
 
 
     pthread_t *threads = calloc(clients, sizeof(pthread_t));
+    struct timeval start, end;
+
+    gettimeofday(&start, NULL);
     for (int i=0; i<clients; i++) {
         struct thread_args args;
         args.conn_t = connectionType;
@@ -136,9 +146,16 @@ int main(int argc, char *argv[]) {
         struct operation *ops;
         pthread_join(threads[i], (void**)&ops);
 
+        if (i == clients-1) {
+            gettimeofday(&end, NULL);
+        }
         if (ops != NULL) {
-            data_processing(ops);
+            data_processing(ops, i);
         }
     }
+
+    double tot_ops_sec = process_ops_sec(&start, &end, clients*num_ops);
+    printf("In total %d clients did %d operations at a speed of %f ops/sec\n", clients, clients*num_ops, tot_ops_sec);
+
     sleep(1);
 }
