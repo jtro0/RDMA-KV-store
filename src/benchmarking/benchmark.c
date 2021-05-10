@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
             pr_info("pthread create failed %d\n", ret);
             exit(EXIT_FAILURE);
         }
-        usleep(10000);
+        usleep(20000);
     }
 
     for (int i=0; i<clients; i++) {
