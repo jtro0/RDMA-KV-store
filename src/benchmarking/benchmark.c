@@ -115,18 +115,21 @@ int main(int argc, char *argv[]) {
         /* no port provided, use the default port */
         server_sockaddr.sin_port = htons(PORT);
     }
-    struct thread_args args;
-    args.conn_t = connectionType;
-    args.server_addr = &server_sockaddr;
-    args.num_ops = num_ops;
+
 
     pthread_t *threads = calloc(clients, sizeof(pthread_t));
     for (int i=0; i<clients; i++) {
+        struct thread_args args;
+        args.conn_t = connectionType;
+        args.server_addr = &server_sockaddr;
+        args.num_ops = num_ops;
+
         ret = pthread_create(&threads[i], NULL, &start_instance, &args);
         if (ret != 0) {
             pr_info("pthread create failed %d\n", ret);
             exit(EXIT_FAILURE);
         }
+        sleep(1);
     }
 
     for (int i=0; i<clients; i++) {
