@@ -124,7 +124,7 @@ int accept_new_connection(struct server_info *server, struct client_info *client
         case RC:
             client->rc_client = malloc(sizeof(struct rc_client_connection));
             pr_debug("allocated rc_client\n");
-            ret = rc_accept_new_connection(server, NULL);
+            ret = rc_accept_new_connection(server, client);
             pr_debug("accepted new connection\n");
             break;
         case UC:
