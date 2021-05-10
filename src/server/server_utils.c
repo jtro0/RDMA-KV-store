@@ -95,11 +95,6 @@ struct server_info *server_init(int argc, char *argv[]) {
     connInfo->addr.sin_addr.s_addr = htonl(INADDR_ANY);
     connInfo->addr.sin_port = htons(connInfo->port);
 
-    connInfo->client = malloc(sizeof(struct client_info));
-    connInfo->client->request = calloc(REQUEST_BACKLOG, sizeof(struct request));
-    connInfo->client->response = malloc(sizeof(struct response));
-    connInfo->client->request_count = 0;
-
     switch (connInfo->type) {
         case TCP:
             connInfo->tcp_server_info = calloc(1, sizeof(struct tcp_conn_info));
@@ -127,8 +122,10 @@ int accept_new_connection(struct server_info *server, struct client_info *client
             ret = tcp_accept_new_connection(server, client->tcp_client);
             break;
         case RC:
-            setup_client_resources(client->rc_client);
-            ret = rc_accept_new_connection(server);
+            client->rc_client = malloc(sizeof(struct rc_client_connection));
+            pr_debug("allocated rc_client\n");
+            ret = rc_accept_new_connection(server, client);
+            pr_debug("accepted new connection\n");
             break;
         case UC:
             break;
