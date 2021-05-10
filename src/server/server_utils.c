@@ -124,6 +124,7 @@ int accept_new_connection(struct server_info *server, struct client_info *client
         case RC:
             pr_debug("setting up new resources\n");
             pr_debug("set up new resources\n");
+            client->rc_client = malloc(sizeof(struct rc_client_connection));
             ret = rc_accept_new_connection(server, NULL);
             pr_debug("accepted new connection\n");
             break;
