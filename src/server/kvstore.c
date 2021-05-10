@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
     for (;;) {
 //    struct client_info *new_client =
 //            calloc(1, sizeof(struct client_info));
-        pr_debug("New client\n");
+        pr_info("New client\n");
         struct client_info *client = malloc(sizeof(struct client_info));
 //        client = malloc(sizeof(struct client_info));
         client->request = calloc(REQUEST_BACKLOG, sizeof(struct request));
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
         client->request_count = 0;
         client->type = server_connection->type;
         client->is_test = server_connection->is_test;
-        pr_debug("Accepting new connection\n");
+        pr_info("Accepting new connection\n");
         if (accept_new_connection(server_connection, client) < 0) {
             pr_info("no new connection");
             continue;
