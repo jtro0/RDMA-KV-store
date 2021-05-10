@@ -146,12 +146,14 @@ int rc_accept_new_connection(struct server_info *server, struct client_info *cli
                                 &cm_event);
     check(ret, ret, "Failed to get cm event, ret = %d \n", ret);
 
+    pr_debug("connected and setting client id\n");
     /* Much like TCP connection, listening returns a new connection identifier
      * for newly connected client. In the case of RDMA, this is stored in id
      * field. For more details: man rdma_get_cm_event
      */
     client->rc_client->cm_client_id = cm_event->id;
 
+    pr_debug("setting client resources\n");
     setup_client_resources(client->rc_client);
 
     /* now we acknowledge the event. Acknowledging the event free the resources
