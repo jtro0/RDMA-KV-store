@@ -18,6 +18,7 @@
 
 #include "tcp_server_utils.h"
 #include "rc_server_utils.h"
+#include "ud_server_utils.h"
 
 int debug = 0;
 int verbose = 0;
@@ -107,6 +108,8 @@ struct server_info *server_init(int argc, char *argv[]) {
         case UC:
             break;
         case UD:
+            connInfo->rc_server_info = calloc(1, sizeof(struct ud_server_info));
+            init_ud_server(connInfo);
             break;
     }
 

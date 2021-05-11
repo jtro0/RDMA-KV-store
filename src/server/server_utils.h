@@ -43,6 +43,22 @@ struct rc_server_info {
     struct rdma_cm_id *cm_server_id;
 };
 
+// TODO similar to rc? Make a common rdma?
+struct ud_client_connection {
+    struct ibv_pd *pd;
+    struct ibv_comp_channel *io_completion_channel;
+    struct ibv_cq *cq;
+    struct ibv_qp_init_attr qp_init_attr;
+    struct rdma_cm_id *cm_client_id;
+    struct ibv_qp *client_qp;
+    struct ibv_mr *request_mr, *response_mr;
+};
+
+struct ud_server_info {
+    struct rdma_event_channel *cm_event_channel;
+    struct rdma_cm_id *cm_server_id;
+};
+
 struct client_info {
     enum connection_type type;
     bool is_test;
@@ -52,6 +68,8 @@ struct client_info {
 
     struct tcp_client_info *tcp_client;
     struct rc_client_connection *rc_client;
+    struct ud_client_connection *ud_client;
+
 };
 
 struct server_info {
@@ -62,6 +80,7 @@ struct server_info {
 
     struct tcp_conn_info *tcp_server_info;
     struct rc_server_info *rc_server_info;
+    struct ud_server_info *ud_server_info;
 
 //    struct client_info *client;// Make array when doing multi clients
 };

@@ -1,11 +1,11 @@
 //
-// Created by jtroo on 15-04-21.
+// Created by Jens on 10/05/2021.
 //
 
-#include "rc_server_utils.h"
+#include "ud_server_utils.h"
 #include "rdma_common.h"
 
-int setup_rc_client_resources(struct rc_client_connection *client) {
+int setup_ud_client_resources(struct ud_client_connection *client) {
     int ret = -1;
     check(!client->cm_client_id, -EINVAL, "Client id is still NULL\n", -EINVAL);
 
@@ -72,7 +72,7 @@ int setup_rc_client_resources(struct rc_client_connection *client) {
     client->qp_init_attr.cap.max_recv_wr = MAX_WR; /* Maximum receive posting capacity */
     client->qp_init_attr.cap.max_send_sge = MAX_SGE; /* Maximum SGE per send posting */
     client->qp_init_attr.cap.max_send_wr = MAX_WR; /* Maximum send posting capacity */
-    client->qp_init_attr.qp_type = IBV_QPT_RC; /* QP type, RC = Reliable connection */
+    client->qp_init_attr.qp_type = IBV_QPT_UD; /* QP type, RC = Reliable connection */
     /* We use same completion queue, but one can use different queues */
     client->qp_init_attr.recv_cq = client->cq; /* Where should I notify for receive completion operations */
     client->qp_init_attr.send_cq = client->cq; /* Where should I notify for send completion operations */
@@ -88,7 +88,7 @@ int setup_rc_client_resources(struct rc_client_connection *client) {
     return ret;
 }
 
-int init_rc_server(struct server_info *server) {
+int init_ud_server(struct server_info *server) {
     int ret = -1;
 
     /*  Open a channel used to report asynchronous communication event */
@@ -131,7 +131,7 @@ int init_rc_server(struct server_info *server) {
     return ret;
 }
 
-int rc_accept_new_connection(struct server_info *server, struct client_info *client) {
+int ud_accept_new_connection(struct server_info *server, struct client_info *client) {
     struct rdma_conn_param conn_param;
     struct rdma_cm_event *cm_event = NULL;
     struct sockaddr_in remote_sockaddr;
@@ -141,7 +141,7 @@ int rc_accept_new_connection(struct server_info *server, struct client_info *cli
      * We wait (block) on the connection management event channel for
      * the connect event.
      */
-    ret = process_rdma_cm_event(server->rc_server_info->cm_event_channel,
+    ret = process_rdma_cm_event(server->ud_server_info->cm_event_channel,
                                 RDMA_CM_EVENT_CONNECT_REQUEST,
                                 &cm_event);
     check(ret, ret, "Failed to get cm event, ret = %d \n", ret);
@@ -151,10 +151,10 @@ int rc_accept_new_connection(struct server_info *server, struct client_info *cli
      * for newly connected client. In the case of RDMA, this is stored in id
      * field. For more details: man rdma_get_cm_event
      */
-    client->rc_client->cm_client_id = cm_event->id;
+    client->ud_client->cm_client_id = cm_event->id;
 
     pr_debug("setting client resources\n");
-    setup_rc_client_resources(client->rc_client);
+    setup_ud_client_resources(client->ud_client);
 
     /* now we acknowledge the event. Acknowledging the event free the resources
      * associated with the event structure. Hence any reference to the event
@@ -164,42 +164,42 @@ int rc_accept_new_connection(struct server_info *server, struct client_info *cli
     ret = rdma_ack_cm_event(cm_event);
     check(ret, -errno, "Failed to acknowledge the cm event errno: %d \n", -errno);
 
-    pr_info("A new RDMA client connection id is stored at %p\n", client->rc_client->cm_client_id);
+    pr_info("A new RDMA client connection id is stored at %p\n", client->ud_client->cm_client_id);
 
-    check(!client->rc_client->cm_client_id || !client->rc_client->cm_client_id, -EINVAL,
+    check(!client->ud_client->cm_client_id || !client->ud_client->cm_client_id, -EINVAL,
           "Client resources are not properly setup\n", -EINVAL);
     /* we prepare the receive buffer in which we will receive the client request*/
-    client->rc_client->request_mr = rdma_buffer_register(client->rc_client->pd /* which protection domain */,
-                                                      client->request/* what memory */,
-                                                      sizeof(struct request)*REQUEST_BACKLOG /* what length */,
-                                                      (IBV_ACCESS_LOCAL_WRITE |
-                                                  IBV_ACCESS_REMOTE_READ | // TODO Remove this permission?
-                                                  IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
-    check(!client->rc_client->request_mr, -ENOMEM, "Failed to register client attr buffer\n", -ENOMEM);
+    client->ud_client->request_mr = rdma_buffer_register(client->ud_client->pd /* which protection domain */,
+                                                         client->request/* what memory */,
+                                                         sizeof(struct request)*REQUEST_BACKLOG /* what length */,
+                                                         (IBV_ACCESS_LOCAL_WRITE |
+                                                          IBV_ACCESS_REMOTE_READ | // TODO Remove this permission?
+                                                          IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
+    check(!client->ud_client->request_mr, -ENOMEM, "Failed to register client attr buffer\n", -ENOMEM);
 
     for (int i = 0; i < REQUEST_BACKLOG; i++) {
         client->request_count = i;
-        ret = rc_post_receive_request(client);
+        ret = ud_post_receive_request(client);
         check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", i, ret);
     }
     client->request_count = 0;
 
     /* now we register the metadata memory */
-    client->rc_client->response_mr = rdma_buffer_register(client->rc_client->pd,
-                                                                  client->response,
+    client->ud_client->response_mr = rdma_buffer_register(client->ud_client->pd,
+                                                          client->response,
                                                           sizeof(struct response),
                                                           IBV_ACCESS_LOCAL_WRITE);
-    check(!client->rc_client->response_mr, ret, "Failed to register the client metadata buffer, ret = %d \n", ret);
+    check(!client->ud_client->response_mr, ret, "Failed to register the client metadata buffer, ret = %d \n", ret);
 
     pr_info("Receive buffer pre-posting is successful \n");
     /* Now we accept the connection. Recall we have not accepted the connection
      * yet because we have to do lots of resource pre-allocation */
     memset(&conn_param, 0, sizeof(conn_param));
     /* this tell how many outstanding requests can we handle */
-    conn_param.initiator_depth = 3; /* For this exercise, we put a small number here */
+    conn_param.initiator_depth = 3; /* For this exeudise, we put a small number here */
     /* This tell how many outstanding requests we expect other side to handle */
     conn_param.responder_resources = 3; /* For this exercise, we put a small number */
-    ret = rdma_accept(client->rc_client->cm_client_id, &conn_param);
+    ret = rdma_accept(client->ud_client->cm_client_id, &conn_param);
 
     check(ret, -errno, "Failed to accept the connection, errno: %d \n", -errno);
 
@@ -208,7 +208,7 @@ int rc_accept_new_connection(struct server_info *server, struct client_info *cli
  * as well as the client sides.
  */
     pr_info("Going to wait for : RDMA_CM_EVENT_ESTABLISHED event \n");
-    ret = process_rdma_cm_event(server->rc_server_info->cm_event_channel,
+    ret = process_rdma_cm_event(server->ud_server_info->cm_event_channel,
                                 RDMA_CM_EVENT_ESTABLISHED,
                                 &cm_event);
     check(ret, -errno, "Failed to get the cm event, errno: %d \n", -errno);
@@ -217,36 +217,15 @@ int rc_accept_new_connection(struct server_info *server, struct client_info *cli
     check(ret, -errno, "Failed to acknowledge the cm event %d\n", -errno);
     /* Just FYI: How to extract connection information */
     memcpy(&remote_sockaddr /* where to save */,
-           rdma_get_peer_addr(client->rc_client->cm_client_id) /* gives you remote sockaddr */,
+           rdma_get_peer_addr(client->ud_client->cm_client_id) /* gives you remote sockaddr */,
            sizeof(struct sockaddr_in) /* max size */);
     printf("A new connection is accepted from %s \n",
            inet_ntoa(remote_sockaddr.sin_addr));
     return ret;
 }
 
-int rc_receive_header(struct client_info *client) {
-    int ret = 0;
-    struct ibv_wc wc;
-    ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1, client->rc_client->cq);
-    check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
-    pr_info("wc wr id: %lu, request count: %d\n", wc.wr_id, client->request_count);
-    return ret;
-}
+int ud_receive_header(struct client_info *client);
 
-int rc_post_receive_request(struct client_info *client) {
-    int ret = 0;
-    pr_info("receiving %d\n", client->request_count);
-    ret = post_recieve(sizeof(struct request), client->rc_client->request_mr->lkey, client->request_count, client->rc_client->client_qp,
-                       &client->request[client->request_count]);
-    return ret;
-}
+int ud_post_receive_request(struct client_info *client);
 
-int rc_send_response(struct client_info *client) {
-    int ret = -1;
-    struct ibv_wc wc;
-
-    ret = post_send(sizeof(struct response), client->rc_client->response_mr->lkey, 0, client->rc_client->client_qp, client->response);
-    ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1, client->rc_client->cq);
-    check(ret < 0, -errno, "Failed to send response: %d\n", ret);
-    return ret;
-}
+int ud_send_response(struct client_info *client);

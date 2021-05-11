@@ -7,7 +7,7 @@
 
 #include "server/server_utils.h"
 
-int setup_client_resources(struct rc_client_connection *client);
+int setup_rc_client_resources(struct rc_client_connection *client);
 
 int init_rc_server(struct server_info *server);
 
