@@ -18,6 +18,8 @@
 #define BACKLOG     10
 #define TIMEOUT     60
 
+#define IB_PHYS_PORT 1			// HERD, Primary physical port number for qps
+
 #define REQUEST_BACKLOG 5
 struct tcp_client_info {
     int socket_fd;
@@ -45,18 +47,26 @@ struct rc_server_info {
 
 // TODO similar to rc? Make a common rdma?
 struct ud_client_connection {
-    struct ibv_pd *pd;
-    struct ibv_comp_channel *io_completion_channel;
-    struct ibv_cq *cq;
-    struct ibv_qp_init_attr qp_init_attr;
-    struct rdma_cm_id *cm_client_id;
-    struct ibv_qp *client_qp;
-    struct ibv_mr *request_mr, *response_mr;
+   struct ud_server_info *ud_server;
+   struct ibv_ah *ah; // maybe array of ah pointers in server?
 };
 
 struct ud_server_info {
-    struct rdma_event_channel *cm_event_channel;
-    struct rdma_cm_id *cm_server_id;
+    struct rdma_event_channel *cm_event_channel; // maybe?
+    struct rdma_cm_id *cm_server_id; // maybe?
+    struct ibv_qp *ud_qp;
+    struct ibv_cq *ud_cq;
+    union ibv_gid server_gid;
+    struct qp_attr local_dgram_qp_attrs;	// Local and remote queue pair attributes
+    struct qp_attr *remote_dgram_qp_attrs;
+
+
+    struct ibv_pd *pd;
+    struct ibv_comp_channel *io_completion_channel; // maybe?
+    struct ibv_qp_init_attr qp_init_attr; // maybe?
+    struct rdma_cm_id *cm_client_id; // maybe
+//    struct ibv_qp *client_qp;
+    struct ibv_mr *request_mr, *response_mr;
 };
 
 struct client_info {
