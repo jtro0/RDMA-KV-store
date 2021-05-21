@@ -7,6 +7,7 @@
 
 #include "common.h"
 #include "rc_client_utils.h"
+#include "ud_client_utils.h"
 
 struct client_to_server_conn {
     enum connection_type conn_t;
@@ -15,6 +16,7 @@ struct client_to_server_conn {
     struct response *response;
 
     struct rc_server_conn *rc_server_conn;
+    struct ud_server_conn *ud_server_conn;
 };
 
 int send_request(struct client_to_server_conn *conn, struct request *request);

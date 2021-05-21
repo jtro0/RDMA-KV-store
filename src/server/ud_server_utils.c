@@ -8,29 +8,6 @@
 #include "ud_server_utils.h"
 #include "rdma_common.h"
 
-int ud_set_init_qp(struct ibv_qp *qp) {
-    struct ibv_qp_attr dgram_attr = {
-            .qp_state		= IBV_QPS_INIT,
-            .pkey_index		= 0,
-            .port_num		= IB_PHYS_PORT,
-            .qkey 			= 0x11111111
-    };
-
-    int ret = ibv_modify_qp(qp, &dgram_attr,
-                      IBV_QP_STATE | IBV_QP_PKEY_INDEX | IBV_QP_PORT | IBV_QP_QKEY);
-    check(ret, ret, "Failed to modify dgram. QP to INIT\n", NULL);
-}
-
-uint16_t get_local_lid(struct ibv_context *context)
-{
-    struct ibv_port_attr attr;
-
-    if (ibv_query_port(context, IB_PHYS_PORT, &attr))
-        return 0;
-
-    return attr.lid;
-}
-
 int init_ud_server(struct server_info *server) {
     int ret = -1;
 
@@ -91,7 +68,7 @@ int init_ud_server(struct server_info *server) {
     server->ud_server_info->qp_init_attr.recv_cq = server->ud_server_info->ud_cq; /* Where should I notify for receive completion operations */
     server->ud_server_info->qp_init_attr.send_cq = server->ud_server_info->ud_cq; /* Where should I notify for send completion operations */
     /*Lets create a QP */
-    ret = rdma_create_qp(server->ud_server_info->cm_client_id /* which connection id */,
+    ret = rdma_create_qp(server->ud_server_info->cm_client_id /* which connection id TODO look here this is not needed*/,
                          server->ud_server_info->pd /* which protection domain*/,
                          &server->ud_server_info->qp_init_attr /* Initial attributes */);
     check(ret, -errno, "Failed to create QP due to errno: %d\n", -errno);

@@ -18,8 +18,6 @@
 #define BACKLOG     10
 #define TIMEOUT     60
 
-#define IB_PHYS_PORT 1			// HERD, Primary physical port number for qps
-
 #define REQUEST_BACKLOG 5
 struct tcp_client_info {
     int socket_fd;

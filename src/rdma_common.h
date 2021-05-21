@@ -53,6 +53,8 @@
 /* Default port where the RDMA server is listening */
 #define DEFAULT_RDMA_PORT (20886)
 
+#define IB_PHYS_PORT 1			// HERD, Primary physical port number for qps
+
 /*
  * We use attribute so that compiler does not step in and try to pad the structure.
  * We use this structure to exchange information between the server and the client.
@@ -146,4 +148,7 @@ int post_recieve(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, 
 
 int post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf);
 
+int ud_set_init_qp(struct ibv_qp *qp);
+
+uint16_t get_local_lid(struct ibv_context *context);
 #endif //RDMA_KV_STORE_RDMA_COMMON_H

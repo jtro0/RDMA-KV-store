@@ -223,4 +223,25 @@ int post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, voi
     return ret;
 }
 
+int ud_set_init_qp(struct ibv_qp *qp) {
+    struct ibv_qp_attr dgram_attr = {
+            .qp_state		= IBV_QPS_INIT,
+            .pkey_index		= 0,
+            .port_num		= IB_PHYS_PORT,
+            .qkey 			= 0x11111111
+    };
 
+    int ret = ibv_modify_qp(qp, &dgram_attr,
+                            IBV_QP_STATE | IBV_QP_PKEY_INDEX | IBV_QP_PORT | IBV_QP_QKEY);
+    check(ret, ret, "Failed to modify dgram. QP to INIT\n", NULL);
+}
+
+uint16_t get_local_lid(struct ibv_context *context)
+{
+    struct ibv_port_attr attr;
+
+    if (ibv_query_port(context, IB_PHYS_PORT, &attr))
+        return 0;
+
+    return attr.lid;
+}
