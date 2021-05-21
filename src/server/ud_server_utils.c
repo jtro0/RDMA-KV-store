@@ -93,6 +93,8 @@ int init_ud_server(struct server_info *server) {
     server->ud_server_info->local_dgram_qp_attrs.qpn = server->ud_server_info->ud_qp->qp_num;
     server->ud_server_info->local_dgram_qp_attrs.psn = lrand48() & 0xffffff;
 
+    server->ud_server_info->request = calloc(REQUEST_BACKLOG, sizeof(struct request));
+
     /* we prepare the receive buffer in which we will receive the client request*/
     server->ud_server_info->request_mr = rdma_buffer_register(server->ud_server_info->pd /* which protection domain */,
                                                          server->ud_server_info->request/* what memory */,
