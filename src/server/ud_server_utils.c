@@ -76,7 +76,7 @@ int init_ud_server(struct server_info *server) {
     pr_info("Or here\n");
 
     server->ud_server_info->ud_qp = ibv_create_qp(server->ud_server_info->pd, &server->ud_server_info->qp_init_attr);
-    check(server->ud_server_info->ud_qp != NULL, -errno, "Failed to create QP due to errno: %d\n", -errno);
+    check(server->ud_server_info->ud_qp == NULL, -errno, "Failed to create QP due to errno: %d\n", -errno);
 
     /* Save the reference for handy typing but is not required */
 //    server->ud_server_info->ud_qp = server->ud_server_info->cm_client_id->qp;
