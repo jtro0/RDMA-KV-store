@@ -54,11 +54,13 @@ int init_ud_server(struct server_info *server) {
                             0 /* 0 = all event type, no filter*/);
     check(ret, -errno, "Failed to request notifications on CQ errno: %d \n",
           -errno);
-
+    pr_info("Been here\n");
     /* Now the last step, set up the queue pair (send, recv) queues and their capacity.
      * The capacity here is define statically but this can be probed from the
      * device. We just use a small number as defined in rdma_common.h */
     bzero(&server->ud_server_info->qp_init_attr, sizeof server->ud_server_info->qp_init_attr);
+    pr_info("Am here\n");
+
     server->ud_server_info->qp_init_attr.cap.max_recv_sge = MAX_SGE; /* Maximum SGE per receive posting */
     server->ud_server_info->qp_init_attr.cap.max_recv_wr = MAX_WR; /* Maximum receive posting capacity */
     server->ud_server_info->qp_init_attr.cap.max_send_sge = MAX_SGE; /* Maximum SGE per send posting */
@@ -68,16 +70,21 @@ int init_ud_server(struct server_info *server) {
     server->ud_server_info->qp_init_attr.recv_cq = server->ud_server_info->ud_cq; /* Where should I notify for receive completion operations */
     server->ud_server_info->qp_init_attr.send_cq = server->ud_server_info->ud_cq; /* Where should I notify for send completion operations */
     /*Lets create a QP */
-    ret = rdma_create_qp(server->ud_server_info->cm_client_id /* which connection id TODO look here this is not needed*/,
-                         server->ud_server_info->pd /* which protection domain*/,
-                         &server->ud_server_info->qp_init_attr /* Initial attributes */);
-    check(ret, -errno, "Failed to create QP due to errno: %d\n", -errno);
+//    ret = rdma_create_qp(server->ud_server_info->cm_client_id /* which connection id TODO look here this is not needed*/,
+//                         server->ud_server_info->pd /* which protection domain*/,
+//                         &server->ud_server_info->qp_init_attr /* Initial attributes */);
+    pr_info("Or here\n");
+
+    server->ud_server_info->ud_qp = ibv_create_qp(server->ud_server_info->pd, &server->ud_server_info->qp_init_attr);
+    check(server->ud_server_info->ud_qp != NULL, -errno, "Failed to create QP due to errno: %d\n", -errno);
 
     /* Save the reference for handy typing but is not required */
-    server->ud_server_info->ud_qp = server->ud_server_info->cm_client_id->qp;
-    pr_debug("Client QP created at %p\n", server->ud_server_info->ud_qp);
+//    server->ud_server_info->ud_qp = server->ud_server_info->cm_client_id->qp;
+//    pr_debug("Client QP created at %p\n", server->ud_server_info->ud_qp);
+    pr_info("Also here\n");
 
     ud_set_init_qp(server->ud_server_info->ud_qp);
+    pr_info("Maybe here\n");
 
     ibv_query_gid(context, IB_PHYS_PORT, 0, &server->ud_server_info->server_gid);
     server->ud_server_info->local_dgram_qp_attrs.gid_global_interface_id = server->ud_server_info->server_gid.global.interface_id;

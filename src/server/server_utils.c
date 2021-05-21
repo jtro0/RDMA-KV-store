@@ -108,7 +108,7 @@ struct server_info *server_init(int argc, char *argv[]) {
         case UC:
             break;
         case UD:
-            connInfo->rc_server_info = calloc(1, sizeof(struct ud_server_info));
+            connInfo->ud_server_info = calloc(1, sizeof(struct ud_server_info));
             init_ud_server(connInfo);
             break;
     }

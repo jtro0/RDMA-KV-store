@@ -230,9 +230,12 @@ int ud_set_init_qp(struct ibv_qp *qp) {
             .port_num		= IB_PHYS_PORT,
             .qkey 			= 0x11111111
     };
+    pr_info("In here\n");
 
     int ret = ibv_modify_qp(qp, &dgram_attr,
                             IBV_QP_STATE | IBV_QP_PKEY_INDEX | IBV_QP_PORT | IBV_QP_QKEY);
+    pr_info("After here\n");
+
     check(ret, ret, "Failed to modify dgram. QP to INIT\n", NULL);
 }
 
