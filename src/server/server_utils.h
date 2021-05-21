@@ -49,6 +49,8 @@ struct rc_server_info {
 struct ud_client_connection {
    struct ud_server_info *ud_server;
    struct ibv_ah *ah; // maybe array of ah pointers in server?
+   int socket_fd;
+    struct ibv_mr *response_mr;
 };
 
 struct ud_server_info {
@@ -66,7 +68,11 @@ struct ud_server_info {
     struct ibv_qp_init_attr qp_init_attr; // maybe?
     struct rdma_cm_id *cm_client_id; // maybe
 //    struct ibv_qp *client_qp;
-    struct ibv_mr *request_mr, *response_mr;
+    struct ibv_mr *request_mr;
+    int socket_fd;
+    int client_counter;
+    struct request *request;
+    int request_count;
 };
 
 struct client_info {

@@ -43,13 +43,13 @@
 #endif /* ACN_RDMA_DEBUG */
 
 /* Capacity of the completion queue (CQ) */
-//#define CQ_CAPACITY (16)
-#define CQ_CAPACITY (1025) // HERD
+#define CQ_CAPACITY (16)
+//#define CQ_CAPACITY (1025) // HERD
 /* MAX SGE capacity */
 #define MAX_SGE (2)
 /* MAX work requests */
-//#define MAX_WR (8)
-#define MAX_WR (1024) // HERD TODO check how this affects stuff
+#define MAX_WR (8)
+//#define MAX_WR (1024) // HERD TODO check how this affects stuff
 /* Default port where the RDMA server is listening */
 #define DEFAULT_RDMA_PORT (20886)
 
@@ -68,6 +68,7 @@ struct __attribute((packed)) rdma_buffer_attr {
         /* if we receive, we call it remote stag */
         uint32_t remote_stag;
     } stag;
+    uint32_t rkey;
 };
 
 struct qp_attr {

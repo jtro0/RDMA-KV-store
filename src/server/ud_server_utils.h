@@ -15,7 +15,7 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
 
 int ud_receive_header(struct client_info *client);
 
-int ud_post_receive_request(struct client_info *client);
+int ud_post_receive_request(struct ud_server_info *server);
 
 int ud_send_response(struct client_info *client);
 

@@ -133,6 +133,8 @@ int accept_new_connection(struct server_info *server, struct client_info *client
         case UC:
             break;
         case UD:
+            client->ud_client = malloc(sizeof(struct ud_client_connection));
+            ret = ud_accept_new_connection(server, client);
             break;
     }
     if (ret < 0) {
