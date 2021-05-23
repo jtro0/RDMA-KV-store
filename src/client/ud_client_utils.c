@@ -223,6 +223,8 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
     int ret;
     struct ud_server_conn *server_conn = calloc(1, sizeof(struct ud_server_conn));
     server_conn->server_sockaddr = server_sockaddr;
+    server_conn->request = allocate_request();
+    server_conn->response = malloc(sizeof(struct response));
 
     ret = ud_prepare_client(server_conn);
     check(ret, ret, "Failed to setup client connection , ret = %d \n", ret);
@@ -230,7 +232,6 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
     ret = ud_client_connect_to_server(server_conn);
     check(ret, ret, "Failed to setup client connection , ret = %d \n", ret);
 
-    server_conn->request = allocate_request();
     bzero(server_conn->request, sizeof(struct request));
     strncpy(server_conn->request->key, "testing", KEY_SIZE);
     server_conn->request->key_len = strlen(server_conn->request->key);
@@ -242,7 +243,6 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
     ret = ud_send_request(server_conn, server_conn->request);
     check(ret, ret, "Failed to get send request, ret = %d \n", ret);
 
-    server_conn->response = malloc(sizeof(struct response));
     bzero(server_conn->response, sizeof(struct response));
     ret = ud_receive_response(server_conn, server_conn->response);
     print_response(server_conn->response);
