@@ -58,7 +58,7 @@ struct ud_server_info {
     struct ibv_cq *ud_cq;
     union ibv_gid server_gid;
     struct qp_attr local_dgram_qp_attrs;	// Local and remote queue pair attributes
-    struct qp_attr *remote_dgram_qp_attrs;
+    struct qp_attr remote_dgram_qp_attrs; // TODO make array
 
 
     struct ibv_pd *pd;

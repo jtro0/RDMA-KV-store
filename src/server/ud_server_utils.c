@@ -192,20 +192,20 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
 
     pr_info("set sock UD, going to read\n");
 
-    if (read(client->ud_client->socket_fd, &server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter],
+    if (read(client->ud_client->socket_fd, &server->ud_server_info->remote_dgram_qp_attrs,
             sizeof(struct qp_attr)) < 0) {
         pr_debug("Could not read queue pair attributes from socket\n");
     }
-    pr_info("Got qp attributes from client %d\n", server->ud_server_info->client_counter-1);
+    pr_info("Got qp attributes from client %d\n", server->ud_server_info->client_counter);
 
     if (write(client->ud_client->socket_fd, &server->ud_server_info->local_dgram_qp_attrs, sizeof(struct qp_attr)) < 0) {
         pr_debug("Could not write queue pair attributes to client\n");
     }
-    pr_info("Sent qp attributes to client %d\n", server->ud_server_info->client_counter-1);
+    pr_info("Sent qp attributes to client %d\n", server->ud_server_info->client_counter);
 
     struct ibv_ah_attr ah_attr;
     bzero(&ah_attr, sizeof ah_attr);
-    ah_attr.dlid = server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter].lid;
+    ah_attr.dlid = server->ud_server_info->remote_dgram_qp_attrs.lid;
     ah_attr.port_num = IB_PHYS_PORT;
 
     client->ud_client->ah = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
