@@ -217,7 +217,14 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
     return ret;
 }
 
-int ud_receive_header(struct client_info *client);
+int ud_receive_header(struct client_info *client) {
+    int ret = 0;
+    struct ibv_wc wc;
+    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, &wc, 1, client->ud_client->ud_server->ud_cq);
+    check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
+    pr_info("wc wr id: %lu, request count: %d\n", wc.wr_id, client->request_count);
+    return ret;
+}
 
 
 // Might need to do UD stuff
@@ -233,7 +240,8 @@ int ud_send_response(struct client_info *client) {
     int ret = -1;
     struct ibv_wc wc;
 
-    ret = post_send(sizeof(struct response), client->rc_client->response_mr->lkey, 0, client->rc_client->client_qp, client->response);
+    ret = ud_post_send(sizeof(struct response), client->rc_client->response_mr->lkey, 0, client->rc_client->client_qp, client->response,
+                        client->ud_client->ah, client->ud_client->ud_server->remote_dgram_qp_attrs->qpn);
     ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1, client->rc_client->cq);
     check(ret < 0, -errno, "Failed to send response: %d\n", ret);
     return ret;

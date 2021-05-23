@@ -208,6 +208,7 @@ int receive_header(struct client_info *client) {
         case UC:
             break;
         case UD:
+            recved = ud_receive_header(client);
             break;
     }
 
@@ -284,6 +285,7 @@ int send_response_to_client(struct client_info *client) {
         case UC:
             break;
         case UD:
+            ret = ud_send_response(client);
             break;
     }
     return ret;
