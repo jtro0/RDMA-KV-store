@@ -167,16 +167,19 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
                                                           sizeof(struct response),
                                                           IBV_ACCESS_LOCAL_WRITE);
     check(!client->rc_client->response_mr, ret, "Failed to register the client metadata buffer, ret = %d \n", ret);
+    pr_info("Registered response UD\n");
 
     int nodelay = 1;
     socklen_t addrlen = sizeof(server->addr);
 
+    pr_info("Accepting UD\n");
     if ((client->ud_client->socket_fd =
                  accept(server->ud_server_info->socket_fd, (struct sockaddr *) &server->addr,
                             &addrlen)) < 0) {
         error("Cannot accept new connection\n");
         return -1;
     }
+    pr_info("Accepted UD\n");
 
     if (setsockopt
                 (client->ud_client->socket_fd, IPPROTO_TCP, TCP_NODELAY, &nodelay,
@@ -184,6 +187,8 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
         perror("setsockopt TCP_NODELAT");
         return -1;
     }
+
+    pr_info("set sock UD, going to read\n");
 
     if (read(client->ud_client->socket_fd, &server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter++],
             sizeof(struct qp_attr)) < 0) {
