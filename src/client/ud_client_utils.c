@@ -122,14 +122,14 @@ int ud_send_request(struct ud_server_conn *server_conn, struct request *request)
     struct ibv_wc wc;
 
 
-    ret = post_send(sizeof(struct request), server_conn->client_request_mr->lkey, 1, server_conn->client_qp,
+    ret = post_send(sizeof(struct request), server_conn->client_request_mr->lkey, 1, server_conn->ud_qp,
                     request);
 
     check(ret, -errno, "Failed to send request, errno: %d \n", -errno);
 
     /* at this point we are expecting 1 work completion for the write */
     ret = process_work_completion_events(server_conn->io_completion_channel,
-                                         &wc, 1, server_conn->client_cq);
+                                         &wc, 1, server_conn->ud_cq);
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 
@@ -146,7 +146,7 @@ int ud_pre_post_receive_response(struct ud_server_conn *server_conn, struct resp
                                                             IBV_ACCESS_REMOTE_READ |
                                                             IBV_ACCESS_REMOTE_WRITE));
 
-    ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, 0, server_conn->client_qp,
+    ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, 0, server_conn->ud_qp,
                        server_conn->response);
 
     check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
@@ -156,20 +156,21 @@ int ud_receive_response(struct ud_server_conn *server_conn, struct response *res
     int ret;
     struct ibv_wc wc;
 
-    ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, 0, server_conn->client_qp,
+    ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, 0, server_conn->ud_qp,
                        server_conn->response);
     check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
 
     /* at this point we are expecting 1 work completion for the write */
     ret = process_work_completion_events(server_conn->io_completion_channel,
-                                         &wc, 1, server_conn->client_cq);
+                                         &wc, 1, server_conn->ud_cq);
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 
     return 0;
 }
 
-/* This function disconnects the RDMA connection from the server and cleans up
+/* TODO: Get rid of the connection type
+ * This function disconnects the RDMA connection from the server and cleans up
  * all the resources.
  */
 int client_disconnect_and_clean(struct ud_server_conn *server_conn) {
@@ -204,7 +205,7 @@ int client_disconnect_and_clean(struct ud_server_conn *server_conn) {
         // we continue anyways;
     }
     /* Destroy CQ */
-    ret = ibv_destroy_cq(server_conn->client_cq);
+    ret = ibv_destroy_cq(server_conn->ud_cq);
     if (ret) {
         error("Failed to destroy completion queue cleanly, %d \n", -errno);
         // we continue anyways;
