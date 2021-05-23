@@ -172,7 +172,7 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
     socklen_t addrlen = sizeof(server->addr);
 
     if ((client->ud_client->socket_fd =
-                 accept(server->tcp_server_info->socket_fd, (struct sockaddr *) &server->addr,
+                 accept(server->ud_server_info->socket_fd, (struct sockaddr *) &server->addr,
                             &addrlen)) < 0) {
         error("Cannot accept new connection\n");
         return -1;
