@@ -173,7 +173,7 @@ int ud_receive_response(struct ud_server_conn *server_conn, struct response *res
  * This function disconnects the RDMA connection from the server and cleans up
  * all the resources.
  */
-int client_disconnect_and_clean(struct ud_server_conn *server_conn) {
+int ud_client_disconnect_and_clean(struct ud_server_conn *server_conn) {
     struct rdma_cm_event *cm_event = NULL;
     int ret = -1;
     /* active disconnect from the client side */
@@ -279,7 +279,7 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
     print_response(server_conn->response);
     check(ret, ret, "Failed to receive second response ret = %d \n", ret);
 
-    ret = client_disconnect_and_clean(server_conn);
+    ret = ud_client_disconnect_and_clean(server_conn);
     check(ret, ret, "Failed to cleanly disconnect and clean up resources \n", ret);
 
     return ret;
