@@ -220,6 +220,7 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
 int ud_receive_header(struct client_info *client) {
     int ret = 0;
     struct ibv_wc wc;
+    pr_info("going to poll for recv\n");
     ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, &wc, 1, client->ud_client->ud_server->ud_cq);
     check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
     pr_info("wc wr id: %lu, request count: %d\n", wc.wr_id, client->request_count);

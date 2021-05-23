@@ -140,6 +140,7 @@ int ud_send_request(struct ud_server_conn *server_conn, struct request *request)
 
     check(ret, -errno, "Failed to send request, errno: %d \n", -errno);
 
+    pr_info("Do we need this?\n");
     /* at this point we are expecting 1 work completion for the write */
     ret = process_work_completion_events(server_conn->io_completion_channel,
                                          &wc, 1, server_conn->ud_cq);
@@ -246,6 +247,7 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
     ret = ud_send_request(server_conn, server_conn->request);
     check(ret, ret, "Failed to get send request, ret = %d \n", ret);
 
+    pr_info("Sent!\n");
     bzero(server_conn->response, sizeof(struct response));
     ret = ud_receive_response(server_conn, server_conn->response);
     print_response(server_conn->response);
