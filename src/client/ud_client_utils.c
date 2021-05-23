@@ -131,8 +131,8 @@ int ud_send_request(struct ud_server_conn *server_conn, struct request *request)
     struct ibv_wc wc;
 
 
-    ret = post_send(sizeof(struct request), server_conn->client_request_mr->lkey, 1, server_conn->ud_qp,
-                    request);
+    ret = ud_post_send(sizeof(struct request), server_conn->client_request_mr->lkey, 1, server_conn->ud_qp,
+                       request, server_conn->ah, server_conn->remote_dgram_qp_attrs.qpn);
 
     check(ret, -errno, "Failed to send request, errno: %d \n", -errno);
 

@@ -223,6 +223,32 @@ int post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, voi
     return ret;
 }
 
+int ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf, struct ibv_ah *ah,
+                 uint32_t qpn) {
+    int ret = 0;
+    struct ibv_send_wr *bad_send_wr;
+
+    struct ibv_sge list = {
+            .addr   = (uintptr_t) buf,
+            .length = size,
+            .lkey   = lkey
+    };
+
+    struct ibv_send_wr send_wr = {
+            .wr_id      = wr_id,
+            .sg_list    = &list,
+            .num_sge    = 1,
+            .opcode     = IBV_WR_SEND,
+            .send_flags = IBV_SEND_SIGNALED,
+            .wr.ud.ah = ah,
+            .wr.ud.remote_qpn = qpn,
+            .wr.ud.remote_qkey = 0x11111111
+    };
+
+    ret = ibv_post_send(qp, &send_wr, &bad_send_wr);
+    return ret;
+}
+
 int ud_set_init_qp(struct ibv_qp *qp) {
     struct ibv_qp_attr dgram_attr = {
             .qp_state		= IBV_QPS_INIT,

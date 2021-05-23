@@ -147,7 +147,8 @@ void show_rdma_cmid(struct rdma_cm_id *id);
 int post_recieve(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf);
 
 int post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf);
-
+int
+ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf, struct ibv_ah *ah, uint32_t qpn);
 int ud_set_init_qp(struct ibv_qp *qp);
 int ud_set_rts_qp(struct ibv_qp *qp, int psn);
 uint16_t get_local_lid(struct ibv_context *context);
