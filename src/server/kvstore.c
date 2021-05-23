@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    for (;;) {
+//    for (;;) {
 //    struct client_info *new_client =
 //            calloc(1, sizeof(struct client_info));
         pr_info("New client\n");
@@ -154,14 +154,14 @@ int main(int argc, char *argv[]) {
         pr_info("Accepting new connection\n");
         if (accept_new_connection(server_connection, client) < 0) {
             pr_info("no new connection");
-            continue;
+//            continue;
             return 0;
         }
-        pthread_t thread_id;
-        printf("Before Thread\n");
-        pthread_create(&thread_id, NULL, main_job, client);
-//        main_job(server_info);
-    }
+//        pthread_t thread_id;
+//        printf("Before Thread\n");
+//        pthread_create(&thread_id, NULL, main_job, client);
+        main_job(client);
+//    }
 //    void *ret;
 //    if (pthread_join(thread_id, &ret) != 0) {
 //        pr_info("pthread join failed");
