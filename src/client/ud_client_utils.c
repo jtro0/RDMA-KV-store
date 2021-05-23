@@ -112,6 +112,15 @@ int ud_client_connect_to_server(struct ud_server_conn *server_conn) {
     if (read(server_conn->socket_fd, &server_conn->remote_dgram_qp_attrs, sizeof(struct qp_attr)) < 0) {
         pr_debug("Could not read servers queue pair attributes\n");
     }
+    struct ibv_ah_attr ah_attr;
+    bzero(&ah_attr, sizeof ah_attr);
+    ah_attr.dlid = server_conn->remote_dgram_qp_attrs.lid;
+    ah_attr.port_num = IB_PHYS_PORT;
+
+    server_conn->ah = ibv_create_ah(server_conn->pd, &ah_attr);
+    check(!server_conn->ah, -1, "Could not create AH from the info given\n", NULL)
+
+    ud_set_rts_qp(server_conn->ud_qp, server_conn->local_dgram_qp_attrs.psn);
 
     printf("The client is connected successfully \n");
     return 0;
