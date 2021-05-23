@@ -161,12 +161,13 @@ int init_ud_server(struct server_info *server) {
 int ud_accept_new_connection(struct server_info *server, struct client_info *client) {
     int ret = -1;
 
+    pr_info("Registering response UD\n");
     /* now we register the metadata memory */
     client->ud_client->response_mr = rdma_buffer_register(server->ud_server_info->pd,
                                                           client->response,
                                                           sizeof(struct response),
                                                           IBV_ACCESS_LOCAL_WRITE);
-    check(!client->rc_client->response_mr, ret, "Failed to register the client metadata buffer, ret = %d \n", ret);
+    check(!client->ud_client->response_mr, ret, "Failed to register the client metadata buffer, ret = %d \n", ret);
     pr_info("Registered response UD\n");
 
     int nodelay = 1;
