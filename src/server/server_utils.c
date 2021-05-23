@@ -164,6 +164,7 @@ int ready_for_next_request(struct client_info *client) {
         case UC:
             break;
         case UD:
+            ret = ud_post_receive_request(client->ud_client->ud_server);
             break;
     }
     check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", client->request_count, ret);

@@ -171,6 +171,7 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
     check(!client->ud_client->response_mr, ret, "Failed to register the client metadata buffer, ret = %d \n", ret);
     pr_info("Registered response UD\n");
 
+    client->ud_client->ud_server = server->ud_server_info;
     int nodelay = 1;
     socklen_t addrlen = sizeof(server->addr);
 
