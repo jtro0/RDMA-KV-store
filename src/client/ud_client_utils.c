@@ -169,41 +169,16 @@ int ud_receive_response(struct ud_server_conn *server_conn, struct response *res
     return 0;
 }
 
-/* TODO: Get rid of the connection type
+/*
  * This function disconnects the RDMA connection from the server and cleans up
  * all the resources.
  */
 int ud_client_disconnect_and_clean(struct ud_server_conn *server_conn) {
-    struct rdma_cm_event *cm_event = NULL;
     int ret = -1;
-    /* active disconnect from the client side */
-    ret = rdma_disconnect(server_conn->cm_client_id);
-    if (ret) {
-        error("Failed to disconnect, errno: %d \n", -errno);
-        //continuing anyways
-    }
-    ret = process_rdma_cm_event(server_conn->cm_event_channel,
-                                RDMA_CM_EVENT_DISCONNECTED,
-                                &cm_event);
-    if (ret) {
-        error("Failed to get RDMA_CM_EVENT_DISCONNECTED event, ret = %d\n",
-              ret);
-        //continuing anyways
-    }
-    ret = rdma_ack_cm_event(cm_event);
-    if (ret) {
-        error("Failed to acknowledge cm event, errno: %d\n",
-              -errno);
-        //continuing anyways
-    }
+
     /* Destroy QP */
     rdma_destroy_qp(server_conn->cm_client_id);
-    /* Destroy client cm id */
-    ret = rdma_destroy_id(server_conn->cm_client_id);
-    if (ret) {
-        error("Failed to destroy client id cleanly, %d \n", -errno);
-        // we continue anyways;
-    }
+
     /* Destroy CQ */
     ret = ibv_destroy_cq(server_conn->ud_cq);
     if (ret) {
@@ -228,7 +203,6 @@ int ud_client_disconnect_and_clean(struct ud_server_conn *server_conn) {
         error("Failed to destroy client protection domain cleanly, %d \n", -errno);
         // we continue anyways;
     }
-    rdma_destroy_event_channel(server_conn->cm_event_channel);
     printf("Client resource clean up is complete \n");
     return 0;
 }

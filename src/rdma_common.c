@@ -239,6 +239,23 @@ int ud_set_init_qp(struct ibv_qp *qp) {
     check(ret, ret, "Failed to modify dgram. QP to INIT\n", NULL);
 }
 
+int ud_set_rts_qp(struct ibv_qp *qp, int psn) {
+    struct ibv_qp_attr dgram_attr = {
+            .qp_state		= IBV_QPS_RTR,
+    };
+
+    int ret = ibv_modify_qp(qp, &dgram_attr, IBV_QP_STATE);
+    check(ret, ret, "Failed to modify dgram. QP to RTR\n", NULL);
+
+    dgram_attr.qp_state = IBV_QPS_RTS;
+    dgram_attr.sq_psn = psn;
+
+    ret = ibv_modify_qp(qp, &dgram_attr, IBV_QP_STATE | IBV_QP_SQ_PSN);
+    check(ret, ret, "Failed to modify dgram. QP to RTS\n", NULL);
+
+    return 0;
+}
+
 uint16_t get_local_lid(struct ibv_context *context)
 {
     struct ibv_port_attr attr;

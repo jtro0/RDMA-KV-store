@@ -110,6 +110,7 @@ int init_ud_server(struct server_info *server) {
         check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", i, ret);
     }
     server->ud_server_info->request_count = 0;
+    ud_set_rts_qp(server->ud_server_info->ud_qp, server->ud_server_info->local_dgram_qp_attrs.psn);
 
 
     // Set up TCP server to accept new clients
@@ -191,7 +192,7 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
 
     pr_info("set sock UD, going to read\n");
 
-    if (read(client->ud_client->socket_fd, &server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter++],
+    if (read(client->ud_client->socket_fd, &server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter],
             sizeof(struct qp_attr)) < 0) {
         pr_debug("Could not read queue pair attributes from socket\n");
     }
@@ -202,6 +203,15 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
     }
     pr_info("Sent qp attributes to client %d\n", server->ud_server_info->client_counter-1);
 
+    struct ibv_ah_attr ah_attr;
+    bzero(&ah_attr, sizeof ah_attr);
+    ah_attr.dlid = server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter].lid;
+    ah_attr.port_num = IB_PHYS_PORT;
+
+    client->ud_client->ah = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
+    check(!client->ud_client->ah, -1, "Could not create AH from the info given\n", NULL)
+
+    server->ud_server_info->client_counter++;
     printf("A new connection is accepted from\n");
 
     return ret;

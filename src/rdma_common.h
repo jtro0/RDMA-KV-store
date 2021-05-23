@@ -78,8 +78,8 @@ struct qp_attr {
     uint64_t gid_global_subnet_prefix; 	// don't like unions. Needed for RoCE only
 
     int lid;							// A queue pair is identified by the local id (lid)
-    uint32_t qpn;							// of the device port and its queue pair number (qpn)
-    long psn;
+    int qpn;							// of the device port and its queue pair number (qpn)
+    int psn;
 };
 
 /* resolves a given destination name to sin_addr */
@@ -149,6 +149,6 @@ int post_recieve(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, 
 int post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf);
 
 int ud_set_init_qp(struct ibv_qp *qp);
-
+int ud_set_rts_qp(struct ibv_qp *qp, int psn);
 uint16_t get_local_lid(struct ibv_context *context);
 #endif //RDMA_KV_STORE_RDMA_COMMON_H
