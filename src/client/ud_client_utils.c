@@ -240,6 +240,8 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
     server_conn->request->msg_len = strlen("hello server");
     strncpy(server_conn->request->msg, "hello server", MSG_SIZE);
 
+    sleep(1);
+
     print_request(server_conn->request);
     ret = ud_send_request(server_conn, server_conn->request);
     check(ret, ret, "Failed to get send request, ret = %d \n", ret);
