@@ -65,14 +65,17 @@ int ud_prepare_client(struct ud_server_conn *server_conn) {
     server_conn->qp_init_attr.recv_cq = server_conn->ud_cq; /* Where should I notify for receive completion operations */
     server_conn->qp_init_attr.send_cq = server_conn->ud_cq; /* Where should I notify for send completion operations */
     /*Lets create a QP */
-    ret = rdma_create_qp(server_conn->cm_client_id /* which connection id TODO change this to ibv_create_qp*/,
-                         server_conn->pd /* which protection domain*/,
-                         &server_conn->qp_init_attr /* Initial attributes */);
-    check(ret, -errno, "Failed to create QP due to errno: %d\n", -errno);
+//    ret = rdma_create_qp(server_conn->cm_client_id /* which connection id TODO change this to ibv_create_qp*/,
+//                         server_conn->pd /* which protection domain*/,
+//                         &server_conn->qp_init_attr /* Initial attributes */);
+//    check(ret, -errno, "Failed to create QP due to errno: %d\n", -errno);
+//
+//    /* Save the reference for handy typing but is not required */
+//    server_conn->ud_qp = server_conn->cm_client_id->qp;
+//    pr_debug("Client QP created at %p\n", server_conn->ud_qp);
 
-    /* Save the reference for handy typing but is not required */
-    server_conn->ud_qp = server_conn->cm_client_id->qp;
-    pr_debug("Client QP created at %p\n", server_conn->ud_qp);
+    server_conn->ud_qp = ibv_create_qp(server_conn->pd, &server_conn->qp_init_attr);
+    check(server_conn->ud_qp == NULL, -errno, "Failed to create QP due to errno: %d\n", -errno);
 
     ud_set_init_qp(server_conn->ud_qp);
 
