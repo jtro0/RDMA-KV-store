@@ -105,9 +105,10 @@ int ud_client_connect_to_server(struct ud_server_conn *server_conn) {
     server_conn->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     check(server_conn->socket_fd < 0, -1, "Socket could not be made: %d\n", server_conn->socket_fd);
 
+    pr_info("connecting\n");
 //  Check if a connection can be made
     check(connect(server_conn->socket_fd, (struct sockaddr *) server_conn->server_sockaddr, sizeof(struct sockaddr_in)), -1, "Connection failed!\n", NULL);
-
+    pr_info("connected\n");
     if (write(server_conn->socket_fd, &server_conn->local_dgram_qp_attrs, sizeof(struct qp_attr)) < 0) {
         pr_debug("Could not write queue pair attributes to server\n");
     }
