@@ -133,6 +133,7 @@ int main(int argc, char *argv[]) {
         args.conn_t = connectionType;
         args.server_addr = &server_sockaddr;
         args.num_ops = num_ops;
+        args.instance_nr = i;
 
         ret = pthread_create(&threads[i], NULL, &start_instance, &args);
         if (ret != 0) {

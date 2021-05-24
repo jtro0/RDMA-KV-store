@@ -26,7 +26,7 @@ void make_get_request(struct client_to_server_conn *conn, int count) {
     }
 
     request->method = GET;
-    sprintf(request->key, "Key from instance %d count %d", 0, count);
+    sprintf(request->key, "Key from instance %d count %d", conn->instance_nr, count);
     request->key_len = strlen(request->key);
     request->msg_len = 0;
 }
@@ -47,9 +47,9 @@ void make_set_request(struct client_to_server_conn *conn, int count) {
     }
 
     request->method = SET;
-    sprintf(request->key, "Key from instance %d count %d", 0, count);
+    sprintf(request->key, "Key from instance %d count %d", conn->instance_nr, count);
     request->key_len = strlen(request->key);
-    sprintf(request->msg, "Message from instance %d count %d", 0, count);
+    sprintf(request->msg, "Message from instance %d count %d", conn->instance_nr, count);
     request->msg_len = strlen(request->msg);
 }
 
@@ -85,11 +85,13 @@ void* start_instance(void *arguments) {
     enum connection_type conn_t = args->conn_t;
     struct sockaddr_in *server_addr = args->server_addr;
     unsigned int num_ops = args->num_ops;
+    unsigned int instance_nr = args->instance_nr;
 
     int returned;
     struct client_to_server_conn conn;
     conn.conn_t = conn_t;
     conn.server_addr = server_addr;
+    conn.instance_nr = instance_nr;
 
     switch (conn_t) {
         case TCP:
