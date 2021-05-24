@@ -96,10 +96,11 @@ int init_ud_server(struct server_info *server) {
     pr_info("%d %d %d\n", server->ud_server_info->local_dgram_qp_attrs.lid, server->ud_server_info->local_dgram_qp_attrs.qpn, server->ud_server_info->local_dgram_qp_attrs.psn);
     server->ud_server_info->request = calloc(REQUEST_BACKLOG, sizeof(struct ud_request));
 
+    pr_info("Going to register for %lu size %lu\n", sizeof(struct ud_request)*REQUEST_BACKLOG, sizeof(struct ud_request));
     /* we prepare the receive buffer in which we will receive the client request*/
     server->ud_server_info->request_mr = rdma_buffer_register(server->ud_server_info->pd /* which protection domain */,
                                                          server->ud_server_info->request/* what memory */,
-                                                         sizeof(struct request)*REQUEST_BACKLOG /* what length */,
+                                                         sizeof(struct ud_request)*REQUEST_BACKLOG /* what length */,
                                                          (IBV_ACCESS_LOCAL_WRITE |
                                                           IBV_ACCESS_REMOTE_READ | // TODO Remove this permission?
                                                           IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
