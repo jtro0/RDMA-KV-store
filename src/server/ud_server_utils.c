@@ -105,12 +105,12 @@ int init_ud_server(struct server_info *server) {
                                                           IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
     check(!server->ud_server_info->request_mr, -ENOMEM, "Failed to register client attr buffer\n", -ENOMEM);
 
-    for (int i = 0; i < 500; i++) {
+    for (int i = 0; i < MAX_CLIENTS-1; i++) {
         server->ud_server_info->request_count = i;
         ret = ud_post_receive_request(server->ud_server_info);
         check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", i, ret);
     }
-//    server->ud_server_info->request_count = 0;
+    server->ud_server_info->request_count = 0;
     ud_set_rts_qp(server->ud_server_info->ud_qp, server->ud_server_info->local_dgram_qp_attrs.psn);
 
 
@@ -219,7 +219,7 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
 
     client->ud_client->ah = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
     check(!client->ud_client->ah, -1, "Could not create AH from the info given\n", NULL)
-    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, client->ud_client->wc, 1, client->ud_client->ud_server->ud_cq);
+//    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, client->ud_client->wc, 1, client->ud_client->ud_server->ud_cq);
 
     server->ud_server_info->client_counter++;
     printf("A new connection is accepted from\n");
