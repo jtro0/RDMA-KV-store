@@ -112,8 +112,8 @@ void* start_instance(void *arguments) {
             conn.ud_server_conn = malloc(sizeof(struct ud_server_conn));
             conn.ud_server_conn->server_sockaddr = server_addr;
             conn.ud_server_conn->request = calloc(1, sizeof(struct request));
-            conn.ud_server_conn->response = calloc(1, sizeof(struct response));
-            conn.ud_server_conn->expected_response = calloc(1, sizeof(struct response));
+            conn.ud_server_conn->response = calloc(1, sizeof(struct ud_response));
+            conn.ud_server_conn->expected_response = calloc(1, sizeof(struct ud_response));
             returned = ud_prepare_client(conn.ud_server_conn);
             check(returned, NULL, "Failed to setup client connection , returned = %d \n", returned);
             pr_debug("prepared\n");
@@ -148,7 +148,7 @@ void* start_instance(void *arguments) {
         gettimeofday(ops[count].end, NULL);
 
         count++;
-        bzero(conn.rc_server_conn->expected_response, sizeof(struct response));
+//        bzero(conn.rc_server_conn->expected_response, sizeof(struct response));
     } while (count < num_ops);
 
     pthread_exit((void*)ops);
