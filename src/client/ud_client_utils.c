@@ -167,6 +167,8 @@ int ud_pre_post_receive_response(struct ud_server_conn *server_conn, struct ud_r
                        server_conn->response);
 
     check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
+
+    return ret;
 }
 
 int ud_receive_response(struct ud_server_conn *server_conn, struct ud_response *response) {
@@ -252,7 +254,7 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
 
     pr_info("Sent!\n");
     bzero(server_conn->response, sizeof(struct ud_response));
-    ret = ud_receive_response(server_conn, &server_conn->response->response);
+    ret = ud_receive_response(server_conn, server_conn->response);
     print_response(&server_conn->response->response);
     check(ret, ret, "Failed to receive response, ret = %d \n", ret);
 
@@ -269,7 +271,7 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
     check(ret, ret, "Failed to get send second request, ret = %d \n", ret);
 
     bzero(server_conn->response, sizeof(struct ud_response));
-    ret = ud_receive_response(server_conn, &server_conn->response->response);
+    ret = ud_receive_response(server_conn, server_conn->response);
     print_response(&server_conn->response->response);
     check(ret, ret, "Failed to receive second response ret = %d \n", ret);
 
