@@ -43,7 +43,7 @@
 #endif /* ACN_RDMA_DEBUG */
 
 /* Capacity of the completion queue (CQ) */
-#define CQ_CAPACITY (16)
+//#define CQ_CAPACITY (16)
 #define CQ_CAPACITY (1025) // HERD
 /* MAX SGE capacity */
 #define MAX_SGE (2)
