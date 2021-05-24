@@ -105,7 +105,7 @@ int init_ud_server(struct server_info *server) {
                                                           IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
     check(!server->ud_server_info->request_mr, -ENOMEM, "Failed to register client attr buffer\n", -ENOMEM);
 
-    for (int i = 0; i < REQUEST_BACKLOG; i++) {
+    for (int i = 0; i < MAX_CLIENTS; i++) {
         server->ud_server_info->request_count = i;
         ret = ud_post_receive_request(server->ud_server_info);
         check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", i, ret);
@@ -163,7 +163,7 @@ int init_ud_server(struct server_info *server) {
 int ud_accept_new_connection(struct server_info *server, struct client_info *client) {
     int ret = -1;
 
-    pr_info("Registering response UD\n");
+    pr_info("Registering response UD on client count %d\n", server->ud_server_info->client_counter);
     /* now we register the metadata memory */
     client->ud_client->response_mr = rdma_buffer_register(server->ud_server_info->pd,
                                                           client->response,
