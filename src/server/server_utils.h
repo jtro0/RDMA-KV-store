@@ -108,7 +108,7 @@ struct request* recv_request(struct client_info *client);
 
 int connection_ready(int socket);
 
-int ready_for_next_request(struct client_info *client);
+int prepare_for_next_request(struct client_info *client);
 
 int receive_header(struct client_info *client);
 
@@ -120,5 +120,6 @@ int read_payload(struct client_info *client, struct request *request, size_t exp
 int check_payload(int socket, struct request *request, size_t expected_len);
 
 int send_response_to_client(struct client_info *client);
-
+struct request *get_current_request(struct client_info *client);
+void ready_for_next_request(struct client_info *client);
 #endif //RDMA_KV_STORE_SERVER_UTILS_H

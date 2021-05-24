@@ -151,7 +151,7 @@ void close_connection(int socket) {
 
 
 // TODO Ask if it is better to have it wait for the prev request to be done or to alloc/reg new request
-int ready_for_next_request(struct client_info *client) {
+int prepare_for_next_request(struct client_info *client) {
     pr_info("ready to receive request %d\n", client->request_count);
 
     int ret = 0;
@@ -229,7 +229,7 @@ struct request *recv_request(struct client_info *client) {
         return NULL;
     }
     request_dispatcher(client);
-    return &client->request[client->request_count];
+    return get_current_request(client);
 }
 
 /**
@@ -290,4 +290,28 @@ int send_response_to_client(struct client_info *client) {
             break;
     }
     return ret;
+}
+
+struct request *get_current_request(struct client_info *client) {
+    switch (client->type) {
+        case TCP:
+        case RC:
+        case UC:
+            return &client->request[client->request_count];
+        case UD:
+            return &client->ud_client->ud_server->request[client->ud_client->ud_server->request_count].request;
+    }
+}
+
+void ready_for_next_request(struct client_info *client) {
+    switch (client->type) {
+        case TCP:
+        case RC:
+        case UC:
+            client->request_count = (client->request_count + 1) % REQUEST_BACKLOG;
+            break;
+        case UD:
+            client->ud_client->ud_server->request_count = (client->ud_client->ud_server->request_count + 1) % REQUEST_BACKLOG;
+            break;
+    }
 }

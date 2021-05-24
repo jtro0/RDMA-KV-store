@@ -83,9 +83,9 @@ void *main_job(void *arg) {
 //            inet_ntoa(client->addr.sin_addr),
 //            ntohs(client->addr.sin_port));
     do {
-        ready_for_next_request(client);
+        prepare_for_next_request(client);
         struct request *request = recv_request(client);
-        client->request_count = (client->request_count + 1) % REQUEST_BACKLOG;
+        ready_for_next_request(client);
 
         bzero(client->response, sizeof(struct response));
         pr_info("request count %d\n", client->request_count);

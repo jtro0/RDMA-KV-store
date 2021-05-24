@@ -133,7 +133,7 @@ int setopt_request(struct client_info *client, struct request *request) {
 }
 
 void request_dispatcher(struct client_info *client) {
-    struct request *request = &client->request[client->request_count];
+    struct request *request = get_current_request(client);
     pr_info("Method: %s\n", method_to_str(request->method));
     pr_info("Key: %s [%zu]\n", request->key, request->key_len);
 
