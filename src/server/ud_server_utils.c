@@ -212,13 +212,13 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
     }
     pr_info("Sent qp attributes to client %d\n", server->ud_server_info->client_counter);
 
-    struct ibv_ah_attr ah_attr;
-    bzero(&ah_attr, sizeof ah_attr);
-    ah_attr.dlid = server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter].lid;
-    ah_attr.port_num = IB_PHYS_PORT;
-
-    client->ud_client->ah = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
-    check(!client->ud_client->ah, -1, "Could not create AH from the info given\n", NULL)
+//    struct ibv_ah_attr ah_attr;
+//    bzero(&ah_attr, sizeof ah_attr);
+//    ah_attr.dlid = server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter].lid;
+//    ah_attr.port_num = IB_PHYS_PORT;
+//
+//    client->ud_client->ah = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
+//    check(!client->ud_client->ah, -1, "Could not create AH from the info given\n", NULL)
 
     server->ud_server_info->client_counter++;
     printf("A new connection is accepted from\n");
@@ -237,8 +237,8 @@ int ud_receive_header(struct client_info *client) {
     check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
     pr_info("wc wr id: %lu, request count: %d\n", client->ud_client->wc->wr_id, client->request_count);
 
-//    struct ud_request *current = &client->ud_client->ud_server->request[client->ud_client->ud_server->request_count];
-//    client->ud_client->ah = ibv_create_ah_from_wc(client->ud_client->ud_server->pd, client->ud_client->wc, current->grh, IB_PHYS_PORT);
+    struct ud_request *current = &client->ud_client->ud_server->request[client->ud_client->ud_server->request_count];
+    client->ud_client->ah = ibv_create_ah_from_wc(client->ud_client->ud_server->pd, client->ud_client->wc, current->grh, IB_PHYS_PORT);
 
     return ret;
 }
