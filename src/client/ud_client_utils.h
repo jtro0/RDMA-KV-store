@@ -27,7 +27,7 @@ struct ud_server_conn {
     struct rdma_cm_id *cm_client_id; // maybe
     struct ibv_mr *client_request_mr, *client_response_mr;
     struct request *request;
-    struct response *response, *expected_response;
+    struct ud_response *response, *expected_response;
     int socket_fd;
     int client_counter;
     int request_count;
@@ -38,7 +38,7 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr);
 int ud_prepare_client(struct ud_server_conn *server_conn);
 int ud_client_connect_to_server(struct ud_server_conn *server_conn);
 int ud_send_request(struct ud_server_conn *server_conn, struct request *request);
-int ud_pre_post_receive_response(struct ud_server_conn *server_conn, struct response *response);
-int ud_receive_response(struct ud_server_conn *server_conn, struct response *response);
+int ud_pre_post_receive_response(struct ud_server_conn *server_conn, struct ud_response *response);
+int ud_receive_response(struct ud_server_conn *server_conn, struct ud_response *response);
 int ud_client_disconnect_and_clean(struct ud_server_conn *server_conn);
 #endif //RDMA_KV_STORE_UD_CLIENT_UTILS_H

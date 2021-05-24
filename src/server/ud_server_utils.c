@@ -94,7 +94,7 @@ int init_ud_server(struct server_info *server) {
     server->ud_server_info->local_dgram_qp_attrs.psn = lrand48() & 0xffffff;
 
     pr_info("%d %d %d\n", server->ud_server_info->local_dgram_qp_attrs.lid, server->ud_server_info->local_dgram_qp_attrs.qpn, server->ud_server_info->local_dgram_qp_attrs.psn);
-    server->ud_server_info->request = calloc(REQUEST_BACKLOG, sizeof(struct request));
+    server->ud_server_info->request = calloc(REQUEST_BACKLOG, sizeof(struct ud_request));
 
     /* we prepare the receive buffer in which we will receive the client request*/
     server->ud_server_info->request_mr = rdma_buffer_register(server->ud_server_info->pd /* which protection domain */,
@@ -226,7 +226,7 @@ int ud_receive_header(struct client_info *client) {
     struct ibv_wc wc;
     sleep(5);
     pr_info("going to poll for recv\n");
-    print_request(&client->ud_client->ud_server->request[client->ud_client->ud_server->request_count]);
+    print_request(&client->ud_client->ud_server->request[client->ud_client->ud_server->request_count].request);
     ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, &wc, 1, client->ud_client->ud_server->ud_cq);
     check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
     pr_info("wc wr id: %lu, request count: %d\n", wc.wr_id, client->request_count);
@@ -238,7 +238,7 @@ int ud_receive_header(struct client_info *client) {
 int ud_post_receive_request(struct ud_server_info *server) {
     int ret = 0;
     pr_info("receiving %d\n", server->request_count);
-    ret = post_recieve(sizeof(struct request), server->request_mr->lkey, server->request_count, server->ud_qp,
+    ret = post_recieve(sizeof(struct ud_request), server->request_mr->lkey, server->request_count, server->ud_qp,
                        &server->request[server->request_count]);
     return ret;
 }

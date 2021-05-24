@@ -143,37 +143,37 @@ int ud_send_request(struct ud_server_conn *server_conn, struct request *request)
 
     check(ret, -errno, "Failed to send request, errno: %d \n", -errno);
 
-//    pr_info("Do we need this?\n");
-//    /* at this point we are expecting 1 work completion for the write */
-//    ret = process_work_completion_events(server_conn->io_completion_channel,
-//                                         &wc, 1, server_conn->ud_cq);
-//    check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
-//          ret);
+    pr_info("Do we need this?\n");
+    /* at this point we are expecting 1 work completion for the write */
+    ret = process_work_completion_events(server_conn->io_completion_channel,
+                                         &wc, 1, server_conn->ud_cq);
+    check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
+          ret);
 
     return 0;
 }
 
-int ud_pre_post_receive_response(struct ud_server_conn *server_conn, struct response *response) {
+int ud_pre_post_receive_response(struct ud_server_conn *server_conn, struct ud_response *response) {
     int ret;
 
     server_conn->client_response_mr = rdma_buffer_register(server_conn->pd,
                                                            server_conn->response,
-                                                           sizeof(struct response),
+                                                           sizeof(struct ud_response),
                                                            (IBV_ACCESS_LOCAL_WRITE |
                                                             IBV_ACCESS_REMOTE_READ |
                                                             IBV_ACCESS_REMOTE_WRITE));
 
-    ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, 0, server_conn->ud_qp,
+    ret = post_recieve(sizeof(struct ud_response), server_conn->client_response_mr->lkey, 0, server_conn->ud_qp,
                        server_conn->response);
 
     check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
 }
 
-int ud_receive_response(struct ud_server_conn *server_conn, struct response *response) {
+int ud_receive_response(struct ud_server_conn *server_conn, struct ud_response *response) {
     int ret;
     struct ibv_wc wc;
 
-    ret = post_recieve(sizeof(struct response), server_conn->client_response_mr->lkey, 0, server_conn->ud_qp,
+    ret = post_recieve(sizeof(struct ud_response), server_conn->client_response_mr->lkey, 0, server_conn->ud_qp,
                        server_conn->response);
     check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
 
@@ -229,7 +229,7 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
     struct ud_server_conn *server_conn = calloc(1, sizeof(struct ud_server_conn));
     server_conn->server_sockaddr = server_sockaddr;
     server_conn->request = allocate_request();
-    server_conn->response = malloc(sizeof(struct response));
+    server_conn->response = malloc(sizeof(struct ud_response));
 
     ret = ud_prepare_client(server_conn);
     check(ret, ret, "Failed to setup client connection , ret = %d \n", ret);
@@ -251,9 +251,9 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
     check(ret, ret, "Failed to get send request, ret = %d \n", ret);
 
     pr_info("Sent!\n");
-    bzero(server_conn->response, sizeof(struct response));
-    ret = ud_receive_response(server_conn, server_conn->response);
-    print_response(server_conn->response);
+    bzero(server_conn->response, sizeof(struct ud_response));
+    ret = ud_receive_response(server_conn, &server_conn->response->response);
+    print_response(&server_conn->response->response);
     check(ret, ret, "Failed to receive response, ret = %d \n", ret);
 
     sleep(5);
@@ -268,9 +268,9 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
     ret = ud_send_request(server_conn, server_conn->request);
     check(ret, ret, "Failed to get send second request, ret = %d \n", ret);
 
-    bzero(server_conn->response, sizeof(struct response));
-    ret = ud_receive_response(server_conn, server_conn->response);
-    print_response(server_conn->response);
+    bzero(server_conn->response, sizeof(struct ud_response));
+    ret = ud_receive_response(server_conn, &server_conn->response->response);
+    print_response(&server_conn->response->response);
     check(ret, ret, "Failed to receive second response ret = %d \n", ret);
 
     ret = ud_client_disconnect_and_clean(server_conn);

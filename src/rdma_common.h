@@ -82,6 +82,16 @@ struct qp_attr {
     int psn;
 };
 
+struct ud_request {
+    char grh[40];
+    struct request request;
+};
+
+struct ud_response {
+    char grh[40];
+    struct response response;
+};
+
 /* resolves a given destination name to sin_addr */
 int get_addr(char *dst, struct sockaddr *addr);
 
