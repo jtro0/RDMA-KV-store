@@ -248,9 +248,9 @@ int ud_send_response(struct client_info *client) {
     int ret = -1;
     struct ibv_wc wc;
 
-    ret = ud_post_send(sizeof(struct response), client->rc_client->response_mr->lkey, 0, client->rc_client->client_qp, client->response,
+    ret = ud_post_send(sizeof(struct response), client->ud_client->response_mr->lkey, 0, client->ud_client->ud_server->ud_qp, client->response,
                         client->ud_client->ah, client->ud_client->ud_server->remote_dgram_qp_attrs.qpn);
-    ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1, client->rc_client->cq);
+    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, &wc, 1, client->ud_client->ud_server->ud_cq);
     check(ret < 0, -errno, "Failed to send response: %d\n", ret);
     return ret;
 }
