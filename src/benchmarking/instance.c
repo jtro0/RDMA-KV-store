@@ -147,7 +147,7 @@ void* start_instance(void *arguments) {
 
         gettimeofday(ops[count].end, NULL);
 
-        usleep(1000);
+//        usleep(1);
         count++;
 //        bzero(conn.rc_server_conn->expected_response, sizeof(struct response));
     } while (count < num_ops);
