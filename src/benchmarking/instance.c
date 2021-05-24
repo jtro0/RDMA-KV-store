@@ -8,6 +8,7 @@
 #include "instance.h"
 #include "client/client.h"
 #include "client/rc_client_utils.h"
+#include "client/ud_client_utils.h"
 
 void make_get_request(struct client_to_server_conn *conn, int count) {
     struct request *request = NULL;
