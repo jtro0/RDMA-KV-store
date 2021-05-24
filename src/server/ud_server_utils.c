@@ -105,7 +105,7 @@ int init_ud_server(struct server_info *server) {
                                                           IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
     check(!server->ud_server_info->request_mr, -ENOMEM, "Failed to register client attr buffer\n", -ENOMEM);
 
-    for (int i = 0; i < MAX_CLIENTS; i++) {
+    for (int i = 0; i < 500; i++) {
         server->ud_server_info->request_count = i;
         ret = ud_post_receive_request(server->ud_server_info);
         check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", i, ret);
