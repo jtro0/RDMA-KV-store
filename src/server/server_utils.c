@@ -315,3 +315,14 @@ void ready_for_next_request(struct client_info *client) {
             break;
     }
 }
+
+bool is_connection_closed(struct client_info *client) {
+    switch (client->type) {
+        case TCP:
+        case RC:
+        case UC:
+            return client->request->connection_close;
+        case UD:
+            return client->ud_client->ud_server->request->request.connection_close;
+    }
+}

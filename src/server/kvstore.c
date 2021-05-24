@@ -110,7 +110,7 @@ void *main_job(void *arg) {
         }
 
         send_response_to_client(client);
-    } while (!client->request->connection_close);
+    } while (!is_connection_closed(client));
 
     close_connection(client->tcp_client->socket_fd);
     free(client->request);
