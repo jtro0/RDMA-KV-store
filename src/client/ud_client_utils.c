@@ -260,7 +260,7 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
 
     sleep(5);
 
-    server_conn->request = allocate_request();
+//    server_conn->request = allocate_request();
     bzero(server_conn->request, sizeof(struct request));
     strncpy(server_conn->request->key, "testing", KEY_SIZE);
     server_conn->request->key_len = strlen(server_conn->request->key);
