@@ -116,6 +116,9 @@ int ud_client_connect_to_server(struct ud_server_conn *server_conn) {
     if (read(server_conn->socket_fd, &server_conn->remote_dgram_qp_attrs, sizeof(struct qp_attr)) < 0) {
         pr_debug("Could not read servers queue pair attributes\n");
     }
+
+    pr_info("%d %d %d\n", server_conn->remote_dgram_qp_attrs.lid, server_conn->remote_dgram_qp_attrs.qpn, server_conn->remote_dgram_qp_attrs.psn);
+
     struct ibv_ah_attr ah_attr;
     bzero(&ah_attr, sizeof ah_attr);
     ah_attr.dlid = server_conn->remote_dgram_qp_attrs.lid;

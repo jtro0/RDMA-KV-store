@@ -93,6 +93,7 @@ int init_ud_server(struct server_info *server) {
     server->ud_server_info->local_dgram_qp_attrs.qpn = server->ud_server_info->ud_qp->qp_num;
     server->ud_server_info->local_dgram_qp_attrs.psn = lrand48() & 0xffffff;
 
+    pr_info("%d %d %d\n", server->ud_server_info->local_dgram_qp_attrs.lid, server->ud_server_info->local_dgram_qp_attrs.qpn, server->ud_server_info->local_dgram_qp_attrs.psn);
     server->ud_server_info->request = calloc(REQUEST_BACKLOG, sizeof(struct request));
 
     /* we prepare the receive buffer in which we will receive the client request*/
