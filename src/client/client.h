@@ -19,8 +19,8 @@ struct client_to_server_conn {
     struct ud_server_conn *ud_server_conn;
 };
 
-int send_request(struct client_to_server_conn *conn, struct request *request);
-int receive_response(struct client_to_server_conn *conn, struct response *response);
+int send_request(struct client_to_server_conn *conn);
+int receive_response(struct client_to_server_conn *conn);
 
 
 #endif //RDMA_KV_STORE_CLIENT_H
