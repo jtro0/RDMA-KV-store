@@ -238,7 +238,8 @@ int ud_receive_header(struct client_info *client) {
     pr_info("wc wr id: %lu, request count: %d\n", client->ud_client->wc->wr_id, client->request_count);
 
     struct ud_request *current = &client->ud_client->ud_server->request[client->ud_client->ud_server->request_count];
-    client->ud_client->ah = ibv_create_ah_from_wc(client->ud_client->ud_server->pd, client->ud_client->wc, current->grh, IB_PHYS_PORT);
+    client->ud_client->ah = ibv_create_ah_from_wc(client->ud_client->ud_server->pd, client->ud_client->wc,
+                                                  (struct ibv_grh *) current->grh, IB_PHYS_PORT);
 
     return ret;
 }
