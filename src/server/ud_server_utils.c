@@ -232,6 +232,7 @@ int ud_receive_header(struct client_info *client) {
 //    sleep(5);
     pr_info("going to poll for recv\n");
     bzero(client->ud_client->wc, sizeof(struct ibv_wc));
+    client->ud_client->wc->wc_flags = IBV_WC_GRH;
 //    print_request(&client->ud_client->ud_server->request[client->ud_client->ud_server->request_count].request);
     ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, client->ud_client->wc, 1, client->ud_client->ud_server->ud_cq);
     check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
