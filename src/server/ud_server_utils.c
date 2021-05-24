@@ -94,13 +94,12 @@ int init_ud_server(struct server_info *server) {
     server->ud_server_info->local_dgram_qp_attrs.psn = lrand48() & 0xffffff;
 
     pr_info("%d %d %d\n", server->ud_server_info->local_dgram_qp_attrs.lid, server->ud_server_info->local_dgram_qp_attrs.qpn, server->ud_server_info->local_dgram_qp_attrs.psn);
-    server->ud_server_info->request = calloc(REQUEST_BACKLOG, sizeof(struct ud_request));
+    server->ud_server_info->request = calloc(REQUEST_BACKLOG*MAX_CLIENTS, sizeof(struct ud_request));
 
-    pr_info("Going to register for %lu size %lu\n", sizeof(struct ud_request)*REQUEST_BACKLOG, sizeof(struct ud_request));
     /* we prepare the receive buffer in which we will receive the client request*/
     server->ud_server_info->request_mr = rdma_buffer_register(server->ud_server_info->pd /* which protection domain */,
                                                          server->ud_server_info->request/* what memory */,
-                                                         sizeof(struct ud_request)*REQUEST_BACKLOG /* what length */,
+                                                         sizeof(struct ud_request)*REQUEST_BACKLOG*MAX_CLIENTS /* what length */,
                                                          (IBV_ACCESS_LOCAL_WRITE |
                                                           IBV_ACCESS_REMOTE_READ | // TODO Remove this permission?
                                                           IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
@@ -111,7 +110,7 @@ int init_ud_server(struct server_info *server) {
         ret = ud_post_receive_request(server->ud_server_info);
         check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", i, ret);
     }
-    server->ud_server_info->request_count = 0;
+//    server->ud_server_info->request_count = 0;
     ud_set_rts_qp(server->ud_server_info->ud_qp, server->ud_server_info->local_dgram_qp_attrs.psn);
 
 
@@ -174,6 +173,11 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
     pr_info("Registered response UD\n");
 
     client->ud_client->ud_server = server->ud_server_info;
+
+    client->ud_client->wc = calloc(1, sizeof(struct ibv_wc));
+    client->ud_client->remote_dgram_qp_attr = &server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter];
+
+
     int nodelay = 1;
     socklen_t addrlen = sizeof(server->addr);
 
@@ -195,7 +199,7 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
 
     pr_info("set sock UD, going to read\n");
 
-    ret = read(client->ud_client->socket_fd, &server->ud_server_info->remote_dgram_qp_attrs,
+    ret = read(client->ud_client->socket_fd, client->ud_client->remote_dgram_qp_attr,
                sizeof(struct qp_attr));
     if (ret < 0) {
         pr_debug("Could not read queue pair attributes from socket\n");
@@ -208,13 +212,13 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
     }
     pr_info("Sent qp attributes to client %d\n", server->ud_server_info->client_counter);
 
-    struct ibv_ah_attr ah_attr;
-    bzero(&ah_attr, sizeof ah_attr);
-    ah_attr.dlid = server->ud_server_info->remote_dgram_qp_attrs.lid;
-    ah_attr.port_num = IB_PHYS_PORT;
-
-    client->ud_client->ah = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
-    check(!client->ud_client->ah, -1, "Could not create AH from the info given\n", NULL)
+//    struct ibv_ah_attr ah_attr;
+//    bzero(&ah_attr, sizeof ah_attr);
+//    ah_attr.dlid = server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter].lid;
+//    ah_attr.port_num = IB_PHYS_PORT;
+//
+//    client->ud_client->ah = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
+//    check(!client->ud_client->ah, -1, "Could not create AH from the info given\n", NULL)
 
     server->ud_server_info->client_counter++;
     printf("A new connection is accepted from\n");
@@ -224,13 +228,17 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
 
 int ud_receive_header(struct client_info *client) {
     int ret = 0;
-    struct ibv_wc wc;
+//    struct ibv_wc wc;
 //    sleep(5);
     pr_info("going to poll for recv\n");
+    bzero(client->ud_client->wc, sizeof(struct ibv_wc));
 //    print_request(&client->ud_client->ud_server->request[client->ud_client->ud_server->request_count].request);
-    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, &wc, 1, client->ud_client->ud_server->ud_cq);
+    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, client->ud_client->wc, 1, client->ud_client->ud_server->ud_cq);
     check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
-    pr_info("wc wr id: %lu, request count: %d\n", wc.wr_id, client->request_count);
+    pr_info("wc wr id: %lu, request count: %d\n", client->ud_client->wc->wr_id, client->request_count);
+
+    struct ud_request *current = &client->ud_client->ud_server->request[client->ud_client->ud_server->request_count];
+    client->ud_client->ah = ibv_create_ah_from_wc(client->ud_client->ud_server->pd, client->ud_client->wc, current->grh, IB_PHYS_PORT);
 
     return ret;
 }
@@ -250,7 +258,7 @@ int ud_send_response(struct client_info *client) {
     struct ibv_wc wc;
 
     ret = ud_post_send(sizeof(struct response), client->ud_client->response_mr->lkey, 0, client->ud_client->ud_server->ud_qp, client->response,
-                        client->ud_client->ah, client->ud_client->ud_server->remote_dgram_qp_attrs.qpn);
+                        client->ud_client->ah, client->ud_client->remote_dgram_qp_attr->qpn);
     ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, &wc, 1, client->ud_client->ud_server->ud_cq);
     check(ret < 0, -errno, "Failed to send response: %d\n", ret);
     return ret;

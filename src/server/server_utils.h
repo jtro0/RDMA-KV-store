@@ -18,7 +18,9 @@
 #define BACKLOG     10
 #define TIMEOUT     60
 
-#define REQUEST_BACKLOG 1000
+#define REQUEST_BACKLOG 5
+
+#define MAX_CLIENTS 1024
 struct tcp_client_info {
     int socket_fd;
 };
@@ -50,20 +52,18 @@ struct ud_client_connection {
    int socket_fd;
 //   struct ud_response *response;
    struct ibv_mr *response_mr;
+   struct ibv_wc *wc;
+   struct qp_attr *remote_dgram_qp_attr;
 };
 
 struct ud_server_info {
-    struct rdma_event_channel *cm_event_channel; // maybe?
-    struct rdma_cm_id *cm_server_id; // maybe?
     struct ibv_qp *ud_qp;
     struct ibv_cq *ud_cq;
     union ibv_gid server_gid;
     struct qp_attr local_dgram_qp_attrs;	// Local and remote queue pair attributes
-    struct qp_attr remote_dgram_qp_attrs; // TODO make array
-
-
+    struct qp_attr remote_dgram_qp_attrs[MAX_CLIENTS]; // TODO make array
     struct ibv_pd *pd;
-    struct ibv_comp_channel *io_completion_channel; // maybe?
+    struct ibv_comp_channel *io_completion_channel;
     struct ibv_qp_init_attr qp_init_attr; // maybe?
     struct rdma_cm_id *cm_client_id; // maybe
 //    struct ibv_qp *client_qp;
