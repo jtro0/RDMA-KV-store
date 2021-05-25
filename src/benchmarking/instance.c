@@ -125,7 +125,7 @@ void* start_instance(void *arguments) {
     }
     struct operation *ops = calloc(num_ops, sizeof(struct operation));
 
-    sleep(1);
+    usleep(1000);
 
     int count = 0;
 
