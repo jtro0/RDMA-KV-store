@@ -321,8 +321,8 @@ void ready_for_next_request(struct client_info *client) {
             break;
         case UD:
             pthread_rwlock_wrlock(&client->ud_client->ud_server->lock);
-            client->ud_client->ud_server->request_count = ((client->ud_client->ud_server->request_count + 1) % (MAX_CLIENTS));
             ud_post_receive_request(client->ud_client->ud_server);
+            client->ud_client->ud_server->request_count = ((client->ud_client->ud_server->request_count + 1) % (MAX_CLIENTS));
             pthread_rwlock_unlock(&client->ud_client->ud_server->lock);
 
             break;
