@@ -184,7 +184,7 @@ int ud_receive_response(struct ud_server_conn *server_conn, struct ud_response *
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 
-    return 0;
+    return ret;
 }
 
 /*
