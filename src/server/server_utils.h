@@ -85,6 +85,7 @@ struct client_info {
     struct rc_client_connection *rc_client;
     struct ud_client_connection *ud_client;
 
+    int client_nr;
 };
 
 struct server_info {

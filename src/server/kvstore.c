@@ -88,7 +88,7 @@ void *main_job(void *arg) {
         ready_for_next_request(client);
 
         bzero(client->response, sizeof(struct response));
-        pr_info("request count %d\n", client->request_count);
+        pr_info("client %d: request count %d\n", client->client_nr, client->request_count);
         switch (request->method) {
             case SET:
                 pr_info("set\n");
@@ -139,6 +139,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    int client_nr = 0;
     for (;;) {
 //    struct client_info *new_client =
 //            calloc(1, sizeof(struct client_info));
@@ -151,6 +152,7 @@ int main(int argc, char *argv[]) {
         client->request_count = 0;
         client->type = server_connection->type;
         client->is_test = server_connection->is_test;
+        client->client_nr = client_nr;
         pr_info("Accepting new connection\n");
         if (accept_new_connection(server_connection, client) < 0) {
             pr_info("no new connection");

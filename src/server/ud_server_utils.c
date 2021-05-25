@@ -209,6 +209,7 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
 
     client->ud_client->wc = calloc(1, sizeof(struct ibv_wc));
     client->ud_client->remote_dgram_qp_attr = &server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter];
+    server->ud_server_info->client_counter++;
 
 
     int nodelay = 1;
@@ -254,7 +255,6 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
 //    check(!client->ud_client->ah, -1, "Could not create AH from the info given\n", NULL)
 //    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, client->ud_client->wc, 1, client->ud_client->ud_server->ud_cq);
 
-    server->ud_server_info->client_counter++;
     printf("A new connection is accepted from\n");
 
     return ret;
@@ -264,7 +264,7 @@ int ud_receive_header(struct client_info *client) {
     int ret = 0;
 //    struct ibv_wc wc;
 //    sleep(5);
-    pr_info("going to poll for recv\n");
+    pr_info("client %d: going to poll for recv\n", client->client_nr);
     bzero(client->ud_client->wc, sizeof(struct ibv_wc));
     client->ud_client->wc->wc_flags = IBV_WC_GRH;
 //    print_request(&client->ud_client->ud_server->request[client->ud_client->ud_server->request_count].request);

@@ -152,7 +152,7 @@ void close_connection(int socket) {
 
 // TODO Ask if it is better to have it wait for the prev request to be done or to alloc/reg new request
 int prepare_for_next_request(struct client_info *client) {
-    pr_info("ready to receive request %d\n", client->request_count);
+    pr_info("client %d: ready to receive request %d\n", client->client_nr, client->request_count);
 
     int ret = 0;
     switch (client->type) {
@@ -195,6 +195,7 @@ int receive_header(struct client_info *client) {
         }
         return 1;
     }
+    pr_info("client %d: receiving header\n", client->client_nr);
     switch (client->type) {
         case TCP:
             if (connection_ready(client->tcp_client->socket_fd) == -1) {
