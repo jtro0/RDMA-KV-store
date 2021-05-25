@@ -20,7 +20,7 @@
 
 #define REQUEST_BACKLOG 5
 
-#define MAX_CLIENTS 1024
+#define MAX_CLIENTS 5
 struct tcp_client_info {
     int socket_fd;
 };
