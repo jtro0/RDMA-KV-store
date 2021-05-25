@@ -48,12 +48,13 @@ struct rc_server_info {
 // TODO similar to rc? Make a common rdma?
 struct ud_client_connection {
    struct ud_server_info *ud_server;
-   struct ibv_ah *ah; // maybe array of ah pointers in server?
+//   struct ibv_ah *ah; // maybe array of ah pointers in server?
    int socket_fd;
 //   struct ud_response *response;
    struct ibv_mr *response_mr;
    struct ibv_wc *wc;
-   struct qp_attr *remote_dgram_qp_attr;
+//   struct qp_attr *remote_dgram_qp_attr;
+    int client_handling;
 };
 
 struct ud_server_info {
@@ -72,6 +73,7 @@ struct ud_server_info {
     int client_counter;
     struct ud_request *request;
     int request_count;
+    struct ibv_ah *ah[MAX_CLIENTS];
 };
 
 struct client_info {

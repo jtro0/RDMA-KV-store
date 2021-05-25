@@ -229,8 +229,12 @@ struct request *recv_request(struct client_info *client) {
         pr_info("No header received\n");
         return NULL;
     }
+    struct request *current = get_current_request(client);
+    if (client->type == UD) {
+        client->ud_client->client_handling = current->client_id;
+    }
     request_dispatcher(client);
-    return get_current_request(client);
+    return current;
 }
 
 /**

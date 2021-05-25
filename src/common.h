@@ -66,6 +66,7 @@ extern int verbose;
 extern int debug;
 
 struct request {
+    int client_id;
     enum method method;
     char key[KEY_SIZE];
     char msg[MSG_SIZE];

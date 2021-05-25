@@ -208,8 +208,7 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
     client->ud_client->ud_server = server->ud_server_info;
 
     client->ud_client->wc = calloc(1, sizeof(struct ibv_wc));
-    client->ud_client->remote_dgram_qp_attr = &server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter];
-    server->ud_server_info->client_counter++;
+//    client->ud_client->remote_dgram_qp_attr = &server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter];
 
 
     int nodelay = 1;
@@ -233,7 +232,7 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
 
     pr_info("set sock UD, going to read\n");
 
-    ret = read(client->ud_client->socket_fd, client->ud_client->remote_dgram_qp_attr,
+    ret = read(client->ud_client->socket_fd, &server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter],
                sizeof(struct qp_attr));
     if (ret < 0) {
         pr_debug("Could not read queue pair attributes from socket\n");
@@ -251,10 +250,11 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
     ah_attr.dlid = server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter].lid;
     ah_attr.port_num = IB_PHYS_PORT;
 
-    client->ud_client->ah = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
-    check(!client->ud_client->ah, -1, "Could not create AH from the info given\n", NULL)
+    server->ud_server_info->ah[server->ud_server_info->client_counter] = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
+    check(!server->ud_server_info->ah[server->ud_server_info->client_counter], -1, "Could not create AH from the info given\n", NULL)
 //    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, client->ud_client->wc, 1, client->ud_client->ud_server->ud_cq);
 
+    server->ud_server_info->client_counter++;
     printf("A new connection is accepted from\n");
 
     return ret;
@@ -295,7 +295,7 @@ int ud_send_response(struct client_info *client) {
     struct ibv_wc wc;
 
     ret = ud_post_send(sizeof(struct response), client->ud_client->response_mr->lkey, 0, client->ud_client->ud_server->ud_qp, client->response,
-                        client->ud_client->ah, client->ud_client->remote_dgram_qp_attr->qpn);
+                        client->ud_client->ud_server->ah[client->ud_client->client_handling], client->ud_client->ud_server->remote_dgram_qp_attrs[client->ud_client->client_handling].qpn);
     ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel_send, &wc, 1, client->ud_client->ud_server->ud_send_cq);
     check(ret < 0, -errno, "Failed to send response: %d\n", ret);
     return ret;
