@@ -17,7 +17,7 @@ struct client_to_server_conn {
 
     struct rc_server_conn *rc_server_conn;
     struct ud_server_conn *ud_server_conn;
-    unsigned int instance_nr;
+    int instance_nr;
 };
 
 int send_request(struct client_to_server_conn *conn);

@@ -87,7 +87,7 @@ void* start_instance(void *arguments) {
     enum connection_type conn_t = args->conn_t;
     struct sockaddr_in *server_addr = args->server_addr;
     unsigned int num_ops = args->num_ops;
-    unsigned int instance_nr = args->instance_nr;
+    int instance_nr = args->instance_nr;
 
     int returned;
     struct client_to_server_conn conn;
