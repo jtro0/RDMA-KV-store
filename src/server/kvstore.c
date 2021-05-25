@@ -87,7 +87,8 @@ void *main_job(void *arg) {
     do {
         prepare_for_next_request(client);
         struct request *request = recv_request(client);
-        ready_for_next_request(client);
+        if (request->method != UNK)
+            ready_for_next_request(client);
 
         bzero(client->response, sizeof(struct response));
         pr_info("client %d: request count %d\n", client->client_nr, client->ud_client->ud_server->request_count);
