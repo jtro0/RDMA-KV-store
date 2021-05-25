@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
         client->type = server_connection->type;
         client->is_test = server_connection->is_test;
         client->client_nr = client_nr;
-        client->client_nr++;
+        client_nr++;
         pr_info("Accepting new connection\n");
         if (accept_new_connection(server_connection, client) < 0) {
             pr_info("no new connection");
