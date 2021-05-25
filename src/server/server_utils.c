@@ -312,8 +312,6 @@ void ready_for_next_request(struct client_info *client) {
             break;
         case UD:
             client->ud_client->ud_server->request_count = (client->ud_client->ud_server->request_count + 1) % REQUEST_BACKLOG;
-            pthread_mutex_unlock(&client->ud_client->ud_server->recv_lock);
-            pthread_cond_signal(&client->ud_client->ud_server->recv_cond);
             break;
     }
 }

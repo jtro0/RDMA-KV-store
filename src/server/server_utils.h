@@ -72,9 +72,6 @@ struct ud_server_info {
     int client_counter;
     struct ud_request *request;
     int request_count;
-
-    pthread_mutex_t recv_lock;
-    pthread_cond_t recv_cond;
 };
 
 struct client_info {

@@ -147,9 +147,6 @@ int init_ud_server(struct server_info *server) {
     server->ud_server_info->request_count = 0;
     ud_set_rts_qp(server->ud_server_info->ud_qp, server->ud_server_info->local_dgram_qp_attrs.psn);
 
-    server->ud_server_info->recv_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; // Might not work?
-    server->ud_server_info->recv_cond = PTHREAD_COND_INITIALIZER;
-
     // Set up TCP server to accept new clients
     int option = 1;
     /* TCP connection */
@@ -271,15 +268,6 @@ int ud_receive_header(struct client_info *client) {
     bzero(client->ud_client->wc, sizeof(struct ibv_wc));
     client->ud_client->wc->wc_flags = IBV_WC_GRH;
 //    print_request(&client->ud_client->ud_server->request[client->ud_client->ud_server->request_count].request);
-
-    if ((ret = pthread_mutex_lock(&client->ud_client->ud_server->recv_lock)) != 0) {
-        pr_debug("Cannot lock!\n");
-        return ret;
-    }
-    if ((ret = pthread_cond_wait(&client->ud_client->ud_server->recv_cond, &client->ud_client->ud_server->recv_lock)) != 0) {
-        pr_debug("Cannot wait on cond!\n");
-        return ret;
-    }
 
     ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel_recv, client->ud_client->wc, 1, client->ud_client->ud_server->ud_recv_cq);
     check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
