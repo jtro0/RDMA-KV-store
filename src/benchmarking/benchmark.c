@@ -10,7 +10,7 @@
 enum connection_type connectionType;
 int debug = 0;
 int verbose = 0;
-int num_ops = 1030;
+int num_ops = 1000000;
 int override = 0;
 
 void usage() {
