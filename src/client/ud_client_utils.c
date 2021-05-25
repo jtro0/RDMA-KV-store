@@ -240,7 +240,7 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
     check(ret, ret, "Failed to setup client connection , ret = %d \n", ret);
 
     bzero(server_conn->request, sizeof(struct request));
-    strncpy(server_conn->request->key, "testing", KEY_SIZE);
+    strncpy(server_conn->request->key, key, KEY_SIZE);
     server_conn->request->key_len = strlen(server_conn->request->key);
     server_conn->request->method = SET;
     server_conn->request->msg_len = strlen("hello server");
@@ -262,7 +262,7 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
 
 //    server_conn->request = allocate_request();
     bzero(server_conn->request, sizeof(struct request));
-    strncpy(server_conn->request->key, "testing", KEY_SIZE);
+    strncpy(server_conn->request->key, key, KEY_SIZE);
     server_conn->request->key_len = strlen(server_conn->request->key);
     server_conn->request->method = GET;
     print_request(server_conn->request);
