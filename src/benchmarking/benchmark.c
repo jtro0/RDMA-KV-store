@@ -112,9 +112,9 @@ int main(int argc, char *argv[]) {
             case 'd':
                 debug = 1;
                 break;
-            case 't': {
+            case 't':
                 override = 1;
-            }
+                break;
             case 'h':
             default:
                 usage();
