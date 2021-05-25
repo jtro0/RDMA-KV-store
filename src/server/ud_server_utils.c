@@ -128,18 +128,18 @@ int init_ud_server(struct server_info *server) {
     server->ud_server_info->local_dgram_qp_attrs.psn = lrand48() & 0xffffff;
 
     pr_info("%d %d %d\n", server->ud_server_info->local_dgram_qp_attrs.lid, server->ud_server_info->local_dgram_qp_attrs.qpn, server->ud_server_info->local_dgram_qp_attrs.psn);
-    server->ud_server_info->request = calloc(REQUEST_BACKLOG*MAX_CLIENTS, sizeof(struct ud_request));
+    server->ud_server_info->request = calloc(MAX_CLIENTS, sizeof(struct ud_request));
 
     /* we prepare the receive buffer in which we will receive the client request*/
     server->ud_server_info->request_mr = rdma_buffer_register(server->ud_server_info->pd /* which protection domain */,
                                                          server->ud_server_info->request/* what memory */,
-                                                         sizeof(struct ud_request)*REQUEST_BACKLOG*MAX_CLIENTS /* what length */,
+                                                         sizeof(struct ud_request)*MAX_CLIENTS /* what length */,
                                                          (IBV_ACCESS_LOCAL_WRITE |
                                                           IBV_ACCESS_REMOTE_READ | // TODO Remove this permission?
                                                           IBV_ACCESS_REMOTE_WRITE) /* access permissions */);
     check(!server->ud_server_info->request_mr, -ENOMEM, "Failed to register client attr buffer\n", -ENOMEM);
 
-    for (int i = 0; i < MAX_CLIENTS-1; i++) {
+    for (int i = 0; i < MAX_CLIENTS; i++) {
         server->ud_server_info->request_count = i;
         ret = ud_post_receive_request(server->ud_server_info);
         check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", i, ret);
