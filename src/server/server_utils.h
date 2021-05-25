@@ -58,12 +58,12 @@ struct ud_client_connection {
 
 struct ud_server_info {
     struct ibv_qp *ud_qp;
-    struct ibv_cq *ud_recv_cq;//, *ud_send_cq; // need to split to not get the sent notifying
+    struct ibv_cq *ud_recv_cq, *ud_send_cq; // need to split to not get the sent notifying
     union ibv_gid server_gid;
     struct qp_attr local_dgram_qp_attrs;	// Local and remote queue pair attributes
     struct qp_attr remote_dgram_qp_attrs[MAX_CLIENTS]; // TODO make array
     struct ibv_pd *pd;
-    struct ibv_comp_channel *io_completion_channel_recv;//, *io_completion_channel_send;
+    struct ibv_comp_channel *io_completion_channel_recv, *io_completion_channel_send;
     struct ibv_qp_init_attr qp_init_attr; // maybe?
     struct rdma_cm_id *cm_client_id; // maybe
 //    struct ibv_qp *client_qp;
