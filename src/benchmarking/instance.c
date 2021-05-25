@@ -150,6 +150,7 @@ void* start_instance(void *arguments) {
 
             returned = receive_response(&conn);
             check(returned < 0, ops, "Failed to get receive response, returned = %d \n", returned);
+            pr_debug("returned %d\n", returned);
         }
 
         gettimeofday(ops[count].end, NULL);
