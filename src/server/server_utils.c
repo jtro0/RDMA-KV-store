@@ -298,13 +298,17 @@ int send_response_to_client(struct client_info *client) {
 }
 
 struct request *get_current_request(struct client_info *client) {
+    struct request *request;
     switch (client->type) {
         case TCP:
         case RC:
         case UC:
             return &client->request[client->request_count];
         case UD:
-            return &client->ud_client->ud_server->request[client->ud_client->ud_server->request_count].request;
+            pthread_rwlock_rdlock(&client->ud_client->ud_server->lock);
+            request =  &client->ud_client->ud_server->request[client->ud_client->ud_server->request_count].request;
+            pthread_rwlock_unlock(&client->ud_client->ud_server->lock);
+            return request;
     }
 }
 
@@ -316,9 +320,9 @@ void ready_for_next_request(struct client_info *client) {
             client->request_count = (client->request_count + 1) % REQUEST_BACKLOG;
             break;
         case UD:
-            pthread_mutex_lock(&client->ud_client->ud_server->lock);
+            pthread_rwlock_wrlock(&client->ud_client->ud_server->lock);
             client->ud_client->ud_server->request_count = ((client->ud_client->ud_server->request_count + 1) % (REQUEST_BACKLOG*MAX_CLIENTS));
-            pthread_mutex_unlock(&client->ud_client->ud_server->lock);
+            pthread_rwlock_unlock(&client->ud_client->ud_server->lock);
 
             break;
     }
