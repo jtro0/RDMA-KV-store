@@ -316,7 +316,7 @@ void ready_for_next_request(struct client_info *client) {
             client->request_count = (client->request_count + 1) % REQUEST_BACKLOG;
             break;
         case UD:
-            client->ud_client->ud_server->request_count = (client->ud_client->ud_server->request_count + 1) % REQUEST_BACKLOG;
+            client->ud_client->ud_server->request_count = (client->ud_client->ud_server->request_count + 1) % REQUEST_BACKLOG*MAX_CLIENTS;
             break;
     }
 }
