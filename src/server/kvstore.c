@@ -21,11 +21,11 @@ int set_request(struct client_info *client, struct request *request, struct resp
     hash_item_t *item = get_key_entry(request->key, request->key_len);
 
     if (pthread_rwlock_trywrlock(&item->rwlock) != 0) {
-        char *trash = malloc(expected_len);
-        read_payload(client, request, expected_len, trash);
+//        char *trash = malloc(expected_len);
+//        read_payload(client, request, expected_len, trash);
         check_payload(client->tcp_client->socket_fd, request, expected_len);
         response->code = KEY_ERROR;
-        free(trash);
+//        free(trash);
 
         return -1;
     }
