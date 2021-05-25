@@ -9,6 +9,7 @@
  *          atrivedi@apache.org
  */
 
+#include <sys/time.h>
 #include "rdma_common.h"
 
 void show_rdma_cmid(struct rdma_cm_id *id) {
@@ -151,6 +152,50 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
         check(ret < 0, ret, "Failed to poll cq for wc due to %d \n", ret);
         total_wc += ret;
     } while (total_wc < max_wc);
+    pr_debug("%d WC are completed \n", total_wc);
+    /* Now we check validity and status of I/O work completions */
+    for (i = 0; i < total_wc; i++) {
+        if (wc[i].status != IBV_WC_SUCCESS) {
+            error("Work completion (WC) has error status: %s at index %d",
+                  ibv_wc_status_str(wc[i].status), i);
+            /* return negative value */
+            return -(wc[i].status);
+        }
+    }
+    /* Similar to connection management events, we need to acknowledge CQ events */
+//    ibv_ack_cq_events(cq_ptr,
+//                      1 /* we received one event notification. This is not
+//		       number of WC elements */);
+    return total_wc;
+}
+
+int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc,
+                                   struct ibv_cq *cq_ptr) {
+//    struct ibv_cq *cq_ptr = NULL;
+    void *context = NULL;
+    int ret = -1, i, total_wc = 0;
+
+    struct timeval time;
+    unsigned long start_time_msec, current_time_msec;
+
+    gettimeofday(&time, NULL);
+    start_time_msec = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+
+    /* We got notification. We reap the work completion (WC) element. It is
+ * unlikely but a good practice it write the CQ polling code that
+    * can handle zero WCs. ibv_poll_cq can return zero. Same logic as
+    * MUTEX conditional variables in pthread programming.
+ */
+    total_wc = 0;
+    do {
+        ret = ibv_poll_cq(cq_ptr /* the CQ, we got notification for */,
+                          max_wc - total_wc /* number of remaining WC elements*/,
+                          wc + total_wc/* where to store */);
+        check(ret < 0, ret, "Failed to poll cq for wc due to %d \n", ret);
+        total_wc += ret;
+        gettimeofday(&time, NULL);
+        current_time_msec = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+    } while (total_wc < max_wc && ((current_time_msec - start_time_msec) < MAX_POLL_CQ_TIMEOUT));
     pr_debug("%d WC are completed \n", total_wc);
     /* Now we check validity and status of I/O work completions */
     for (i = 0; i < total_wc; i++) {

@@ -143,11 +143,14 @@ void* start_instance(void *arguments) {
 
         gettimeofday(ops[count].start, NULL);
 
-        returned = send_request(&conn);
-        check(returned, ops, "Failed to get send request, returned = %d \n", returned);
+        returned = 0;
+        while (returned == 0) {
+            returned = send_request(&conn);
+            check(returned, ops, "Failed to get send request, returned = %d \n", returned);
 
-        returned = receive_response(&conn);
-        check(returned, ops, "Failed to get receive response, returned = %d \n", returned);
+            returned = receive_response(&conn);
+            check(returned < 0, ops, "Failed to get receive response, returned = %d \n", returned);
+        }
 
         gettimeofday(ops[count].end, NULL);
 

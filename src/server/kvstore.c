@@ -46,6 +46,8 @@ int set_request(struct client_info *client, struct request *request, struct resp
         response->code = OK;
         pr_debug("Everything is good, sent response\n");
         pthread_rwlock_unlock(&item->rwlock);
+        pr_debug("pthread\n");
+
     }
     return 0;
 }
