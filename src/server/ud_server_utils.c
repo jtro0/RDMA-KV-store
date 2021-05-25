@@ -57,35 +57,35 @@ int init_ud_server(struct server_info *server) {
 
 
 
-    /* Now we need a completion channel, were the I/O completion
- * notifications are sent. Remember, this is different from connection
- * management (CM) event notifications.
- * A completion channel is also tied to an RDMA device, hence we will
- * use cm_client_id->verbs.
- */
-    server->ud_server_info->io_completion_channel_send = ibv_create_comp_channel(context);
-    check(!server->ud_server_info->io_completion_channel_send, -errno,
-          "Failed to create an I/O completion event channel, %d\n",
-          -errno);
-
-    pr_debug("An I/O completion event channel is created at %p \n",
-             server->ud_server_info->io_completion_channel_send);
-
-    server->ud_server_info->ud_send_cq = ibv_create_cq(context /* which device*/,
-                                                  CQ_CAPACITY /* maximum capacity*/,
-                                                  NULL /* user context, not used here */,
-                                                  server->ud_server_info->io_completion_channel_send /* which IO completion channel */,
-                                                  0 /* signaling vector, not used here*/);
-    check(!server->ud_server_info->ud_send_cq, -errno, "Failed to create a completion queue (cq), errno: %d\n",
-          -errno);
-
-    pr_debug("Completion queue (CQ) is created at %p with %d elements \n",
-             server->ud_server_info->ud_send_cq, server->ud_server_info->ud_send_cq->cqe);
-    /* Ask for the event for all activities in the completion queue*/
-    ret = ibv_req_notify_cq(server->ud_server_info->ud_send_cq /* on which CQ */,
-                            0 /* 0 = all event type, no filter*/);
-    check(ret, -errno, "Failed to request notifications on CQ errno: %d \n",
-          -errno);
+//    /* Now we need a completion channel, were the I/O completion
+// * notifications are sent. Remember, this is different from connection
+// * management (CM) event notifications.
+// * A completion channel is also tied to an RDMA device, hence we will
+// * use cm_client_id->verbs.
+// */
+//    server->ud_server_info->io_completion_channel_send = ibv_create_comp_channel(context);
+//    check(!server->ud_server_info->io_completion_channel_send, -errno,
+//          "Failed to create an I/O completion event channel, %d\n",
+//          -errno);
+//
+//    pr_debug("An I/O completion event channel is created at %p \n",
+//             server->ud_server_info->io_completion_channel_send);
+//
+//    server->ud_server_info->ud_send_cq = ibv_create_cq(context /* which device*/,
+//                                                  CQ_CAPACITY /* maximum capacity*/,
+//                                                  NULL /* user context, not used here */,
+//                                                  server->ud_server_info->io_completion_channel_send /* which IO completion channel */,
+//                                                  0 /* signaling vector, not used here*/);
+//    check(!server->ud_server_info->ud_send_cq, -errno, "Failed to create a completion queue (cq), errno: %d\n",
+//          -errno);
+//
+//    pr_debug("Completion queue (CQ) is created at %p with %d elements \n",
+//             server->ud_server_info->ud_send_cq, server->ud_server_info->ud_send_cq->cqe);
+//    /* Ask for the event for all activities in the completion queue*/
+//    ret = ibv_req_notify_cq(server->ud_server_info->ud_send_cq /* on which CQ */,
+//                            0 /* 0 = all event type, no filter*/);
+//    check(ret, -errno, "Failed to request notifications on CQ errno: %d \n",
+//          -errno);
 
 
     pr_info("Been here\n");
@@ -102,7 +102,7 @@ int init_ud_server(struct server_info *server) {
     server->ud_server_info->qp_init_attr.qp_type = IBV_QPT_UD; /* QP type, UD = Unreliable datagram */
     /* We use same completion queue, but one can use different queues */
     server->ud_server_info->qp_init_attr.recv_cq = server->ud_server_info->ud_recv_cq; /* Where should I notify for receive completion operations */
-    server->ud_server_info->qp_init_attr.send_cq = server->ud_server_info->ud_send_cq; /* Where should I notify for send completion operations */
+    server->ud_server_info->qp_init_attr.send_cq = server->ud_server_info->ud_recv_cq; /* Where should I notify for send completion operations */
     /*Lets create a QP */
 //    ret = rdma_create_qp(server->ud_server_info->cm_client_id /* which connection id TODO look here this is not needed*/,
 //                         server->ud_server_info->pd /* which protection domain*/,
@@ -245,13 +245,13 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
     }
     pr_info("Sent qp attributes to client %d\n", server->ud_server_info->client_counter);
 
-    struct ibv_ah_attr ah_attr;
-    bzero(&ah_attr, sizeof ah_attr);
-    ah_attr.dlid = server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter].lid;
-    ah_attr.port_num = IB_PHYS_PORT;
-
-    client->ud_client->ah = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
-    check(!client->ud_client->ah, -1, "Could not create AH from the info given\n", NULL)
+//    struct ibv_ah_attr ah_attr;
+//    bzero(&ah_attr, sizeof ah_attr);
+//    ah_attr.dlid = server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter].lid;
+//    ah_attr.port_num = IB_PHYS_PORT;
+//
+//    client->ud_client->ah = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
+//    check(!client->ud_client->ah, -1, "Could not create AH from the info given\n", NULL)
 //    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, client->ud_client->wc, 1, client->ud_client->ud_server->ud_cq);
 
     server->ud_server_info->client_counter++;
@@ -296,7 +296,7 @@ int ud_send_response(struct client_info *client) {
 
     ret = ud_post_send(sizeof(struct response), client->ud_client->response_mr->lkey, 0, client->ud_client->ud_server->ud_qp, client->response,
                         client->ud_client->ah, client->ud_client->remote_dgram_qp_attr->qpn);
-    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel_send, &wc, 1, client->ud_client->ud_server->ud_send_cq);
+    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel_recv, &wc, 1, client->ud_client->ud_server->ud_recv_cq);
     check(ret < 0, -errno, "Failed to send response: %d\n", ret);
     return ret;
 }
