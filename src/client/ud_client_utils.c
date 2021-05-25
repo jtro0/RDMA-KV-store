@@ -235,10 +235,10 @@ int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
 
     int client_nr;
     if (strcmp(key, "boo") == 0) {
-        client_nr = 1;
+        client_nr = 0;
     }
     else {
-        client_nr = 2;
+        client_nr = 1;
     }
 
     ret = ud_prepare_client(server_conn);
