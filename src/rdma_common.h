@@ -55,7 +55,7 @@
 
 #define IB_PHYS_PORT 1			// HERD, Primary physical port number for qps
 
-#define MAX_POLL_CQ_TIMEOUT 500
+#define MAX_POLL_CQ_TIMEOUT 1000
 /*
  * We use attribute so that compiler does not step in and try to pad the structure.
  * We use this structure to exchange information between the server and the client.
