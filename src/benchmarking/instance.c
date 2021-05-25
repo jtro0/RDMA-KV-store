@@ -29,6 +29,7 @@ void make_get_request(struct client_to_server_conn *conn, int count) {
     sprintf(request->key, "Key from instance %d count %d", conn->instance_nr, count);
     request->key_len = strlen(request->key);
     request->msg_len = 0;
+    request->client_id = conn->instance_nr;
 }
 
 void make_set_request(struct client_to_server_conn *conn, int count) {
@@ -51,6 +52,7 @@ void make_set_request(struct client_to_server_conn *conn, int count) {
     request->key_len = strlen(request->key);
     sprintf(request->msg, "Message from instance %d count %d", conn->instance_nr, count);
     request->msg_len = strlen(request->msg);
+    request->client_id = conn->instance_nr;
 }
 
 void make_expected_response(struct response *response, struct request *made_request, int count) {
