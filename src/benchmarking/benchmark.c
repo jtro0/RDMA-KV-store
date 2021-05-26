@@ -44,15 +44,15 @@ int data_processing(struct operation *ops, int client_number) {
     struct operation first = ops[count];
     struct operation last = first;
 
-    char *file_name = malloc(28* sizeof(char));
-    snprintf(file_name, 28,"benchmarking/client_%d.csv", client_number);
+    char *file_name = malloc(30* sizeof(char));
+    snprintf(file_name, 30,"./benchmarking/client_%d.csv", client_number);
     char *suffix = &file_name[strlen(file_name)-4];
     if (strncmp(".csv", suffix, 4) != 0) {
         fprintf(stderr, "File name is not correct!\n");
         exit(EXIT_FAILURE);
     }
 
-    FILE *file = fopen(file_name, "w");
+    FILE *file = fopen(file_name, "w+");
     if (file == NULL) {
         fprintf(stderr, "Could not open file!\n");
         exit(EXIT_FAILURE);
