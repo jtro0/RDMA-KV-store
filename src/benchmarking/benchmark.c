@@ -7,11 +7,12 @@
 #include "instance.h"
 #include <sys/time.h>
 
-enum connection_type connectionType;
+enum connection_type connectionType = TCP;
 int debug = 0;
 int verbose = 0;
 int num_ops = 1000000;
 int override = 0;
+int clients = 1;
 
 void usage() {
     printf("Usage:\n");
@@ -44,8 +45,8 @@ int data_processing(struct operation *ops, int client_number) {
     struct operation first = ops[count];
     struct operation last = first;
 
-    char *file_name = malloc(30* sizeof(char));
-    snprintf(file_name, 30,"./benchmarking/client_%d.csv", client_number);
+    char *file_name = malloc(255* sizeof(char));
+    snprintf(file_name, 255,"./benchmarking/%s_%d_client_%d_%d.csv", connection_type_to_str(connectionType), clients, client_number, num_ops);
     char *suffix = &file_name[strlen(file_name)-4];
     if (strncmp(".csv", suffix, 4) != 0) {
         fprintf(stderr, "File name is not correct!\n");
@@ -82,12 +83,11 @@ int data_processing(struct operation *ops, int client_number) {
 }
 
 int main(int argc, char *argv[]) {
-    int ret, clients = 1;
+    int ret;
     struct sockaddr_in server_sockaddr;
     bzero(&server_sockaddr, sizeof server_sockaddr);
     server_sockaddr.sin_family = AF_INET;
     server_sockaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    connectionType = RC;
 
     const struct option long_options[] = {
             {"help", no_argument,       NULL, 'h'},

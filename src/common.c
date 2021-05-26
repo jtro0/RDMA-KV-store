@@ -42,6 +42,18 @@ const char *method_to_str(enum method code) {
     return "UNK";
 }
 
+const char *connection_type_to_str(enum connection_type type) {
+    const size_t nconnection_types = sizeof(connection_type_conversion) /
+                                     sizeof(connection_type_conversion[0]);
+    size_t i;
+    for (i = 0; i < nconnection_types; i++) {
+        if (connection_type_conversion[i].type == type) {
+            return connection_type_conversion[i].str;
+        }
+    }
+    return "TCP";
+}
+
 void print_request(struct request *request) {
     pr_info("Request:\nMethod: %s\nKey: %s\nKey_len: %zu\nMessage_len: %zu\nConnection_closed: %d\nMsg: %s\n",
             method_to_str(request->method), request->key, request->key_len, request->msg_len,
