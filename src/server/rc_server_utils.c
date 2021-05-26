@@ -5,7 +5,7 @@
 #include "rc_server_utils.h"
 #include "rdma_common.h"
 
-int setup_client_resources(struct rc_client_connection *client) {
+int setup_rc_client_resources(struct rc_client_connection *client) {
     int ret = -1;
     check(!client->cm_client_id, -EINVAL, "Client id is still NULL\n", -EINVAL);
 
@@ -154,7 +154,7 @@ int rc_accept_new_connection(struct server_info *server, struct client_info *cli
     client->rc_client->cm_client_id = cm_event->id;
 
     pr_debug("setting client resources\n");
-    setup_client_resources(client->rc_client);
+    setup_rc_client_resources(client->rc_client);
 
     /* now we acknowledge the event. Acknowledging the event free the resources
      * associated with the event structure. Hence any reference to the event

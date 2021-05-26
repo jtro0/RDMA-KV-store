@@ -18,6 +18,7 @@
 
 #include "tcp_server_utils.h"
 #include "rc_server_utils.h"
+#include "ud_server_utils.h"
 
 int debug = 0;
 int verbose = 0;
@@ -107,6 +108,8 @@ struct server_info *server_init(int argc, char *argv[]) {
         case UC:
             break;
         case UD:
+            connInfo->ud_server_info = calloc(1, sizeof(struct ud_server_info));
+            init_ud_server(connInfo);
             break;
     }
 
@@ -130,6 +133,8 @@ int accept_new_connection(struct server_info *server, struct client_info *client
         case UC:
             break;
         case UD:
+            client->ud_client = malloc(sizeof(struct ud_client_connection));
+            ret = ud_accept_new_connection(server, client);
             break;
     }
     if (ret < 0) {
@@ -146,8 +151,8 @@ void close_connection(int socket) {
 
 
 // TODO Ask if it is better to have it wait for the prev request to be done or to alloc/reg new request
-int ready_for_next_request(struct client_info *client) {
-    pr_info("ready to receive request %d\n", client->request_count);
+int prepare_for_next_request(struct client_info *client) {
+    pr_info("client %d: ready to receive request %d\n", client->client_nr, client->request_count);
 
     int ret = 0;
     switch (client->type) {
@@ -159,6 +164,7 @@ int ready_for_next_request(struct client_info *client) {
         case UC:
             break;
         case UD:
+//            ret = ud_post_receive_request(client->ud_client->ud_server);
             break;
     }
     check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", client->request_count, ret);
@@ -189,6 +195,7 @@ int receive_header(struct client_info *client) {
         }
         return 1;
     }
+    pr_info("client %d: receiving header\n", client->client_nr);
     switch (client->type) {
         case TCP:
             if (connection_ready(client->tcp_client->socket_fd) == -1) {
@@ -203,6 +210,7 @@ int receive_header(struct client_info *client) {
         case UC:
             break;
         case UD:
+            recved = ud_receive_header(client);
             break;
     }
 
@@ -221,8 +229,12 @@ struct request *recv_request(struct client_info *client) {
         pr_info("No header received\n");
         return NULL;
     }
+    struct request *current = get_current_request(client);
+    if (client->type == UD) {
+        client->ud_client->client_handling = current->client_id;
+    }
     request_dispatcher(client);
-    return &client->request[client->request_count];
+    return current;
 }
 
 /**
@@ -279,7 +291,51 @@ int send_response_to_client(struct client_info *client) {
         case UC:
             break;
         case UD:
+            ret = ud_send_response(client);
             break;
     }
     return ret;
+}
+
+struct request *get_current_request(struct client_info *client) {
+    struct request *request;
+    switch (client->type) {
+        case TCP:
+        case RC:
+        case UC:
+            return &client->request[client->request_count];
+        case UD:
+            pthread_rwlock_rdlock(&client->ud_client->ud_server->lock);
+            request =  &client->ud_client->ud_server->request[client->ud_client->ud_server->request_count].request;
+            pthread_rwlock_unlock(&client->ud_client->ud_server->lock);
+            return request;
+    }
+}
+
+void ready_for_next_request(struct client_info *client) {
+    switch (client->type) {
+        case TCP:
+        case RC:
+        case UC:
+            client->request_count = (client->request_count + 1) % REQUEST_BACKLOG;
+            break;
+        case UD:
+            pthread_rwlock_wrlock(&client->ud_client->ud_server->lock);
+            ud_post_receive_request(client->ud_client->ud_server);
+            client->ud_client->ud_server->request_count = ((client->ud_client->ud_server->request_count + 1) % (MAX_CLIENTS));
+            pthread_rwlock_unlock(&client->ud_client->ud_server->lock);
+
+            break;
+    }
+}
+
+bool is_connection_closed(struct client_info *client) {
+    switch (client->type) {
+        case TCP:
+        case RC:
+        case UC:
+            return client->request->connection_close;
+        case UD:
+            return client->ud_client->ud_server->request->request.connection_close;
+    }
 }

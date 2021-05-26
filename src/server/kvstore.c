@@ -21,11 +21,11 @@ int set_request(struct client_info *client, struct request *request, struct resp
     hash_item_t *item = get_key_entry(request->key, request->key_len);
 
     if (pthread_rwlock_trywrlock(&item->rwlock) != 0) {
-        char *trash = malloc(expected_len);
-        read_payload(client, request, expected_len, trash);
-        check_payload(client->tcp_client->socket_fd, request, expected_len);
+//        char *trash = malloc(expected_len);
+//        read_payload(client, request, expected_len, trash);
+//        check_payload(client->tcp_client->socket_fd, request, expected_len);
         response->code = KEY_ERROR;
-        free(trash);
+//        free(trash);
 
         return -1;
     }
@@ -46,6 +46,8 @@ int set_request(struct client_info *client, struct request *request, struct resp
         response->code = OK;
         pr_debug("Everything is good, sent response\n");
         pthread_rwlock_unlock(&item->rwlock);
+        pr_debug("pthread\n");
+
     }
     return 0;
 }
@@ -83,12 +85,13 @@ void *main_job(void *arg) {
 //            inet_ntoa(client->addr.sin_addr),
 //            ntohs(client->addr.sin_port));
     do {
-        ready_for_next_request(client);
+        prepare_for_next_request(client);
         struct request *request = recv_request(client);
-        client->request_count = (client->request_count + 1) % REQUEST_BACKLOG;
+        if (request->method != UNK)
+            ready_for_next_request(client);
 
         bzero(client->response, sizeof(struct response));
-        pr_info("request count %d\n", client->request_count);
+        pr_info("client %d: request count %d\n", client->client_nr, client->ud_client->ud_server->request_count);
         switch (request->method) {
             case SET:
                 pr_info("set\n");
@@ -110,7 +113,7 @@ void *main_job(void *arg) {
         }
 
         send_response_to_client(client);
-    } while (!client->request->connection_close);
+    } while (!is_connection_closed(client));
 
     close_connection(client->tcp_client->socket_fd);
     free(client->request);
@@ -139,27 +142,31 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    int client_nr = 0;
     for (;;) {
 //    struct client_info *new_client =
 //            calloc(1, sizeof(struct client_info));
         pr_info("New client\n");
         struct client_info *client = malloc(sizeof(struct client_info));
 //        client = malloc(sizeof(struct client_info));
+        // TODO: put this in connection specific (UD doesnt need)
         client->request = calloc(REQUEST_BACKLOG, sizeof(struct request));
         client->response = malloc(sizeof(struct response));
         client->request_count = 0;
         client->type = server_connection->type;
         client->is_test = server_connection->is_test;
+        client->client_nr = client_nr;
+        client_nr++;
         pr_info("Accepting new connection\n");
         if (accept_new_connection(server_connection, client) < 0) {
             pr_info("no new connection");
             continue;
-            return 0;
+//            return 0;
         }
         pthread_t thread_id;
         printf("Before Thread\n");
         pthread_create(&thread_id, NULL, main_job, client);
-//        main_job(server_info);
+//        main_job(client);
     }
 //    void *ret;
 //    if (pthread_join(thread_id, &ret) != 0) {

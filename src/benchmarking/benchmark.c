@@ -11,6 +11,7 @@ enum connection_type connectionType;
 int debug = 0;
 int verbose = 0;
 int num_ops = 1000000;
+int override = 0;
 
 void usage() {
     printf("Usage:\n");
@@ -72,7 +73,7 @@ int main(int argc, char *argv[]) {
     for (;;) {
         int option_index = 0;
         int c;
-        c = getopt_long(argc, argv, "a:p:n:r:hdv", long_options,
+        c = getopt_long(argc, argv, "a:p:n:r:hdvot", long_options,
                         &option_index);
         if (c == -1)
             break;
@@ -111,6 +112,9 @@ int main(int argc, char *argv[]) {
             case 'd':
                 debug = 1;
                 break;
+            case 't':
+                override = 1;
+                break;
             case 'h':
             default:
                 usage();
@@ -133,6 +137,10 @@ int main(int argc, char *argv[]) {
         args.conn_t = connectionType;
         args.server_addr = &server_sockaddr;
         args.num_ops = num_ops;
+        if (override)
+            args.instance_nr = 1;
+        else
+            args.instance_nr = i;
 
         ret = pthread_create(&threads[i], NULL, &start_instance, &args);
         if (ret != 0) {

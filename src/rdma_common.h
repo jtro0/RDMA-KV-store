@@ -43,14 +43,19 @@
 #endif /* ACN_RDMA_DEBUG */
 
 /* Capacity of the completion queue (CQ) */
-#define CQ_CAPACITY (16)
+//#define CQ_CAPACITY (16)
+#define CQ_CAPACITY (1025) // HERD
 /* MAX SGE capacity */
 #define MAX_SGE (2)
 /* MAX work requests */
-#define MAX_WR (8)
+//#define MAX_WR (8)
+#define MAX_WR (1024) // HERD TODO check how this affects stuff
 /* Default port where the RDMA server is listening */
 #define DEFAULT_RDMA_PORT (20886)
 
+#define IB_PHYS_PORT 1			// HERD, Primary physical port number for qps
+
+#define MAX_POLL_CQ_TIMEOUT 1000
 /*
  * We use attribute so that compiler does not step in and try to pad the structure.
  * We use this structure to exchange information between the server and the client.
@@ -66,6 +71,26 @@ struct __attribute((packed)) rdma_buffer_attr {
         /* if we receive, we call it remote stag */
         uint32_t remote_stag;
     } stag;
+    uint32_t rkey;
+};
+
+struct qp_attr {
+    uint64_t gid_global_interface_id;	// Store the gid fields separately because I
+    uint64_t gid_global_subnet_prefix; 	// don't like unions. Needed for RoCE only
+
+    int lid;							// A queue pair is identified by the local id (lid)
+    int qpn;							// of the device port and its queue pair number (qpn)
+    int psn;
+};
+
+struct ud_request {
+    char grh[40];
+    struct request request;
+};
+
+struct ud_response {
+    char grh[40];
+    struct response response;
 };
 
 /* resolves a given destination name to sin_addr */
@@ -126,12 +151,17 @@ void rdma_buffer_deregister(struct ibv_mr *mr);
  */
 int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct ibv_wc *wc, int max_wc,
                                    struct ibv_cq *cq_ptr);
-
+int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc,
+                                                struct ibv_cq *cq_ptr);
 /* prints some details from the cm id */
 void show_rdma_cmid(struct rdma_cm_id *id);
 
 int post_recieve(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf);
 
 int post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf);
-
+int
+ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf, struct ibv_ah *ah, uint32_t qpn);
+int ud_set_init_qp(struct ibv_qp *qp);
+int ud_set_rts_qp(struct ibv_qp *qp, int psn);
+uint16_t get_local_lid(struct ibv_context *context);
 #endif //RDMA_KV_STORE_RDMA_COMMON_H
