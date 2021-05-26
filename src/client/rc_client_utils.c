@@ -195,7 +195,7 @@ int rc_receive_response(struct rc_server_conn *server_conn, struct response *res
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 
-    return 0;
+    return ret;
 }
 
 /* This function disconnects the RDMA connection from the server and cleans up
