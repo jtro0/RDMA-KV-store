@@ -15,7 +15,7 @@ int override = 0;
 
 void usage() {
     printf("Usage:\n");
-    printf("RDMA KV Store Benchmark: [-a <server_addr>] [-p <server_port>] [-n <number of clients>] [-r <rc,uc,ud>] [-d] [-v]\n");
+    printf("RDMA KV Store Benchmark: [-a <server_addr>] [-p <server_port>] [-n <number of clients>] [-r <rc,uc,ud>] [-d] [-v] [-o <number of operations per client>]\n");
     printf("(default uses 1 client and server with IP 127.0.0.1, using tcp, and port is %d)\n", PORT);
     exit(1);
 }
@@ -43,13 +43,40 @@ int data_processing(struct operation *ops, int client_number) {
     int count = 0;
     struct operation first = ops[count];
     struct operation last = first;
+
+    char *file_name = malloc(28* sizeof(char));
+    snprintf(file_name, 28,"benchmarking/client_%d.csv", client_number);
+    char *suffix = &file_name[strlen(file_name)-4];
+    if (strncmp(".csv", suffix, 4) != 0) {
+        fprintf(stderr, "File name is not correct!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    FILE *file = fopen(file_name, "w");
+    if (file == NULL) {
+        fprintf(stderr, "Could not open file!\n");
+        exit(EXIT_FAILURE);
+    }
+    fprintf(file, "start_sec, start_usec, end_sec, end_usec, diff_sec, diff_usec\n");
+
     while (count < num_ops) {
-        struct operation op = ops[count++];
+        struct operation op = ops[count];
+        if (op.start == NULL || op.end == NULL) {
+            break;
+        }
+        struct timeval *time_taken = malloc(sizeof(struct timeval));
+        timersub(op.end, op.start, time_taken);
+
+        fprintf(file, "%ld, %ld, %ld, %ld, %ld, %ld\n", op.start->tv_sec, op.start->tv_usec, op.end->tv_sec, op.end->tv_usec, time_taken->tv_sec, time_taken->tv_usec);
+
+        count++;
         last = op;
     }
 
-    double ops_sec = process_ops_sec(first.start, last.end, num_ops);
-    printf("Client %d did %d operations at a speed of %f ops/sec\n", client_number, num_ops, ops_sec);
+    double ops_sec = process_ops_sec(first.start, last.end, count);
+    printf("Client %d did %d operations at a speed of %f ops/sec\n", client_number, count, ops_sec);
+
+    fclose(file);
 
     return 0;
 }
@@ -67,13 +94,14 @@ int main(int argc, char *argv[]) {
             {"port", required_argument, NULL, 'p'},
             {"clients",  required_argument, NULL, 'n'},
             {"rdma", required_argument, NULL, 'r'},
+            {"ops", required_argument, NULL, 'o'},
             {0, 0, 0,                         0}
     };
 
     for (;;) {
         int option_index = 0;
         int c;
-        c = getopt_long(argc, argv, "a:p:n:r:hdvot", long_options,
+        c = getopt_long(argc, argv, "a:p:n:r:hdvo", long_options,
                         &option_index);
         if (c == -1)
             break;
@@ -112,8 +140,8 @@ int main(int argc, char *argv[]) {
             case 'd':
                 debug = 1;
                 break;
-            case 't':
-                override = 1;
+            case 'o':
+                num_ops = strtol(optarg, NULL, 0);
                 break;
             case 'h':
             default:
