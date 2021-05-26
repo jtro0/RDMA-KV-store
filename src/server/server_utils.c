@@ -301,12 +301,12 @@ struct request *get_current_request(struct client_info *client) {
     struct request *request;
     switch (client->type) {
         case TCP:
-        case RC:
         case UC:
+        case RC:
             return &client->request[client->request_count];
         case UD:
             pthread_rwlock_rdlock(&client->ud_client->ud_server->lock);
-            request =  &client->ud_client->ud_server->request[client->ud_client->ud_server->request_count].request;
+            request = &client->ud_client->ud_server->request[client->ud_client->ud_server->request_count].request;
             pthread_rwlock_unlock(&client->ud_client->ud_server->lock);
             return request;
     }

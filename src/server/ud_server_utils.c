@@ -72,7 +72,7 @@ int init_ud_server(struct server_info *server) {
              server->ud_server_info->io_completion_channel_send);
 
     server->ud_server_info->ud_send_cq = ibv_create_cq(context /* which device*/,
-                                                  CQ_CAPACITY /* maximum capacity*/,
+                                                  MAX_CLIENTS+1 /* maximum capacity*/,
                                                   NULL /* user context, not used here */,
                                                   server->ud_server_info->io_completion_channel_send /* which IO completion channel */,
                                                   0 /* signaling vector, not used here*/);
@@ -96,9 +96,9 @@ int init_ud_server(struct server_info *server) {
     pr_info("Am here\n");
 
     server->ud_server_info->qp_init_attr.cap.max_recv_sge = MAX_SGE; /* Maximum SGE per receive posting */
-    server->ud_server_info->qp_init_attr.cap.max_recv_wr = MAX_WR; /* Maximum receive posting capacity */
+    server->ud_server_info->qp_init_attr.cap.max_recv_wr = MAX_CLIENTS; /* Maximum receive posting capacity */
     server->ud_server_info->qp_init_attr.cap.max_send_sge = MAX_SGE; /* Maximum SGE per send posting */
-    server->ud_server_info->qp_init_attr.cap.max_send_wr = MAX_WR; /* Maximum send posting capacity */
+    server->ud_server_info->qp_init_attr.cap.max_send_wr = MAX_CLIENTS; /* Maximum send posting capacity */
     server->ud_server_info->qp_init_attr.qp_type = IBV_QPT_UD; /* QP type, UD = Unreliable datagram */
     /* We use same completion queue, but one can use different queues */
     server->ud_server_info->qp_init_attr.recv_cq = server->ud_server_info->ud_recv_cq; /* Where should I notify for receive completion operations */
