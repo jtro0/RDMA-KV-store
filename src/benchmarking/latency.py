@@ -1,0 +1,49 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import util
+import sys
+
+filenames = util.get_all_csv()
+
+type_arg = str(sys.argv[1])
+number_clients_arg = int(sys.argv[2])
+    
+plt.figure(figsize=(8,6), dpi=100)    
+
+for filename in filenames:
+    type, number_clients, client_number, number_ops = util.get_parts(filename)
+    
+    if (type_arg != type) or (number_clients_arg != number_clients):
+        continue
+    
+    df = pd.read_csv(filename)
+    
+    if client_number == 0:
+        first_sec = df[:1]["start_sec"]
+        first_usec = df[:1][" start_usec"]
+    elif client_number == 9:
+        last_sec = df.tail(1)[" end_sec"]
+        last_usec = df.tail(1)[" end_usec"]
+        
+    current_first_sec = df.head(1)["start_sec"].at[0]
+    current_first_usec = df.head(1)[" start_usec"].at[0]
+    current_last_sec = df.tail(1)[" end_sec"].at[len(df.index)-1]
+    current_last_usec = df.tail(1)[" end_usec"].at[len(df.index)-1]
+    
+    time_taken_sec = util.calc_time_difference_sec(current_first_sec, current_first_usec, current_last_sec, current_last_usec)
+    
+    latency_msec = util.time_in_msec(df[" diff_sec"], df[" diff_usec"])
+    
+    ops_per_sec = len(df.index) / time_taken_sec
+    
+    plot_label = 'Client %(id)d: %(ops)d ops/sec' % {"id":client_number, "ops":ops_per_sec}
+    
+    plt.plot(latency_msec.index, latency_msec, label=plot_label)
+
+plt.title("RC connection, 10 clients, 1 million operations per client: Latency per client")
+plt.legend(loc="upper left", bbox_to_anchor=(1, 0.5))
+plt.xlabel("Operation")
+plt.ylabel("Latency (ms)")
+plt.show
+
