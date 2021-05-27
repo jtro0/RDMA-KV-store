@@ -40,7 +40,7 @@ int init_ud_server(struct server_info *server) {
      * is called "work" ;)
      */
     server->ud_server_info->ud_recv_cq = ibv_create_cq(context /* which device*/,
-                               CQ_CAPACITY /* maximum capacity*/,
+                               MAX_CLIENTS+1 /* maximum capacity*/,
                                NULL /* user context, not used here */,
                                                server->ud_server_info->io_completion_channel_recv /* which IO completion channel */,
                                0 /* signaling vector, not used here*/);
