@@ -46,4 +46,6 @@ plt.legend(loc="upper left", bbox_to_anchor=(1, 0.5))
 plt.xlabel("Operation")
 plt.ylabel("Latency (ms)")
 plt.show
+graph_filename = "../../benchmarking/graphs/%(type)s_%(clients)d.png" % {"type":type_arg, "clients":number_clients_arg}
+plt.savefig(graph_filename, dpi=100)
 

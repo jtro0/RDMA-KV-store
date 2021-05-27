@@ -63,6 +63,8 @@ plt.title("Overall throughput per Transport Type")
 plt.legend(loc="upper left", bbox_to_anchor=(1, 0.5))
 plt.xlabel("Number of clients")
 plt.ylabel("Throughput (ops/sec)")
-plt.show
+
+graph_filename = "../../benchmarking/graphs/Throughput_%d.png" % max_clients
+plt.savefig(graph_filename, dpi=100)
 
      
