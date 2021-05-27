@@ -50,7 +50,7 @@ for type in types:
         time_taken_sec = util.calc_time_difference_sec(current_start_sec, current_start_usec, current_end_sec, current_end_usec)
                 
         
-        ops_per_sec = (number_ops*max_clients) / time_taken_sec
+        ops_per_sec = (number_ops*current_number_clients) / time_taken_sec
         if ops_per_sec > 0:
             per_number_client[current_number_clients-1] = ops_per_sec
 
