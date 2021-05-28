@@ -13,7 +13,7 @@ max_clients = int(sys.argv[1])
 
 for type in types:    
     per_number_client = []
-    x_values = {}
+    x_values = set()
 
     for current_number_clients in range(1, max_clients+1):    
         current_start_sec = sys.maxsize
