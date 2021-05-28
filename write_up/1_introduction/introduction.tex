@@ -1,0 +1,51 @@
+
+% this file is called up by thesis.tex
+% content in this file will be fed into the main document
+
+%: ----------------------- introduction file header -----------------------
+\chapter{Introduction}
+
+% the code below specifies where the figures are stored
+\ifpdf
+    \graphicspath{{1_introduction/figures/PNG/}{1_introduction/figures/PDF/}{1_introduction/figures/}}
+\else
+    \graphicspath{{1_introduction/figures/EPS/}{1_introduction/figures/}}
+\fi
+
+% ----------------------------------------------------------------------
+%: ----------------------- introduction content ----------------------- 
+% ----------------------------------------------------------------------
+
+
+
+%: ----------------------- HELP: latex document organisation
+% the commands below help you to subdivide and organise your thesis
+%    \chapter{}       = level 1, top level
+%    \section{}       = level 2
+%    \subsection{}    = level 3
+%    \subsubsection{} = level 4
+% note that everything after the percentage sign is hidden from output
+
+
+
+\section{Context}
+Seemingly ever growing tech giants, such as Facebook, Amazon and Google, require fast, reliable and scalable key-value storage (KV-store) to serve product recommendations, user preferences, and advertisements.
+A KV-store is a data storage type which aims to store many small values and provides a high throughput and low latency interface.
+KV-stores usually offer a simple interface using 3 commands: GET, SET, and DEL. A trivial implementation involves a hash-table which matches the hash value of a given key, to the value associated with that key.
+Past implementations of KV-stores have focussed on improving these underlying data structures.
+For example, Cuckoo and Hopscotch1 \cite{geambasu2010comet} hashing, have presented an alternative of an improved hash table algorithm.
+Nonetheless, with recent developments with RDMA networks, it has become a more attractive method to improve KV-stores.
+
+Remote direct memory access (RDMA) networks have increasingly become more popular in commercial and academic data centers, due to the increase in availability and decrease in cost for RDMA capable network interface cards (RNICs).
+RDMA offers a more direct connection between two machines, by interfacing the memory directly.
+Instead of the operating system (OS) handling the incoming and outgoing packets, RNICs implement this in hardware, requiring no additional help from the OS and CPU. This results in lowering the overall latency and CPU overhead.
+However, making efficient use of such networks requires in-depth knowledge on the hardware constraints which are present in the RNICs and processors\cite{chen2019scalable}.
+
+\section{Objective}
+
+
+\section{Research Question}
+
+\section{Research Method}
+
+ 
