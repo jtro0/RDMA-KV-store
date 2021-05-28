@@ -14,7 +14,7 @@ max_clients = int(sys.argv[1])
 for type in types:    
     per_number_client = []
 
-    x_values = range(1, 11)
+    x_values = list(range(1, 11))
     if max_clients > 10:
         x_values + range(15, max_clients, 5)
 
