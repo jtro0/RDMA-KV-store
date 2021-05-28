@@ -8,10 +8,12 @@ filenames = util.get_all_csv()
 
 types = ["TCP", "RC", "UC", "UD"]
 
+
 max_clients = int(sys.argv[1])
 
 for type in types:    
-    per_number_client = [0]*max_clients
+    per_number_client = []
+    x_values = {}
 
     for current_number_clients in range(1, max_clients+1):    
         current_start_sec = sys.maxsize
@@ -25,7 +27,8 @@ for type in types:
             
             if (type != type_file) or number_clients != current_number_clients:
                 continue
-                        
+
+
             df = pd.read_csv(filename)
                     
             current_first_sec = df.head(1)["start_sec"].at[0]
@@ -52,12 +55,14 @@ for type in types:
         
         ops_per_sec = (number_ops*current_number_clients) / time_taken_sec
         if ops_per_sec > 0:
-            per_number_client[current_number_clients-1] = ops_per_sec
+            per_number_client.append(ops_per_sec)
+            x_values.add(number_clients)
+        # per_number_client[current_number_clients-1] = ops_per_sec
 
         
     if per_number_client:
         plot_label = type
-        plt.plot(range(1, max_clients+1), per_number_client, label=plot_label)
+        plt.plot(x_values, per_number_client, label=plot_label)
     
 plt.title("Overall throughput per Transport Type")
 plt.legend(loc="upper left", bbox_to_anchor=(1, 0.5))
