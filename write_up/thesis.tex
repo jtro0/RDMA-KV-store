@@ -19,7 +19,7 @@
 % Macros help you summarise frequently repeated Latex commands.
 % Here, they are placed in an external file /Latex/Macros/MacroFile1.tex
 % An macro that you may use frequently is the figuremacro (see introduction.tex)
-% \include{Latex/Macros/MacroFile1}
+\include{Latex/Macros/MacroFile1}
 \usepackage[T1]{fontenc}
 \usepackage{array}
 \usepackage{pdfpages}
@@ -50,7 +50,7 @@ Vrije Universiteit Amsterdam
 
 \vspace{1mm}
 
-\includegraphics[height=25mm]{0_frontmatter/figures/vu-griffioen.pdf}
+\includegraphics[height=25mm]{0_frontmatter/figures/vu-griffioen}
 
 \vspace{2cm}
 
@@ -222,6 +222,8 @@ Vrije Universiteit Amsterdam
 \include{5_evaluation/evaluation}
 
 \include{6_related_work/relatedwork}
+
+\include{7_conclusion/conclusion}
 %\include{3_materials&methods/materials_methods}						
 %\include{4_analysis&results/analysis&results}	
 
@@ -249,10 +251,11 @@ Vrije Universiteit Amsterdam
 %\begin{multicols}{2} % \begin{multicols}{ # columns}[ header text][ space]
 %\begin{tiny} % tiny(5) < scriptsize(7) < footnotesize(8) < small (9)
 
-\bibliographystyle{Latex/Classes/PhDbiblio-url2} % Title is link if provided
+%\bibliographystyle{Latex/Classes/PhDbiblio-url2} % Title is link if provided
+\bibliographystyle{plainnat}
 \renewcommand{\bibname}{References} % changes the header; default: Bibliography
 
-\bibliography{7_references/references} % adjust this to fit your BibTex file
+\bibliography{8_references/references} % adjust this to fit your BibTex file
 
 %\end{tiny}
 %\end{multicols}

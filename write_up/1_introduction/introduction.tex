@@ -6,11 +6,11 @@
 \chapter{Introduction}
 
 % the code below specifies where the figures are stored
-\ifpdf
-    \graphicspath{{1_introduction/figures/PNG/}{1_introduction/figures/PDF/}{1_introduction/figures/}}
-\else
-    \graphicspath{{1_introduction/figures/EPS/}{1_introduction/figures/}}
-\fi
+%\ifpdf
+%    \graphicspath{{1_introduction/figures/PNG/}{1_introduction/figures/PDF/}{1_introduction/figures/}}
+%\else
+%    \graphicspath{{1_introduction/figures/EPS/}{1_introduction/figures/}}
+%\fi
 
 % ----------------------------------------------------------------------
 %: ----------------------- introduction content ----------------------- 
@@ -31,25 +31,43 @@
 \section{Context}
 Seemingly ever growing tech giants, such as Facebook, Amazon and Google, require fast, reliable and scalable key-value storage (KV-store) to serve product recommendations, user preferences, and advertisements.
 A KV-store is a data storage type which aims to store many small values and provides a high throughput and low latency interface.
-KV-stores usually offer a simple interface using 3 commands: GET, SET, and DEL. A trivial implementation involves a hash-table which matches the hash value of a given key, to the value associated with that key.
-Past implementations of KV-stores have focussed on improving these underlying data structures.
-For example, Cuckoo and Hopscotch1 \cite{geambasu2010comet} hashing, have presented an alternative of an improved hash table algorithm.
-Nonetheless, with recent developments with RDMA networks, it has become a more attractive method to improve KV-stores.
+KV-stores usually offer a simple interface using 3 commands: GET, SET, and DEL. A trivial implementation makes use of a hash-table which matches the hash value of a given key, to the value associated with that key.
+Past advancements of KV-stores have focussed on improving these underlying data structures.
+For example, Cuckoo and Hopscotch hashing\cite{geambasu2010comet}, have presented an alternative of an improved hash table algorithm.
+Nonetheless, with recent developments with RDMA networks, this has become a more attractive direction to improve KV-stores.
 
 Remote direct memory access (RDMA) networks have increasingly become more popular in commercial and academic data centers, due to the increase in availability and decrease in cost for RDMA capable network interface cards (RNICs).
 RDMA offers a more direct connection between two machines, by interfacing the memory directly.
+
+% Move to background
 Instead of the operating system (OS) handling the incoming and outgoing packets, RNICs implement this in hardware, requiring no additional help from the OS and CPU. This results in lowering the overall latency and CPU overhead.
-However, making efficient use of such networks requires in-depth knowledge on the hardware constraints which are present in the RNICs and processors\cite{chen2019scalable}.
 
-\section{Objective}
+\section{Problem statement}
+Making efficient use of RDMA networks is a difficult task, and requires in-depth knowledge on the hardware constraints present in the RNICs \cite{chen2019scalable}.
+Additionally, in a higher level sense, there are design choices to be made.
+RDMA networks can handle of various transportation types and so-called verbs.
+Each of these have advantage and disadvantages, in general setting, which can be read about in \ref{sec:rdma}.
 
+Furthermore, with the continuous growth of tech giants, an important factor is scalability.
+Some of these design choices impact scalability.
 
 \section{Research Question}
-Which RDMA transportation type is best for RDMA KV-store?
+This paper will explore to what extent RDMA transportation types affect the performance and scalability of KV-store.
+For this, this research will answer the following questions:
 
-How scalable are these transportation types, compared to traditional TCP?
+RQ1: What are the advantages and disadvantages of RDMA transportation types on an KV-store?
+This question aims to apply the already known information on the RDMA transportation types, on a RDMA KV-store specific setting.
+Aiding the design processes of further RDMA KV-store implementation, and possibly related implementations.
+
+RQ2: How scalable are these transportation types?%, compared to traditional TCP?
+This being an important factor for tech giants which make use of RDMA KV-store, and require a system to be scalable and reach multiple clients.
 
 \section{Research Method}
+M1: A KV-store prototype will be implemented, with a flexible network interfacing, to include both socket and RDMA interfacing.
+This implementation can not only be used for this paper, but could also be expanded upon, for example with more advanced KV-store implementations.
+
+M2: To investigate the performance and scalability between the various networking types, macro level benchmark will be designed, with realistic KV-store workloads.
+
 A simple KV-store will be implemented.
 The backend, networking side, will be flexibly implemented to accommodate for the various transportation types.
  
