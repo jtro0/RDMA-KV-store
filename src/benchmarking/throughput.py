@@ -31,7 +31,6 @@ for type in types:
             if (type != type_file) or number_clients != current_number_clients:
                 continue
 
-
             df = pd.read_csv(filename)
                     
             current_first_sec = df.head(1)["start_sec"].at[0]
@@ -58,7 +57,6 @@ for type in types:
         print(ops_per_sec)
         if ops_per_sec > 0:
             per_number_client.append(ops_per_sec)
-            x_values.add(number_clients)
         # per_number_client[current_number_clients-1] = ops_per_sec
 
         
