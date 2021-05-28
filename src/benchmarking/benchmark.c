@@ -46,7 +46,7 @@ int data_processing(struct operation *ops, int client_number) {
     struct operation last = first;
 
     char *file_name = malloc(255* sizeof(char));
-    snprintf(file_name, 255,"./benchmarking/%s_%d_client_%d_%d.csv", connection_type_to_str(connectionType), clients, client_number, num_ops);
+    snprintf(file_name, 255,"./benchmarking/data/cmt2054/%s_%d_client_%d_%d.csv", connection_type_to_str(connectionType), clients, client_number, num_ops);
     char *suffix = &file_name[strlen(file_name)-4];
     if (strncmp(".csv", suffix, 4) != 0) {
         fprintf(stderr, "File name is not correct!\n");
