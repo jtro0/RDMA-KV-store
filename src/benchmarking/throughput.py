@@ -13,9 +13,12 @@ max_clients = int(sys.argv[1])
 
 for type in types:    
     per_number_client = []
-    x_values = set()
 
-    for current_number_clients in range(1, max_clients+1):    
+    x_values = range(1, 11)
+    if max_clients > 10:
+        x_values + range(15, max_clients, 5)
+
+    for current_number_clients in x_values:
         current_start_sec = sys.maxsize
         current_start_usec = sys.maxsize
         
