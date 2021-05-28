@@ -87,6 +87,9 @@ void *main_job(void *arg) {
     do {
         prepare_for_next_request(client);
         struct request *request = recv_request(client);
+        if (request == NULL) {
+            return 0;
+        }
         if (request->method != UNK)
             ready_for_next_request(client);
 
