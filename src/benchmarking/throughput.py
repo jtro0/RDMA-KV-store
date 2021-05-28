@@ -16,7 +16,7 @@ for type in types:
 
     x_values = list(range(1, 11))
     if max_clients > 10:
-        x_values + range(15, max_clients, 5)
+        x_values + list(range(15, max_clients, 5))
 
     for current_number_clients in x_values:
         current_start_sec = sys.maxsize
