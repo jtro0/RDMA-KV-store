@@ -141,7 +141,10 @@ int main(int argc, char *argv[]) {
                 debug = 1;
                 break;
             case 'o':
+                pr_info("operations\n");
                 num_ops = strtol(optarg, NULL, 0);
+                pr_info("set to %d\n", num_ops);
+
                 break;
             case 'h':
             default:
