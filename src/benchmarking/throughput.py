@@ -51,9 +51,8 @@ for type in types:
                     current_end_usec = current_last_usec
             
         time_taken_sec = util.calc_time_difference_sec(current_start_sec, current_start_usec, current_end_sec, current_end_usec)
-                
-        
         ops_per_sec = (number_ops*current_number_clients) / time_taken_sec
+        print(ops_per_sec)
         if ops_per_sec > 0:
             per_number_client.append(ops_per_sec)
             x_values.add(number_clients)
