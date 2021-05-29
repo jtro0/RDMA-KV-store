@@ -15,15 +15,65 @@
 
 
 % ----------------------- contents from here ------------------------
-% 
+%
+%
+In this section, background information on key value stores, which is the backbone of this thesis.
+Also, the issues with commonly used linux sockets, will be explained.
+These issues have lead to the development of RDMA which is crucial for this thesis and research.
+
 \section[KV-store]{Key Value Store}\label{sec:kv-store}
 
 \section[Linux scokets]{Linux sockets}\label{sec:linux-sockets}
 
 \section[RDMA]{RDMA}\label{sec:rdma}
-RDMA has been developed to address the issues of linux sockets.
-Providing a lower latency
-However, RDMA needs specialized hardware to
+Remote Direct Memory Access (RDMA) has been developed to address the issues of linux sockets.
+Providing a lower latency, less CPU overhead, and potentially higher throughput.
+The cost of RDMA is in the specialized hardware (RNICs) and added complexity.
+
+As shown in section \ref{sec:linux-sockets} above, the linux kernel has an extensive route, from NIC to application, including system calls and memory copies.
+RDMA achieves lower latency, and the reason why it requires specialized hardware, by bypassing the CPU and OS kernel when it comes to memory access (allowing for zero copy memory transfers) and packet handling.
+
+\subsection{Transportation types}
+Much like traditional networking, RDMA can make use of several transport types.
+Simply put, these can be split into two types, connection and datagram.
+Connection based can be split further into reliable and unreliable.
+Difference between reliable connection (RC) and unreliable connection (UC) is the use of ACK/NAK packets.
+With reliable transport types these are sent, while with unreliable these are not.
+This could result in packet loss.
+However, it has been shown TODO: ADD REFERENCE, that this rarely occurs.
+
+As stated in the name, RC and UC need a connection between queue pairs (QP).
+Only one QP can be connected to another QP.
+Contrasting this, unreliable datagram (UD) do not require a connection.
+This meaning that a UD QP can communicate with any other UD QP.
+UD therefore can make efficient use of a one-to-many network topology or application.
+
+\subsection{Verbs}
+To interact with RNICs, RDMA uses so-called "verbs" to execute specific types of instructions.
+Some of which are: read, write, send, and receive.
+Read and write follow so-called memory semantics, while send and receive follow channel semantics.
+Memory semantics require the destination memory address to be known.
+This meaning, to be able to perform a RDMA read of a remote memory location, the memory address of the requested memory needs to be known.
+
+Channel semantics are simpler in the sense that the remote memory address does not need to be known.
+However, to perform a send operation from client to server, the server needs to first post a receive.
+This tells the server's RNIC which memory location the application expects the next incoming message to be place.
+
+Not all verbs are available to every QP type. Table \ref{tab:transport-verb} summarizes the transportation type and which verb is available.
+\begin{table}
+    \centering
+    \begin{tabular}{lllllr}
+        \toprule
+        \textbf{Transportation type} & \textbf{SEND} & \textbf{RECV} & \textbf{READ} & \textbf{WRITE} & \textbf{MTU size} \\
+        \midrule
+        RC & YES & YES & YES & YES &  \\
+        UC & YES & YES & NO & YES &  \\
+        UD & YES & YES & NO & NO &  \\
+        \bottomrule
+    \end{tabular}
+    \caption{Verbs available to each transportation type}
+    \label{tab:transport-verb}
+\end{table}
 
 
 
