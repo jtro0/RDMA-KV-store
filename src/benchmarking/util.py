@@ -32,6 +32,15 @@ def get_all_csv():
                 filenames.append(os.path.join(path, file))
     return filenames
 
+def get_all_csv_local():
+    filenames = []
+    
+    for path, folders, files in os.walk("../../../First tests/"):
+        for file in files:
+            if fnmatch.fnmatch(file, '*.csv'):
+                filenames.append(os.path.join(path, file))
+    return filenames
+
 
 def get_parts(filename):
     filename_parts = filename.rsplit("/", 1)[-1].rsplit("_", 4)
