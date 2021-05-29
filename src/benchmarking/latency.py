@@ -9,8 +9,8 @@ filenames = util.get_all_csv()
 type_arg = str(sys.argv[1])
 number_clients_arg = int(sys.argv[2])
     
-plt.figure(figsize=(8,6), dpi=100)    
-
+fig = plt.figure()
+ax = fig.add_axes([0.1, 0.1, 0.6, 0.75])
 for filename in filenames:
     type, number_clients, client_number, number_ops = util.get_parts(filename)
     
@@ -39,13 +39,13 @@ for filename in filenames:
     
     plot_label = 'Client %(id)d: %(ops)d ops/sec' % {"id":client_number, "ops":ops_per_sec}
     
-    plt.plot(latency_msec.index, latency_msec, label=plot_label)
+    ax.plot(latency_msec.index, latency_msec, label=plot_label)
 
-plt.title("RC connection, 10 clients, 1 million operations per client: Latency per client")
-plt.legend(loc="upper left", bbox_to_anchor=(1, 0.5))
+plot_title = "%(type)s connection, %(clients)d clients: Latency per client" % {"type": type_arg, "clients":number_clients_arg}
+plt.title(plot_title)
+ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 plt.xlabel("Operation")
 plt.ylabel("Latency (ms)")
-plt.show
 graph_filename = "../../benchmarking/graphs/%(type)s_Latency_%(clients)d.png" % {"type":type_arg, "clients":number_clients_arg}
 plt.savefig(graph_filename, dpi=100)
 
