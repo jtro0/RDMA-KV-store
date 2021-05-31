@@ -15,15 +15,14 @@
 
 
 % ----------------------- contents from here ------------------------
-% 
 
 \section{Key value store}
 This thesis is focused on the scalability using RDMA, and will not focus on advancing KV-stores.
-A simple KV-store is sufficient.
-There are two main and necessary commands needed: GET and SET.
-These commands will allow interaction with the hash table.
-The hash table internally uses a linked list.
-
+Therefore, a simplified KV store has been used.
+As shown in \ref{sec:kv-store} are two main and necessary commands needed: GET and SET.
+Together with a key these form a request.
+Figure TODO MAKE FIGURE shows the structure of such a request.
+The
 \subsection{Requests}
 For a client to interact with a KV server, the client has to send a request towards the server.
 A request is structured as shown in figure TODO MAKE FIGURE.
@@ -31,13 +30,51 @@ Along with the command type, a key must be given.
 This key is used to identify the correct field within the hash table.
 
 
+
+These commands will allow interaction with the hash table, which holds values for a given key.
+
+\subsection{Hash table}
+Internally, the hash table uses a linked list.
+Figure TODO MAKE FIGURE shows the structure of the KV store used.
+It should be noted, a linked list approach, as used here, does not scale well.
+As buckets are filled, either due to a hash collisions or extensive use, GET requests can cause for significantly delay, especially when encountering a key miss.
+This can be partially solved with a large hash table, this however will not be a long term solution, along with strong hash function.
+A longer term solution could be using Cuckoo hash table\cite{pagh2004cuckoo}.
+Cuckoo hash tables excel at fast key look up, which the KV store in this design lacks.
+
+
+
+
 \section{RDMA}
-For RDMA a design choice has to be made when designing a RDMA KV store, which verbs to use, and in turn which transportation type.
-With the focus of this thesis being the scalability of various transportation types,  table TODO TABLE REF shows that using SEND and RECV would allow for all transportation types.
-A combination of transportation types could be used
+For this research, the two-sided verbs SEND and RECV are used for RDMA.
+Looking at TODO ADD TABLE REF, across all transportation types SEND/RECV is the only available verb.
+This will come at a cost of performance.
+It has been show TODO FIND SOURCE HERD? that one-sided verbs, RDMA READ and WRITE, outperform the two-sided verbs.
+
+\subsection{Queue pairs}
+Between RC and UC, and UD, the requirements for queue pairs differ.
+With RC and UC, each client will need a QP.
+With each new connection with client, a server thread is created and linked with a QP.
+This meaning that every thread handles one and only one client, only the common hash table is shared.
+A situation can occur when several clients have completed their work, and one client is left.
+This client will only be handled by its corresponding server thread.
+
+This differs with UD.
+As stated in section \ref{sec:rdma}, any UD QP can communicate with any other UD QP.
+This meaning, that the server only needs one QP for all clients.
+A server thread is still created for every client, however, in the case of UD, all threads use a shared queue.
+This contrasts RC and UC where if one client is left, all threads can process the requests.
+
+\subsection{Connecting to server}
+With RDMA, metadata needs to be transfered between server and client.
+
 
 
 \section{Benchmark design}
+To evaluate the performance and scalability of the RDMA KV store, a multiclient benchmark has been made.
+
+
+
 To evaluate the performance and scalability of RDMA KV store, there are a few concepts that need to be applied: multithreading and consistent.
 For scalability, it is important to evaluate the performance while increasing the number of clients.
 For this, multithreading is used to have multiple clients from a single node.
@@ -45,6 +82,8 @@ This is used to
 
 \subsection{Baseline}
 As baseline, a TCP implementation will be used.
+This is used to compare the scalability of RDMA against traditional sockets.
+
 
 \subsection{Experimental Setup}
 All performance tests and results have been gathered on the DAS-5 computing cluster.
