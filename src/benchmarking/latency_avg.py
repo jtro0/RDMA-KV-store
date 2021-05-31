@@ -48,10 +48,10 @@ for type in types:
             
         if len(all_latencies) > 0:
             concat = pd.concat(all_latencies)
-            five_quantile.append(concat.quantile(.25))
-            ninety_five_quantile.append(concat.quantile(.75))
-            per_number_client.append(concat.mean())
-            std_deviation.append(concat.std())
+            five_quantile.append(concat.quantile(.25)/1000000)
+            ninety_five_quantile.append(concat.quantile(.75)/1000000)
+            per_number_client.append(concat.mean()/1000000)
+            std_deviation.append(concat.std()/1000000)
         # per_number_client[current_number_clients-1] = ops_per_sec
 
         
