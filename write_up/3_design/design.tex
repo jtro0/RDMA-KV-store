@@ -1,7 +1,7 @@
 % this file is called up by thesis.tex
 % content in this file will be fed into the main document
 
-\chapter{Design}\label{ch:design} % top level followed by section, subsection
+\chapter{Designing a RDMA Key Value store}\label{ch:design} % top level followed by section, subsection
 
 
 % ----------------------- paths to graphics ------------------------
@@ -17,7 +17,65 @@
 % ----------------------- contents from here ------------------------
 % 
 
-\dots
+\section{Key value store}
+This thesis is focused on the scalability using RDMA, and will not focus on advancing KV-stores.
+A simple KV-store is sufficient.
+There are two main and necessary commands needed: GET and SET.
+These commands will allow interaction with the hash table.
+The hash table internally uses a linked list.
+
+\subsection{Requests}
+For a client to interact with a KV server, the client has to send a request towards the server.
+A request is structured as shown in figure TODO MAKE FIGURE.
+Along with the command type, a key must be given.
+This key is used to identify the correct field within the hash table.
+
+
+\section{RDMA}
+For RDMA a design choice has to be made when designing a RDMA KV store, which verbs to use, and in turn which transportation type.
+With the focus of this thesis being the scalability of various transportation types,  table TODO TABLE REF shows that using SEND and RECV would allow for all transportation types.
+A combination of transportation types could be used
+
+
+\section{Benchmark design}
+To evaluate the performance and scalability of RDMA KV store, there are a few concepts that need to be applied: multithreading and consistent.
+For scalability, it is important to evaluate the performance while increasing the number of clients.
+For this, multithreading is used to have multiple clients from a single node.
+This is used to
+
+\subsection{Baseline}
+As baseline, a TCP implementation will be used.
+
+\subsection{Experimental Setup}
+All performance tests and results have been gathered on the DAS-5 computing cluster.
+This distributed system of computers is spread across the Netherlands, and is used by research groups from VU Amsterdam, TU Delft, Leiden University, and many more.
+Each cluster varies slightly in specifications, however each, is equipped with a 48 Gbit/s Inifiniband (IB) RDMA networking, and 1 Gbit/s classical ethernet networking.
+The specifications of each cluster is as shown in table \ref{tab:das5}.
+
+All experiments make use of the IB network card, and is also configured to run TCP/IP.
+Furthermore, at least two nodes are used.
+This ensures that the server and clients are separate.
+
+\begin{table}
+    \centering
+    \begin{tabular}{lrlllll}
+        \toprule
+        \textbf{Cluster} & \textbf{Nodes} & \textbf{CPU type} & \textbf{CPU frequency (GHz} & \textbf{Memory (GB)} & \textbf{Network} \\
+        \midrule
+        VU & 68 & dual 8-core & 2.4 & 64 & IB and GbE \\
+        LU & 24 & dual 8-core & 2.4 & 64 & IB and GbE \\
+        UvA & 18 & dual 8-core & 2.4 & 64 & IB and GbE \\
+        TUD & 48 & dual 8-core & 2.4 & 64 & IB and GbE \\
+        UvA-MN & 31 & dual 8-core & 2.4 & 64 & IB and GbE \\
+        ASTRON & 9 & dual 8/10/14-core & 2.6 & 128/512 & IB, 40 GbE, GbE \\
+        \bottomrule
+    \end{tabular}
+    \caption{DAS-5 cluster specifications}
+    \label{tab:das5}
+\end{table}
+
+
+
 
 
 
