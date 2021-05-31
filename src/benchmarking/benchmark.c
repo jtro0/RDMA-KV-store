@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
         struct thread_args args;
         args.conn_t = connectionType;
         args.server_addr = &server_sockaddr;
-        args.num_ops = num_ops;
+        args.num_ops = num_ops/clients;
         if (override)
             args.instance_nr = 1;
         else
@@ -198,8 +198,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    double tot_ops_sec = process_ops_sec(&start, &end, clients*num_ops);
-    printf("In total %d clients did %d operations at a speed of %f ops/sec\n", clients, clients*num_ops, tot_ops_sec);
+    double tot_ops_sec = process_ops_sec(&start, &end, num_ops);
+    printf("In total %d clients did %d operations at a speed of %f ops/sec\n", clients, num_ops, tot_ops_sec);
 
     sleep(1);
 }
