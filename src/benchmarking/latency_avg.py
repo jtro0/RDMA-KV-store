@@ -43,12 +43,13 @@ for type in types:
             #ms = df.apply(lambda x:  util.time_in_msec(x[" diff_sec"], x[" diff_usec"]), axis=1)
             ms = df['latency']
             if len(ms) > 0:
+                print(ms)
                 all_latencies.append(ms)
             
         if len(all_latencies) > 0:
             concat = pd.concat(all_latencies)
-            five_quantile.append(concat.quantile(.05))
-            ninety_five_quantile.append(concat.quantile(.95))
+            five_quantile.append(concat.quantile(.25))
+            ninety_five_quantile.append(concat.quantile(.75))
             per_number_client.append(concat.mean())
             std_deviation.append(concat.std())
         # per_number_client[current_number_clients-1] = ops_per_sec
