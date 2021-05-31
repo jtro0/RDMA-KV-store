@@ -8,7 +8,7 @@
 #include "hash.h"
 #include "kvstore.h"
 
-#define HT_CAPACITY 256
+#define HT_CAPACITY 1024
 
 hashtable_t *ht;
 
@@ -87,11 +87,18 @@ void *main_job(void *arg) {
     do {
         prepare_for_next_request(client);
         struct request *request = recv_request(client);
+        if (request == NULL) {
+            return 0;
+        }
         if (request->method != UNK)
             ready_for_next_request(client);
 
         bzero(client->response, sizeof(struct response));
-        pr_info("client %d: request count %d\n", client->client_nr, client->ud_client->ud_server->request_count);
+        if (client->type == UD)
+            pr_info("client %d: request count %d\n", client->client_nr, client->ud_client->ud_server->request_count);
+        else
+            pr_info("client %d: request count %d\n", client->client_nr, client->request_count);
+
         switch (request->method) {
             case SET:
                 pr_info("set\n");

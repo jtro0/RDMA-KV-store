@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     server_sockaddr.sin_family = AF_INET;
     server_sockaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     char *key;
-    connectionType = RC;
+    connectionType = TCP;
 
     const struct option long_options[] = {
             {"help", no_argument,       NULL, 'h'},
@@ -96,6 +96,7 @@ int main(int argc, char *argv[]) {
     switch (connectionType) {
 
         case TCP:
+            tcp_main(key, &server_sockaddr);
             break;
         case RC:
             rc_main(key, &server_sockaddr);

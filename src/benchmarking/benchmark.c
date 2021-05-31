@@ -7,15 +7,16 @@
 #include "instance.h"
 #include <sys/time.h>
 
-enum connection_type connectionType;
+enum connection_type connectionType = TCP;
 int debug = 0;
 int verbose = 0;
-int num_ops = 1000000;
+int num_ops = 10000000;
 int override = 0;
+int clients = 1;
 
 void usage() {
     printf("Usage:\n");
-    printf("RDMA KV Store Benchmark: [-a <server_addr>] [-p <server_port>] [-n <number of clients>] [-r <rc,uc,ud>] [-d] [-v]\n");
+    printf("RDMA KV Store Benchmark: [-a <server_addr>] [-p <server_port>] [-n <number of clients>] [-r <rc,uc,ud>] [-d] [-v] [-o <number of operations per client>]\n");
     printf("(default uses 1 client and server with IP 127.0.0.1, using tcp, and port is %d)\n", PORT);
     exit(1);
 }
@@ -39,41 +40,73 @@ double process_ops_sec(struct timeval *start, struct timeval *end, unsigned int 
     return ops_per_sec;
 }
 
+double time_in_msec(struct timeval *time) {
+    return time->tv_sec*1000.0 + time->tv_usec/1000.0;
+}
+
 int data_processing(struct operation *ops, int client_number) {
     int count = 0;
     struct operation first = ops[count];
     struct operation last = first;
-    while (count < num_ops) {
-        struct operation op = ops[count++];
+
+    char *file_name = malloc(255* sizeof(char));
+    snprintf(file_name, 255,"./benchmarking/data/cmt2054/%s_%d_client_%d_%d.csv", connection_type_to_str(connectionType), clients, client_number, num_ops);
+    char *suffix = &file_name[strlen(file_name)-4];
+    if (strncmp(".csv", suffix, 4) != 0) {
+        fprintf(stderr, "File name is not correct!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    FILE *file = fopen(file_name, "w+");
+    if (file == NULL) {
+        fprintf(stderr, "Could not open file!\n");
+        exit(EXIT_FAILURE);
+    }
+    fprintf(file, "start_sec,start_usec,end_sec,end_usec,latency\n");
+
+    while (count < num_ops/clients) {
+        struct operation op = ops[count];
+        if (op.start == NULL || op.end == NULL) {
+            break;
+        }
+        struct timeval *time_taken = malloc(sizeof(struct timeval));
+        timersub(op.end, op.start, time_taken);
+        double ms = time_in_msec(time_taken);
+
+        fprintf(file, "%ld,%ld,%ld,%ld,%f\n", op.start->tv_sec, op.start->tv_usec, op.end->tv_sec, op.end->tv_usec, ms);
+
+        count++;
         last = op;
     }
 
-    double ops_sec = process_ops_sec(first.start, last.end, num_ops);
-    printf("Client %d did %d operations at a speed of %f ops/sec\n", client_number, num_ops, ops_sec);
+    double ops_sec = process_ops_sec(first.start, last.end, count);
+    printf("Client %d did %d operations at a speed of %f ops/sec\n", client_number, count, ops_sec);
+
+    fclose(file);
 
     return 0;
 }
 
 int main(int argc, char *argv[]) {
-    int ret, clients = 1;
+    int ret;
     struct sockaddr_in server_sockaddr;
     bzero(&server_sockaddr, sizeof server_sockaddr);
     server_sockaddr.sin_family = AF_INET;
     server_sockaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    connectionType = RC;
 
     const struct option long_options[] = {
             {"help", no_argument,       NULL, 'h'},
             {"port", required_argument, NULL, 'p'},
             {"clients",  required_argument, NULL, 'n'},
             {"rdma", required_argument, NULL, 'r'},
+            {"ops", required_argument, NULL, 'o'},
             {0, 0, 0,                         0}
     };
 
     for (;;) {
         int option_index = 0;
         int c;
-        c = getopt_long(argc, argv, "a:p:n:r:hdvot", long_options,
+        c = getopt_long(argc, argv, "a:p:n:r:hdvo", long_options,
                         &option_index);
         if (c == -1)
             break;
@@ -112,8 +145,11 @@ int main(int argc, char *argv[]) {
             case 'd':
                 debug = 1;
                 break;
-            case 't':
-                override = 1;
+            case 'o':
+                pr_info("operations\n");
+                num_ops = strtol(optarg, NULL, 0);
+                pr_info("set to %d\n", num_ops);
+
                 break;
             case 'h':
             default:
@@ -136,7 +172,7 @@ int main(int argc, char *argv[]) {
         struct thread_args args;
         args.conn_t = connectionType;
         args.server_addr = &server_sockaddr;
-        args.num_ops = num_ops;
+        args.num_ops = num_ops/clients;
         if (override)
             args.instance_nr = 1;
         else
@@ -162,8 +198,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    double tot_ops_sec = process_ops_sec(&start, &end, clients*num_ops);
-    printf("In total %d clients did %d operations at a speed of %f ops/sec\n", clients, clients*num_ops, tot_ops_sec);
+    double tot_ops_sec = process_ops_sec(&start, &end, num_ops);
+    printf("In total %d clients did %d operations at a speed of %f ops/sec\n", clients, num_ops, tot_ops_sec);
 
     sleep(1);
 }
