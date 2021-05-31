@@ -36,7 +36,7 @@ for type in types:
         for filename in filenames:
             type_file, number_clients, client_number, number_ops = util.get_parts(filename)
             
-            if (type != type_file) or number_clients != current_number_clients:
+            if (type != type_file) or number_clients != current_number_clients or number_ops != 10000000:
                 continue
 
             df = pd.read_csv(filename)
