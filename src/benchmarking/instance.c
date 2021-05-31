@@ -142,7 +142,7 @@ void* start_instance(void *arguments) {
             make_set_request(&conn, count);
         }
         else {
-            make_get_request(&conn, rand() % (count-1));
+            make_get_request(&conn, (rand() % (count))-1);
         }
         ops[count].start = malloc(sizeof(struct timeval));
         ops[count].end = malloc(sizeof(struct timeval));
