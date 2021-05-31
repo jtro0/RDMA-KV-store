@@ -41,7 +41,7 @@ double process_ops_sec(struct timeval *start, struct timeval *end, unsigned int 
 }
 
 double time_in_msec(struct timeval *time) {
-    return time->tv_sec*1000.0 + time->tv_usec*1000.0;
+    return time->tv_sec*1000.0 + time->tv_usec/1000.0;
 }
 
 int data_processing(struct operation *ops, int client_number) {
