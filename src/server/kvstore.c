@@ -8,7 +8,7 @@
 #include "hash.h"
 #include "kvstore.h"
 
-#define HT_CAPACITY 2048
+#define HT_CAPACITY 512
 
 hashtable_t *ht;
 
