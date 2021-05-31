@@ -74,7 +74,7 @@ struct ud_server_info {
     struct ud_request *request;
     int request_count;
     struct ibv_ah *ah[MAX_CLIENTS];
-    pthread_rwlock_t lock;
+    pthread_mutex_t lock;
 };
 
 struct client_info {
