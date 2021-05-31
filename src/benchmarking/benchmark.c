@@ -64,7 +64,7 @@ int data_processing(struct operation *ops, int client_number) {
     }
     fprintf(file, "start_sec,start_usec,end_sec,end_usec,latency\n");
 
-    while (count < num_ops) {
+    while (count < num_ops/clients) {
         struct operation op = ops[count];
         if (op.start == NULL || op.end == NULL) {
             break;
