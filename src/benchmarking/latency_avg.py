@@ -2,7 +2,7 @@ import util
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
-
+from operator import add, sub
 
 filenames = util.get_all_csv()
 
@@ -56,8 +56,10 @@ for type in types:
         
     if per_number_client:
         plot_label = type
+        x_plus_std = list(map(add, x_values, std_deviation))
+        x_min_std = list(map(sub, x_values, std_deviation))
         ax.plot(x_values, per_number_client, label=plot_label)
-        ax.fill_between(x_values, x_values+std_deviation, x_values-std_deviation, alpha=0.5, interpolate=True)
+        ax.fill_between(x_values, x_plus_std, x_min_std, alpha=0.5, interpolate=True)
     
 plt.title("Overall latency per Transport Type")
 plt.legend(loc="upper left", bbox_to_anchor=(1, 0.5))
