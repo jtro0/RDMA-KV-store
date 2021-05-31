@@ -11,6 +11,8 @@ types = ["TCP", "RC", "UC", "UD"]
 
 max_clients = int(sys.argv[1])
 
+fig = plt.figure()
+ax = fig.add_axes([0.1, 0.1, 0.6, 0.75])
 for type in types:    
     per_number_client = []
 
@@ -54,7 +56,7 @@ for type in types:
                     current_end_usec = current_last_usec
             
         time_taken_sec = util.calc_time_difference_sec(current_start_sec, current_start_usec, current_end_sec, current_end_usec)
-        ops_per_sec = (number_ops*current_number_clients) / time_taken_sec
+        ops_per_sec = number_ops / time_taken_sec
         print(ops_per_sec)
         if ops_per_sec > 0:
             per_number_client.append(ops_per_sec)
@@ -68,7 +70,7 @@ for type in types:
 plt.title("Overall throughput per Transport Type")
 plt.legend(loc="upper left", bbox_to_anchor=(1, 0.5))
 plt.xlabel("Number of clients")
-plt.ylabel("Throughput (ops/sec)")
+plt.ylabel("Throughput (tasks/sec)")
 
 graph_filename = "../../benchmarking/graphs/Throughput_%d.png" % max_clients
 plt.savefig(graph_filename, dpi=100)
