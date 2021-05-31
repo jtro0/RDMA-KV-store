@@ -274,7 +274,7 @@ int ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, 
     struct ibv_send_wr *bad_send_wr;
 
     struct ibv_sge list = {
-            .addr   = (uintptr_t) buf,
+            .addr   = (uint64_t) buf,
             .length = size,
             .lkey   = lkey
     };
