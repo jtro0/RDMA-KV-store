@@ -24,12 +24,12 @@ for filename in filenames:
         first_usec = df[:1]["start_usec"]
     elif client_number == 9:
         last_sec = df.tail(1)["end_sec"]
-        last_usec = df.tail(1)[" end_usec"]
+        last_usec = df.tail(1)["end_usec"]
         
     current_first_sec = df.head(1)["start_sec"].at[0]
-    current_first_usec = df.head(1)[" start_usec"].at[0]
-    current_last_sec = df.tail(1)[" end_sec"].at[len(df.index)-1]
-    current_last_usec = df.tail(1)[" end_usec"].at[len(df.index)-1]
+    current_first_usec = df.head(1)["start_usec"].at[0]
+    current_last_sec = df.tail(1)["end_sec"].at[len(df.index)-1]
+    current_last_usec = df.tail(1)["end_usec"].at[len(df.index)-1]
     
     time_taken_sec = util.calc_time_difference_sec(current_first_sec, current_first_usec, current_last_sec, current_last_usec)
     
