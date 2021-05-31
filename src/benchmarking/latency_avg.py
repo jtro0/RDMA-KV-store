@@ -56,10 +56,10 @@ for type in types:
         
     if per_number_client:
         plot_label = type
-        #x_plus_std = list(map(add, x_values, std_deviation))
-        #x_min_std = list(map(sub, x_values, std_deviation))
+        x_plus_std = list(map(add, x_values, std_deviation))
+        x_min_std = list(map(sub, x_values, std_deviation))
         ax.plot(x_values, per_number_client, label=plot_label)
-        ax.fill_between(x_values, ninety_five_quantile, five_quantile, alpha=0.5, interpolate=True)
+        ax.fill_between(x_values, five_quantile, ninety_five_quantile, alpha=0.1, interpolate=True)
     
 plt.title("Overall latency per Transport Type")
 plt.legend(loc="upper left", bbox_to_anchor=(1, 0.5))
