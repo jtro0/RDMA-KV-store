@@ -163,9 +163,9 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
         }
     }
     /* Similar to connection management events, we need to acknowledge CQ events */
-//    ibv_ack_cq_events(cq_ptr,
-//                      1 /* we received one event notification. This is not
-//		       number of WC elements */);
+    ibv_ack_cq_events(cq_ptr,
+                      1 /* we received one event notification. This is not
+		       number of WC elements */);
     return total_wc;
 }
 
@@ -274,7 +274,7 @@ int ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, 
     struct ibv_send_wr *bad_send_wr;
 
     struct ibv_sge list = {
-            .addr   = (uintptr_t) buf,
+            .addr   = (uint64_t) buf,
             .length = size,
             .lkey   = lkey
     };
@@ -289,6 +289,8 @@ int ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, 
             .wr.ud.remote_qpn = qpn,
             .wr.ud.remote_qkey = 0x11111111
     };
+
+    pr_debug("send %p %p %p %p %p\n", buf, &send_wr, &bad_send_wr, qp, ah);
 
     ret = ibv_post_send(qp, &send_wr, &bad_send_wr);
     return ret;

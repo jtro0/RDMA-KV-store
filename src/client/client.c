@@ -7,6 +7,9 @@ int send_request(struct client_to_server_conn *conn) {
     int ret = -1;
     switch (conn->conn_t) {
         case TCP:
+            ret = tcp_send_request(conn->tcp_server_conn, conn->tcp_server_conn->request);
+            if (ret > 0)
+                ret = 0;
             break;
         case RC:
             ret = rc_send_request(conn->rc_server_conn, conn->rc_server_conn->request);
@@ -24,6 +27,7 @@ int receive_response(struct client_to_server_conn *conn) {
     int ret = -1;
     switch (conn->conn_t) {
         case TCP:
+            ret = tcp_receive_response(conn->tcp_server_conn, conn->tcp_server_conn->response);
             break;
         case RC:
             ret = rc_receive_response(conn->rc_server_conn, conn->rc_server_conn->response);

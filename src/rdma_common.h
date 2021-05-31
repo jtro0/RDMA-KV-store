@@ -43,19 +43,19 @@
 #endif /* ACN_RDMA_DEBUG */
 
 /* Capacity of the completion queue (CQ) */
-//#define CQ_CAPACITY (16)
-#define CQ_CAPACITY (1025) // HERD
+#define CQ_CAPACITY (16)
+//#define CQ_CAPACITY (1025) // HERD
 /* MAX SGE capacity */
 #define MAX_SGE (2)
 /* MAX work requests */
-//#define MAX_WR (8)
-#define MAX_WR (1024) // HERD TODO check how this affects stuff
+#define MAX_WR (8)
+//#define MAX_WR (1024) // HERD TODO check how this affects stuff
 /* Default port where the RDMA server is listening */
 #define DEFAULT_RDMA_PORT (20886)
 
 #define IB_PHYS_PORT 1			// HERD, Primary physical port number for qps
 
-#define MAX_POLL_CQ_TIMEOUT 1000
+#define MAX_POLL_CQ_TIMEOUT 5
 /*
  * We use attribute so that compiler does not step in and try to pad the structure.
  * We use this structure to exchange information between the server and the client.

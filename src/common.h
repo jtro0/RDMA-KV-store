@@ -14,12 +14,26 @@
 #define KEY_SIZE 64
 #define DUMP_FILE   "dump.dat"
 
+
+enum connection_type {
+    TCP, RC, UC, UD
+};
+
+static const struct {
+    enum connection_type type;
+    const char *str;
+} connection_type_conversion[] = {
+        {
+                TCP,    "TCP"},
+        {
+                RC,    "RC"},
+        {
+                UC,    "UC"},
+        {
+                UD,    "UD"},};
 // Request protocol methods
 enum method {
     UNK, SET, GET, DEL, PING, DUMP, RST, EXIT, SETOPT
-};
-enum connection_type {
-    TCP, RC, UC, UD
 };
 
 static const struct {
@@ -123,7 +137,7 @@ enum method method_to_enum(const char *str);
 const char *code_msg(int code);
 
 const char *method_to_str(enum method code);
-
+const char *connection_type_to_str(enum connection_type type);
 void print_request(struct request *request);
 void print_response(struct response *response);
 

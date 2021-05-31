@@ -14,6 +14,7 @@ void make_get_request(struct client_to_server_conn *conn, int count) {
     struct request *request = NULL;
     switch (conn->conn_t) {
         case TCP:
+            request = conn->tcp_server_conn->request;
             break;
         case RC:
             request = conn->rc_server_conn->request;
@@ -36,6 +37,7 @@ void make_set_request(struct client_to_server_conn *conn, int count) {
     struct request *request = NULL;
     switch (conn->conn_t) {
         case TCP:
+            request = conn->tcp_server_conn->request;
             break;
         case RC:
             request = conn->rc_server_conn->request;
@@ -97,6 +99,10 @@ void* start_instance(void *arguments) {
 
     switch (conn_t) {
         case TCP:
+            conn.tcp_server_conn = malloc(sizeof(struct tcp_server_conn));
+            conn.tcp_server_conn->server_sockaddr = server_addr;
+            returned = tcp_client_prepare_connection(conn.tcp_server_conn);
+            returned = tcp_client_connect_to_server(conn.tcp_server_conn);
             break;
         case RC:
             conn.rc_server_conn = malloc(sizeof(struct rc_server_conn));
@@ -132,11 +138,11 @@ void* start_instance(void *arguments) {
     int count = 0;
 
     do {
-        if (count == 0) {
+        if (rand() % 100 <= 5) {
             make_set_request(&conn, count);
         }
         else {
-            make_get_request(&conn, 0);
+            make_get_request(&conn, (rand() % (count+1))-1);
         }
         ops[count].start = malloc(sizeof(struct timeval));
         ops[count].end = malloc(sizeof(struct timeval));
