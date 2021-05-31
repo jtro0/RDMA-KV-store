@@ -138,7 +138,7 @@ void* start_instance(void *arguments) {
     int count = 0;
 
     do {
-        if (rand() % 100 <= 5) {
+        if (rand() % 100 <= 0) {
             make_set_request(&conn, count);
         }
         else {

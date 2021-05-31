@@ -271,7 +271,7 @@ int post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, voi
 int ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf, struct ibv_ah *ah,
                  uint32_t qpn) {
     int ret = 0;
-    struct ibv_send_wr *bad_send_wr = malloc(sizeof(struct ibv_send_wr));
+    struct ibv_send_wr *bad_send_wr;
 
     struct ibv_sge list = {
             .addr   = (uint64_t) buf,
