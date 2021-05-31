@@ -18,6 +18,7 @@ for type in types:
     per_number_client = []
     five_quantile = []
     ninety_five_quantile = []
+    std_deviation = []
     
     x_values = list(range(1, 11))
     if max_clients > 10:
@@ -39,7 +40,8 @@ for type in types:
                 continue
 
             df = pd.read_csv(filename)
-            ms = df.apply(lambda x:  util.time_in_msec(x[" diff_sec"], x[" diff_usec"]), axis=1)
+            #ms = df.apply(lambda x:  util.time_in_msec(x[" diff_sec"], x[" diff_usec"]), axis=1)
+            ms = df['latency']
             if len(ms) > 0:
                 all_latencies.append(ms)
             
@@ -48,13 +50,14 @@ for type in types:
             five_quantile.append(concat.quantile(.05))
             ninety_five_quantile.append(concat.quantile(.95))
             per_number_client.append(concat.mean())
+            std_deviation.append(concat.std())
         # per_number_client[current_number_clients-1] = ops_per_sec
 
         
     if per_number_client:
         plot_label = type
         ax.plot(x_values, per_number_client, label=plot_label)
-        ax.fill_between(x_values, ninety_five_quantile, five_quantile, alpha=0.5, interpolate=True)
+        ax.fill_between(x_values, x_values+std_deviation, x_values-std_deviation, alpha=0.5, interpolate=True)
     
 plt.title("Overall latency per Transport Type")
 plt.legend(loc="upper left", bbox_to_anchor=(1, 0.5))

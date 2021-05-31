@@ -21,9 +21,9 @@ for filename in filenames:
     
     if client_number == 0:
         first_sec = df[:1]["start_sec"]
-        first_usec = df[:1][" start_usec"]
+        first_usec = df[:1]["start_usec"]
     elif client_number == 9:
-        last_sec = df.tail(1)[" end_sec"]
+        last_sec = df.tail(1)["end_sec"]
         last_usec = df.tail(1)[" end_usec"]
         
     current_first_sec = df.head(1)["start_sec"].at[0]
@@ -33,7 +33,7 @@ for filename in filenames:
     
     time_taken_sec = util.calc_time_difference_sec(current_first_sec, current_first_usec, current_last_sec, current_last_usec)
     
-    latency_msec = util.time_in_msec(df[" diff_sec"], df[" diff_usec"])
+    latency_msec = df['latency']
     
     ops_per_sec = len(df.index) / time_taken_sec
     

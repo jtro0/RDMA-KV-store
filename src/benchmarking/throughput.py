@@ -35,9 +35,9 @@ for type in types:
             df = pd.read_csv(filename)
                     
             current_first_sec = df.head(1)["start_sec"].at[0]
-            current_first_usec = df.head(1)[" start_usec"].at[0]
-            current_last_sec = df.tail(1)[" end_sec"].at[len(df.index)-1]
-            current_last_usec = df.tail(1)[" end_usec"].at[len(df.index)-1]
+            current_first_usec = df.head(1)["start_usec"].at[0]
+            current_last_sec = df.tail(1)["end_sec"].at[len(df.index)-1]
+            current_last_usec = df.tail(1)["end_usec"].at[len(df.index)-1]
             
             if current_first_sec < current_start_sec:
                 current_start_sec = current_first_sec

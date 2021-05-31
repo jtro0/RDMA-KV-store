@@ -40,6 +40,10 @@ double process_ops_sec(struct timeval *start, struct timeval *end, unsigned int 
     return ops_per_sec;
 }
 
+double time_in_msec(struct timeval *time) {
+    return time->tv_sec*1000.0 + time->tv_usec*1000.0;
+}
+
 int data_processing(struct operation *ops, int client_number) {
     int count = 0;
     struct operation first = ops[count];
@@ -58,7 +62,7 @@ int data_processing(struct operation *ops, int client_number) {
         fprintf(stderr, "Could not open file!\n");
         exit(EXIT_FAILURE);
     }
-    fprintf(file, "start_sec, start_usec, end_sec, end_usec, diff_sec, diff_usec\n");
+    fprintf(file, "start_sec,start_usec,end_sec,end_usec,latency\n");
 
     while (count < num_ops) {
         struct operation op = ops[count];
@@ -67,8 +71,9 @@ int data_processing(struct operation *ops, int client_number) {
         }
         struct timeval *time_taken = malloc(sizeof(struct timeval));
         timersub(op.end, op.start, time_taken);
+        double ms = time_in_msec(time_taken);
 
-        fprintf(file, "%ld, %ld, %ld, %ld, %ld, %ld\n", op.start->tv_sec, op.start->tv_usec, op.end->tv_sec, op.end->tv_usec, time_taken->tv_sec, time_taken->tv_usec);
+        fprintf(file, "%ld,%ld,%ld,%ld,%f\n", op.start->tv_sec, op.start->tv_usec, op.end->tv_sec, op.end->tv_usec, ms);
 
         count++;
         last = op;
