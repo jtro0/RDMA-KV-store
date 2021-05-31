@@ -22,7 +22,7 @@ for type in types:
     
     x_values = list(range(1, 11))
     if max_clients > 10:
-        x_values = x_values + list(range(15, max_clients, 5))
+        x_values = x_values + list(range(15, max_clients+1, 5))
 
     for current_number_clients in x_values:
         current_start_sec = sys.maxsize
@@ -56,10 +56,10 @@ for type in types:
         
     if per_number_client:
         plot_label = type
-        x_plus_std = list(map(add, x_values, std_deviation))
-        x_min_std = list(map(sub, x_values, std_deviation))
+        #x_plus_std = list(map(add, x_values, std_deviation))
+        #x_min_std = list(map(sub, x_values, std_deviation))
         ax.plot(x_values, per_number_client, label=plot_label)
-        ax.fill_between(x_values, x_plus_std, x_min_std, alpha=0.5, interpolate=True)
+        ax.fill_between(x_values, ninety_five_quantile, five_quantile, alpha=0.5, interpolate=True)
     
 plt.title("Overall latency per Transport Type")
 plt.legend(loc="upper left", bbox_to_anchor=(1, 0.5))
