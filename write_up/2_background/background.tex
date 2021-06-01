@@ -91,9 +91,9 @@ Not all verbs are available to every QP type. Table \ref{tab:transport-verb} sum
         \toprule
         \textbf{Transportation type} & \textbf{SEND} & \textbf{RECV} & \textbf{READ} & \textbf{WRITE} & \textbf{MTU size} \\
         \midrule
-        RC & YES & YES & YES & YES &  \\
-        UC & YES & YES & NO & YES &  \\
-        UD & YES & YES & NO & NO &  \\
+        RC & YES & YES & YES & YES & 2 GB \\
+        UC & YES & YES & NO & YES & 2 GB \\
+        UD & YES & YES & NO & NO & 4 KB \\
         \bottomrule
     \end{tabular}
     \caption{Verbs available to each transportation type}
