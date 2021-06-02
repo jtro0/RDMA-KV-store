@@ -1,0 +1,43 @@
+% this file is called up by thesis.tex
+% content in this file will be fed into the main document
+
+\chapter{Future improvements}\label{ch:future-improvements} % top level followed by section, subsection
+
+
+% ----------------------- paths to graphics ------------------------
+
+% change according to folder and file names
+\ifpdf
+    \graphicspath{{7/figures/PNG/}{7/figures/PDF/}{7/figures/}}
+\else
+    \graphicspath{{7/figures/EPS/}{7/figures/}}
+\fi
+
+
+% ----------------------- contents from here ------------------------
+%
+\section{Experimental transport types}
+Current transportation types all have advantages and disadvantages.
+Reliable transport has advantages being predictable packet behavior.
+However, as has been shown in this thesis, connection transports (such as RC) have scalability issues, due to the RNIC caching issues with increasing number of QP's.
+Dynamically Connected Transport (DCT) is, currently, an experimental transport type which addresses these issues.
+DCT has a connection based design, while only requiring one QP.
+This is achieved by dynamically connecting and disconnecting with remote QP's, which would introduce additional latency with short-lived clients, or when dealing with concurrent large number of clients.
+
+\section{Optimizations}
+Currently, no optimizations are used to improve performance.
+Since this thesis focused on performance across transport types, this needed to remain consistent throughout.
+Optimizations, such as those used in HERD, improve performance significantly.
+Other optimizations can be found in Kalia et. al. paper on design guidelines and possible optimizations\cite{kalia2016design}.
+
+This thesis has shown the potential of using UD as scalable and high throughput transport type for RDMA KV stores, however this could be improved further.
+One improvement is to have multiple groups of clients, each with a single QP.
+This has been shown to be effective in ScaleRPC\cite{chen2019scalable}.
+Grouping clients reduces RNIC cache contention, by limiting the number of worker threads competing for cache. TODO
+However, like with RC and UC, using multiple QP's increases context switching, which harms performance.
+ScaleRPC have proposed solutions by "warming up" QP's.
+
+
+% ---------------------------------------------------------------------------
+% ----------------------- end of thesis sub-document ------------------------
+% ---------------------------------------------------------------------------

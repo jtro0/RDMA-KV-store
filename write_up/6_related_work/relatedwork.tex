@@ -15,9 +15,30 @@
 
 
 % ----------------------- contents from here ------------------------
-% 
+%
 
-\dots
+There are several proposed RDMA KV store designs.
+One of which, HERD \cite{kalia2014using}, uses a combination of transport types.
+HERD uses RDMA WRITE over UC for requests and SEND over UD for responses.
+Kalia et. al. have shown that WRITE offers lower latency and higher throughput compared to READ.
+Outgoing WRITEs have also been shown to not scale well with increase in number of QP connections.
+This confirms the poor scalability seen with RC in section \ref{subsec:scalability-rate}.
+
+HERD out performs the RDMA KV store presented in this thesis significantly.
+This could due to multiple factors:
+\begin{itemize}
+    \item HERD has implemented some optimizations towards prefetching before posting a SEND WR.
+    With this they have observed roughly 30\% improvement, in the best case comparison (2 random memory accesses at 4 CPU cores.)
+    \item Making use of one-sided WRITE for requests, bypassing the CPU.
+    \item Using inlined data for key.
+    Inlining small payloads decreases latency as there is no need for a DMA operation.
+\end{itemize}
+
+However, Kalia et. al. stated that performance should be comparable to SEND/SEND, given that inlining is possible.
+It was found that for a large number of clients and/or requests, the round-robin polling used, is inefficient.
+With 1000s of clients, a SEND/SEND design would scale better than the WRITE/SEND used in HERD.
+
+
 
 
 
