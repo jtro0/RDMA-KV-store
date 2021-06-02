@@ -37,6 +37,10 @@ Grouping clients reduces RNIC cache contention, by limiting the number of worker
 However, like with RC and UC, using multiple QP's increases context switching, which harms performance.
 ScaleRPC have proposed solutions by "warming up" QP's.
 
+\section{Newer hardware}
+Performance benchmarks for this thesis have been ran on DAS-5.
+DAS-5 is becoming outdated, with the newer DAS-6 being available mid-2021\cite{das6}.
+DAS-6 will make use of 100 Gbit/s Infiniband RNIC, near 2x bandwidth compared to DAS-5.
 
 % ---------------------------------------------------------------------------
 % ----------------------- end of thesis sub-document ------------------------

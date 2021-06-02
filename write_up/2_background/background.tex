@@ -23,39 +23,37 @@ Further, RDMA is thoroughly explained, as this is crucial to the understanding o
 
 \section[KV-store]{Key Value Store}\label{sec:kv-store}
 Key value stores are extensively used to offer low latency look ups.
-These have a wide variety of use cases, most notably as cache systems\cite{memcached} and as remote DRAM storage\cite{ousterhout2010case}.
+These have a wide variety of use cases, most notably as cache systems, such as Memcached\cite{memcached}, and as remote DRAM storage, such as RAMCloud\cite{ousterhout2010case}.
 In its simplest form, KV store use a set of commands, commonly SET, GET, and DEL, to perform tasks on a server.
 These commands interact with a fast data structure, like hash table or similar.
 Typically, this was the target for advancements in KV stores, using lower latency, memory efficient, and scalable data structures.
 
 It has been found that typical work loads consist mostly of GET requests.
-Atikoglu et. al. analysed typical workloads on Memcached systems, and have found that on average a 30:1 (95\%) GET/SET ratio\cite{atikoglu2012workload}.
-This figure will be used in the benchmarking design, see section \ref{benchmark} TODO.
+Atikoglu et. al. analysed workloads on Memcached systems, and have found that on average a 30:1 (95\%) GET/SET ratio\cite{atikoglu2012workload}.
+This figure will be used in the benchmarking design, see section \ref{sec:benchmark-design}.
 
 \section[Linux scokets]{Linux sockets}\label{sec:linux-sockets}
 
 \section[RDMA]{RDMA}\label{sec:rdma}
-Remote Direct Memory Access (RDMA) has been developed to address the issues of linux sockets.
-Providing a lower latency, less CPU overhead, and potentially higher throughput.
-The cost of RDMA is in the specialized hardware (RNICs) and added complexity.
-RNICs offload packet processing and memory management from the CPU.
+Remote Direct Memory Access (RDMA) address the issues of linux sockets, providing lower latency, less CPU overhead, and potentially higher throughput.
+RDMA has been used in super computers for many years, however recently have seen significant improvements.
+RDMA capable network cards (RNICs) have seen lowering in cost \cite{kalia2016design}, which made this an appealing improvement to data center networking.
+
+RDMA achieves this low latency by offloading all the network stack processing onto the RNIC, bypassing CPU and kernel entirely.
 As shown in section \ref{sec:linux-sockets} above, the linux kernel has an extensive route, from NIC to application, including system calls and memory copies.
-RDMA is a compelling technology for data centers, under latency sensitive workloads, making remote memory operations perform near local memory operations.
-
-As the name suggests, RDMA performs a DMA operations for fetching payloads and writing incoming payloads.
-For small payloads this can be inlined with the
-
-RDMA achieves lower latency, and the reason why it requires specialized hardware, by bypassing the CPU and OS kernel when it comes to memory access (allowing for zero copy memory transfers) and packet handling.
+With RDMA, a zero-copy memory access can be realized through DMA and programmable IO (PIO) operations.
+This makes RDMA a compelling technology for latency sensitive workloads, making remote memory operations possible and perform near local memory operation speeds.
 
 \subsection{Queue Pairs}\label{subsec:queue-pairs}
-A queue pair (QP) consists of a send and receive queue, these are the essence of performing network operations.
-These queues can be seen as the RX and TX queues in classical NIC, however are bound per RDMA connection instead of being shared.
-An application can post a send or receive work request onto these queues.
+RDMA is largely based around the notion of a queue pair (QP).
+These consist of a send and receive queue, these are the essence of performing network operations.
+These queues can be seen as the RX and TX queues in classical NIC, however are bound per QP instead of being shared system wide.
+A QP is similar to a linux socket, as these are used to send and receive data.
 A work request (WR) is a type of command that tells the RNIC what task to perform and which memory locations are needed.
-For RDMA operations like READ and WRITE this would include the remote address to be accessed, with two-sided verbs such as SEND and RECV this is accompanied by a buffer in which a scatter-gather event can take place.
-In this paper, the focus will be on SEND and RECV verbs, more can be read in section \ref{subsec:verbs} below and in \ref{ch:design} TODO REF RDMA IN DESIGN.
-Every WR placed either in the send or receive queue will be consumed in the same order as placed in the queue, similarly for completion of WR's.
-This is important when dealing with unreliable transportation, as explained in \ref{subsec:transportation-types}.
+For RDMA operations like READ and WRITE this would include the remote address to be accessed, with two-sided verbs such as SEND and RECV this is accompanied by a buffer for which DMA operations can take place.
+In this paper, the focus will be on SEND and RECV verbs, more can be read in section \ref{subsec:verbs} below and in \ref{sec:rdma2}.
+Every WR placed either in the send or receive queue will be consumed in the same order as placed in the queue, similarly for completions of WR's.
+This is important when dealing with unreliable transportation, as will be explained in \ref{subsec:transportation-types}.
 
 Queue pairs are also linked with a completion queue (CQ).
 This queue is used to inform an application of the status of WR's.
@@ -65,22 +63,34 @@ For connected QP's, explained further in \ref{subsec:transportation-types}, this
 A RECV WR will be successful once a matching SEND has been seen, and has been placed in the requests buffer location.
 
 \subsection{Transportation types}\label{subsec:transportation-types}
-Much like traditional networking, RDMA can make use of several transport types.
+Much like traditional networking, RDMA can make use of several transport protocols.
 Simply put, these can be split into two types, connection and datagram.
 Connection based can be split further into reliable and unreliable.
 Difference between reliable connection (RC) and unreliable connection (UC) is the use of ACK/NAK packets.
 With reliable transport types these are sent, while with unreliable these are not.
 This could result in packet loss.
-However, it has been shown TODO: ADD REFERENCE, that this rarely occurs.
-Furthermore, unreliable transport types do not ensure correct ordering of packets, similar to TCP and UDP.
+However, it has been shown that this rarely occurs\cite{kalia2014using, kalia2016fasst}.
+Furthermore, unreliable transport types do not ensure correct ordering of packets, similar to UDP.
 As stated in \ref{subsec:queue-pairs}, this entails that the order of a RECV WR's might not be filled with the appropriate client SEND request.
 This rises issues when working with various buffer types, as a buffer could with incorrect data and/or size.
+Additionally, this could require application retransmission handling.
+This is done by the RNIC in the case of RC.
 
 As stated in the name, RC and UC need a connection between queue pairs (QP).
 Only one QP can be connected to another QP.
 Contrasting this, unreliable datagram (UD) do not require a connection.
 This meaning that a UD QP can communicate with any other UD QP.
-UD therefore can make efficient use of a one-to-many network topology or application.
+UD therefore can make efficient use of a one-to-many network topology or application, and RNIC cache.
+Every QP has to be held by RNIC in cache, which is severely limited\cite{qiu2018toward}.
+A cache miss or many context switching in RNIC, would degregate performance.
+With the fan-in and fan-out effect present in many data center workloads, the potential scalability of connection oriented QP's is limited.
+
+UD is limited however in the maximum transmission unit (MTU).
+As can be seen in table \ref{tab:transport-verb}, UD has a maximum message size of 4KB, beyond this and the message is divided into several packets.
+This strongly contrasts the 2 GB available for RC and UC.
+This has to be taken into account on a per-application bases.
+In the case of this thesis, 4 KB is sufficient message size for KV-stores.
+Frey and Alonso have comprised a list of application and if it is suitable for RDMA\cite{frey2009minimizing}.
 
 \subsection{Verbs}\label{subsec:verbs}
 To interact with RNICs, RDMA uses so-called "verbs" to execute specific types of instructions.
@@ -120,7 +130,7 @@ This is a QP which is always available when using RNIC, and can be used to commu
 
 \subsection{Programming with RDMA}\label{subsec:programming-with-rdma}
 Unlike traditional sockets, much of RDMA's interfacing is open to the programmer, allowing for more detailed optimizations.
-The cost of this is the need for more management, which otherwise would be done by the kernel.
+The cost of this is the need for more memory management, which otherwise would be done by the kernel.
 
 Each program should allocate a protection domain (PD) before any other RDMA operation, as this acts as the address space within an RNIC.
 Any queue or buffer is associated with a PD.
@@ -129,28 +139,25 @@ A buffer registered within one PD cannot be accesses by a queue pair from anothe
 
 To create a "connection", first a QP should be created.
 QP's differ per transportation type, see section \ref{subsec:transportation-types}, and should be created accordingly.
-A QP is similar to socket, and is used to perform RDMA operations on the correct send or receive queue and, for connection based transport types, the correct connection.
 Along with send and receive queues, a completion queue is needed to inform the application when needed.
 To check for new WC's, the program can either block or poll on this CQ.
 The latter is preferred for lower latency.
 Checking the CQ is a thread safe operation, and a WC can only be consumed once and only once.
 This is important for the UD implementation used in this thesis, as multiple threads can poll CQ without conflicting.
-To connect or exchange QP information, the CM can be used, or using traditional sockets.
 
 Before performing any DMA operations, memory should be registered to make this accessible by the RNIC.
 This is done within the PD, and creates a memory region (MR).
-This memory can then be used by the RNIC with scatter-gather events.
-Besides, registering memory gives the RNIC confidence no page fault can occur.
-Any given memory address can be registered multiple times, and a single registration can register roughly 2 GB of memory.
-This limit differs per configuration and can also be altered.
+This memory can then be used by the RNIC with DMA.
+Any given memory address can be registered multiple times.
 Memory registration is an intensive operation and should be used sparingly.
 
 After the setup processes, the application can perform RDMA operations.
 A WR should be created.
-This holds SGE, which memory to access and what size, and the type of operation being performed, be it RDMA READ, WRITE, or SEND, RECV.
+This holds scatter-gather elements (SGE), used to identify which memory to access and what size, and the type of operation being performed, be it RDMA READ, WRITE, or SEND, RECV.
 A WR can be a linked list of multiple WR's.
-This save the amount of PCIe IO operations required.
 Along with this WR, a so-called "bad WR" should be included, for failed requests.
+A small payload can be attached to this WR, this is called inlining.
+This reduces the need for potential DMA operations, since some of the payload can be given along with the WR in one PIO operation.
 Program can post the WR and bad WR, on the send or receive queue of a QP.
 This operation is non-blocking, meaning the program can continue doing other instructions.
 

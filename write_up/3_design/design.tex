@@ -15,17 +15,16 @@
 
 
 % ----------------------- contents from here ------------------------
+In this section, the design of the used key value store is shown, along with design decision made for RDMA.
+Further, benchmarking strategy will be explained, used to evaluate the performance of various RDMA transport types.
+Lastly, an overview of DAS-5 is given, which will be used to run benchmarks.
+This can be used when comparisons are made with other findings.
 
 \section{Key value store}
 This thesis is focused on the scalability using RDMA, and will not focus on advancing KV-stores.
 Therefore, a simplified KV store has been used.
-In this simplified KV store, SET, GET, DEL are implemented, a long with other commands for testing purposes.
+In this simplified KV store, SET and GET instructions are mainly used, a long with other commands for testing purposes.
 
-
-As shown in \ref{sec:kv-store} are two main and necessary commands needed: GET and SET.
-Together with a key these form a request.
-Figure TODO MAKE FIGURE shows the structure of such a request.
-The
 \subsection{Requests}
 For a client to interact with a KV server, the client has to send a request towards the server.
 A request is structured as shown in figure TODO MAKE FIGURE.
@@ -59,13 +58,14 @@ This thread will read requests, process accordingly, and send back a response, a
 In this way, worker threads are unaffected by new clients that are connecting.
 
 To ensure concurrent and correct operation, each bucket has a mutex lock, and each key-value pair a read-write lock.
+This could cause performance loss as been seen in FaSST \cite{kalia2016fasst, qiu2018toward}.
 
-\section{RDMA}
+\section{RDMA}\label{sec:rdma2}
 For this research, the two-sided verbs SEND and RECV are used for RDMA.
-Looking at TODO ADD TABLE REF, across all transportation types SEND/RECV is the only available verb.
-This will come at a cost of performance.
-It has been show TODO FIND SOURCE HERD? that one-sided verbs, RDMA READ and WRITE, outperform the two-sided verbs.
-One-sided verbs are a compelling option for KV stores, as this would remove the need for much of the server processing, however this lies out of scope for this thesis.
+Looking at table \ref{tab:transport-verb}, across all transportation types SEND/RECV is the only available verb.
+This might come at a cost of performance, due to the channel schematic and CPU involvement.
+It has been shown that in some use cases, one-sided WRITE operations perform better\cite{kalia2014using}.
+However, this difference is minimal, and the use of WRITE is not possible for this research.
 
 \subsection{Queue pairs}
 Connection based QP's will be handled similarly as in section \ref{subsec:multithreaded} above.
@@ -75,9 +75,6 @@ This differs for UD.
 As stated in section \ref{sec:rdma}, any UD QP can communicate with any other UD QP.
 This meaning, that the server only needs one QP for all clients.
 A worker thread is still created for every client, however, in the case of UD, all threads use a shared queue.
-This contrasts RC and UC.
-Connected QP cannot process for another client.
-UD with its shared request queue, if only one client is left, all threads can process its requests.
 
 TODO ADD MORE GRAPHICS
 
@@ -94,6 +91,7 @@ During client benchmark execution, the time will be taken at two points: before 
 With this, the throughput and latency of every client and every operation can be traced back.
 These times will be kept in an array, and be returned after completing its tasks.
 The time will be later written to CSV files perform statistical analysis and graphs are drawn, as can be seen later on in the evaluation section \ref{ch:evaluation}.
+For this, Python 3.6\cite{python} is used, along with pandas\cite{pandas} and matplotlib\cite{matplotlib}.
 
 The benchmark is designed to evaluate each transportation types under similar conditions, and will follow the same path.
 Once a client is setup and connected with the server, it will start performing its tasks.
@@ -104,20 +102,19 @@ Else a GET request is generated.
 The client sends out the request, and waits for response.
 
 \subsection{Experimental Setup}
-All performance tests and results have been gathered on the DAS-5 computing cluster.
-This distributed system of computers is spread across the Netherlands, and is used by research groups from VU Amsterdam, TU Delft, Leiden University, and many more.
-Each cluster varies slightly in specifications, however each, is equipped with a 48 Gbit/s Inifiniband (IB) RDMA networking, and 1 Gbit/s classical ethernet networking.
+All performance tests and results have been gathered on the DAS-5 computing cluster\cite{das5}.
+This distributed system of computers spread across the Netherlands, and is used by research groups from VU Amsterdam, TU Delft, Leiden University, and many more.
+Each cluster varies slightly in specifications, however each, is equipped with dual Intel E5-2630v3 8-core CPUs, a 56 Gbit/s Inifiniband (IB) RDMA networking, and 1 Gbit/s classical ethernet networking.
 The specifications of each cluster is as shown in table \ref{tab:das5}.
 
 All experiments make use of the IB network card, and is also configured to run TCP/IP.
-Furthermore, at least two nodes are used.
-This ensures that the server and clients are separated.
+Furthermore, at least two nodes are used, his ensures that the server and clients are separated.
 
 \begin{table}
     \centering
     \begin{tabular}{lrlllll}
         \toprule
-        \textbf{Cluster} & \textbf{Nodes} & \textbf{CPU type} & \textbf{CPU frequency (GHz)} & \textbf{Memory (GB)} & \textbf{Network} \\
+        \textbf{Cluster} & \textbf{Nodes} & \textbf{CPU type} & \textbf{Frequency (GHz)} & \textbf{Memory (GB)} & \textbf{Network} \\
         \midrule
         VU & 68 & dual 8-core & 2.4 & 64 & IB and GbE \\
         LU & 24 & dual 8-core & 2.4 & 64 & IB and GbE \\

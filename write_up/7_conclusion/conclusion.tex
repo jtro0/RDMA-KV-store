@@ -15,13 +15,26 @@
 
 
 % ----------------------- contents from here ------------------------
-% 
-The results gathered have shown an significant improvement over TCP when using RDMA.
-Reliable connection transportation type has seen similar scalability to TCP, with a near 60 Ktasks/sec increase in throughput across all number of clients.
-Unreliable datagram has been shown to be most promising in scalability.
-With the highest throughput performance (near 60\% improvement compared to RC) and lowest latency, this transport type is easy to recommend for future RDMA key value stores.
-UD also has the most potential optimizations, improving performance further.
-Multiple QP connection, as needed with RC, have shown scalability issues, due to limited RNIC cache and context switching.
+%
+RDMA has been shown to be a promising advancement for key values stores.
+The low latency that RDMA brings with it, opens op new possibilities, not only for key value stores, but also for remote storage in DRAM.
+RDMA also requires more design decision to be made, which transportation protocol to use, which optimizations to use, and which verbs to use.
+In this thesis, the transportation protocols RC and UD have been compared, on performance, to TCP.
+
+\textbf{RQ1:} In industry, KV stores require to be scalable and low latency.
+Connection based transportation (RC and UC) put stress on RNIC when using large number of clients, hindering performance with respect to throughput and scalability.
+RC has similar scalability as TCP, with a near 60 kilo-tasks/sec increase in throughput across all number of clients.
+Best performing transportation type is UD.
+It has been shown that UD offers a 58.7\% improvement in throughput against RC, and 45.5\% improvement in latency.
+For scalability UD is recommended to use, as this offers the best overall performance and sustains this up to 30 clients, and has the potential for optimizations to further improve performance.
+
+\textbf{RQ2:} The advantages and disadvantages present with the different transportation types impact the KV store design choices.
+In context of KV stores, UD is a compelling transportation type, however does not offer RDMA verbs such as READ and WRITE, which could offer for improved performance.
+UD also allow for more optimizations, due to their one-to-many QP.
+UD performance in this thesis have found to be limited.
+Multiple UD QP's along with client grouping could continue scalability further.
+Connection based transportation types are limited by one-to-one QP, although also have some room for improvements.
+
 
 % ---------------------------------------------------------------------------
 % ----------------------- end of thesis sub-document ------------------------
