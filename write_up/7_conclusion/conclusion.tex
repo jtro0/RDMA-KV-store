@@ -16,10 +16,12 @@
 
 % ----------------------- contents from here ------------------------
 % 
-
-\dots
-
-
+The results gathered have shown an significant improvement over TCP when using RDMA.
+Reliable connection transportation type has seen similar scalability to TCP, with a near 60 Ktasks/sec increase in throughput across all number of clients.
+Unreliable datagram has been shown to be most promising in scalability.
+With the highest throughput performance (near 60\% improvement compared to RC) and lowest latency, this transport type is easy to recommend for future RDMA key value stores.
+UD also has the most potential optimizations, improving performance further.
+Multiple QP connection, as needed with RC, have shown scalability issues, due to limited RNIC cache and context switching.
 
 % ---------------------------------------------------------------------------
 % ----------------------- end of thesis sub-document ------------------------
