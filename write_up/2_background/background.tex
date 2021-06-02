@@ -32,7 +32,16 @@ It has been found that typical work loads consist mostly of GET requests.
 Atikoglu et. al. analysed workloads on Memcached systems, and have found that on average a 30:1 (95\%) GET/SET ratio\cite{atikoglu2012workload}.
 This figure will be used in the benchmarking design, see section \ref{sec:benchmark-design}.
 
-\section[Linux scokets]{Linux sockets}\label{sec:linux-sockets}
+\section[Linux scokets and TCP]{Linux sockets and TCP network stack}\label{sec:linux-sockets}
+Linux sockets are versatile programming API, offering for many types: files, IO, and lastly networking.
+Behind this socket interface, the kernel is tasked with data and memory, and connection management.
+This results in CPU cycles being used to process incoming packets and data copies, while these cycles could be used for other tasks.
+Linux takes an extensive route when dealing with packets, as shown in figure TODO MAKE FIGURE.
+The majority of the TCP network stack overhead being memory copies.
+
+Past attempts at improving TCP performance included offloading most processing to the network interface card (NIC).
+This has seen some improvements, however, TCP offload engine (TOE) has been better improvements.
+Combining this with DMA operation from the NIC, and a close to RDMA design is realised.
 
 \section[RDMA]{RDMA}\label{sec:rdma}
 Remote Direct Memory Access (RDMA) address the issues of linux sockets, providing lower latency, less CPU overhead, and potentially higher throughput.
