@@ -40,7 +40,8 @@ A task is defined as a request and response, and are equal to two operations.
 \section{Throughput analysis}\label{sec:throughput-analysis}
 We compare the average throughput between TCP, RC, and UD with up to 30 clients.
 From figure \ref{fig:throughput-30}, the maximum average throughput is observed to be roughly 205 kilo-tasks/sec for TCP, 251 kilo-tasks/sec for RC, both at 30 clients, and 399 kilo-tasks/sec for UD at 25 clients.
-
+RC shows a mere 22.8\% maximum improvement over TCP.
+UD in turn offers a significant gain of 94.8\% over TCP.
 \begin{figure}
     \centering
     \includegraphics[height=80mm]{/home/jtroo/Documents/VU/Thesis/RDMA-KV-store/benchmarking/graphs/Throughput_30}
