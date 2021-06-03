@@ -23,7 +23,7 @@ This can be used when comparisons are made with other findings.
 \section{Key value store}
 This thesis is focused on the scalability using RDMA, and will not focus on advancing KV-stores.
 Therefore, a simplified KV store has been used.
-In this simplified KV store, SET and GET instructions are mainly used, a long with other commands for testing purposes.
+For this KV store, SET and GET instructions are mainly used, a long with other commands for testing purposes.
 
 \subsection{Requests}
 For a client to interact with a KV server, the client has to send a request towards the server.
@@ -101,7 +101,7 @@ This is done by generating a random number as follows: $rand() \bmod 100 <= 5$.
 Else a GET request is generated.
 The client sends out the request, and waits for response.
 
-\subsection{Experimental Setup}
+\subsection{Experimental Setup}\label{subsec:experimental-setup}
 All performance tests and results have been gathered on the DAS-5 computing cluster\cite{das5}.
 This distributed system of computers spread across the Netherlands, and is used by research groups from VU Amsterdam, TU Delft, Leiden University, and many more.
 Each cluster varies slightly in specifications, however each, is equipped with dual Intel E5-2630v3 8-core CPUs, a 56 Gbit/s Inifiniband (IB) RDMA networking, and 1 Gbit/s classical ethernet networking.

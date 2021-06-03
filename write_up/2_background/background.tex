@@ -26,7 +26,7 @@ Key value stores are extensively used to offer low latency look ups.
 These have a wide variety of use cases, most notably as cache systems, such as Memcached\cite{memcached}, and as remote DRAM storage, such as RAMCloud\cite{ousterhout2010case}.
 In its simplest form, KV store use a set of commands, commonly SET, GET, and DEL, to perform tasks on a server.
 These commands interact with a fast data structure, like hash table or similar.
-Typically, this was the target for advancements in KV stores, using lower latency, memory efficient, and scalable data structures.
+Typically, this was the target for advancements in KV stores, using lower latency, memory efficient, and scalable data structures\cite{lim2014mica, escriva2012hyperdex}.
 
 It has been found that typical work loads consist mostly of GET requests.
 Atikoglu et. al. analysed workloads on Memcached systems, and have found that on average a 30:1 (95\%) GET/SET ratio\cite{atikoglu2012workload}.
@@ -34,56 +34,58 @@ This figure will be used in the benchmarking design, see section \ref{sec:benchm
 
 \section[Linux scokets and TCP]{Linux sockets and TCP network stack}\label{sec:linux-sockets}
 Linux sockets are versatile programming API, offering for many types: files, IO, and lastly networking.
-Behind this socket interface, the kernel is tasked with data and memory, and connection management.
+Behind this socket interface, the kernel is tasked with data and memory, and connection management\cite{hanford2018survey, seth2009tcp}.
 This results in CPU cycles being used to process incoming packets and data copies, while these cycles could be used for other tasks.
-Linux takes an extensive route when dealing with packets, as shown in figure TODO MAKE FIGURE.
-The majority of the TCP network stack overhead being memory copies.
+Linux takes an extensive route when dealing with packets, as shown by Hanford et. al. detailed investigation into this\cite{hanford2018survey}
+Memory copies have been found to cause delay in Frey and Alonso's work\cite{frey2009minimizing}, however for small message sizes, Yasukata, and team, found this is insignificant\cite{yasukata2016stackmap}.
+TCP processing accounted for more than half of the overhead, after subtracting unavoidable PCIe latencies.
 
-Past attempts at improving TCP performance included offloading most processing to the network interface card (NIC).
-This has seen some improvements, however, TCP offload engine (TOE) has been better improvements.
-Combining this with DMA operation from the NIC, and a close to RDMA design is realised.
+Past attempts at improving TCP performance included offloading most processing to the network interface card (NIC)\cite{hanford2018survey}.
+Higher end NICs use an TCP offload engine (TOE) and DMA.
+The socket API still requires system calls, among other limitations, thus requiring kernel trapping for management.
 
 \section[RDMA]{RDMA}\label{sec:rdma}
 Remote Direct Memory Access (RDMA) address the issues of linux sockets, providing lower latency, less CPU overhead, and potentially higher throughput.
 RDMA has been used in super computers for many years, however recently have seen significant improvements.
 RDMA capable network cards (RNICs) have seen lowering in cost \cite{kalia2016design}, which made this an appealing improvement to data center networking.
 
-RDMA achieves this low latency by offloading all the network stack processing onto the RNIC, bypassing CPU and kernel entirely.
-As shown in section \ref{sec:linux-sockets} above, the linux kernel has an extensive route, from NIC to application, including system calls and memory copies.
-With RDMA, a zero-copy memory access can be realized through DMA and programmable IO (PIO) operations.
-This makes RDMA a compelling technology for latency sensitive workloads, making remote memory operations possible and perform near local memory operation speeds.
+RDMA achieves this low latency by offloading the network processing onto the RNIC, bypassing CPU and kernel entirely.
+As shown in section \ref{sec:linux-sockets} above, the linux kernel has an extensive route, from application to NIC to network, including system calls and memory copies.
+With RDMA, a zero-copy memory access can be realised through DMA and programmable IO (PIO) operations.
+This makes RDMA a compelling technology for latency sensitive workloads, like KV-store, making remote memory operations possible and perform near to local memory operation speeds.
 
 \subsection{Queue Pairs}\label{subsec:queue-pairs}
 RDMA is largely based around the notion of a queue pair (QP).
 These consist of a send and receive queue, these are the essence of performing network operations.
-These queues can be seen as the RX and TX queues in classical NIC, however are bound per QP instead of being shared system wide.
+These queues can be seen as the receive and transmit queue (RX and TX respectively) in classical NIC, however are bound per QP instead of being shared system wide.
 A QP is similar to a linux socket, as these are used to send and receive data.
-A work request (WR) is a type of command that tells the RNIC what task to perform and which memory locations are needed.
+A work request (WR) is a type of command that tells the RNIC what task to perform and which memory locations are needed, these are passed to the RNIC via PIO operations.
 For RDMA operations like READ and WRITE this would include the remote address to be accessed, with two-sided verbs such as SEND and RECV this is accompanied by a buffer for which DMA operations can take place.
 In this paper, the focus will be on SEND and RECV verbs, more can be read in section \ref{subsec:verbs} below and in \ref{sec:rdma2}.
 Every WR placed either in the send or receive queue will be consumed in the same order as placed in the queue, similarly for completions of WR's.
 This is important when dealing with unreliable transportation, as will be explained in \ref{subsec:transportation-types}.
 
 Queue pairs are also linked with a completion queue (CQ).
-This queue is used to inform an application of the status of WR's.
-Once an WR has been processed by the RNIC, it generates a work completion (WC), and places this on the CQ.
-For a SEND WR, a WC will be generated when the request has been successfully sent.
-For connected QP's, explained further in \ref{subsec:transportation-types}, this is when the recipient has acknowledged the request.
-A RECV WR will be successful once a matching SEND has been seen, and has been placed in the requests buffer location.
+This queue is used as a notification queue, with the status of WR's.
+For signalled WR's, a completion event will be passed from RNIC to CPU, thus minor CPU involvement.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\columnwidth]{/home/jtroo/Documents/VU/Thesis/RDMA-KV-store/write_up/figures/PDF/RDAM_SEND_RECV_drawing}
+    \caption[Process overview of pre-posting and send from client to server.]{Process overview of pre-posting and send from client to server. add more explaination}
+    \label{fig:send_recv_drawing}
+\end{figure}
+
 
 \subsection{Transportation types}\label{subsec:transportation-types}
 Much like traditional networking, RDMA can make use of several transport protocols.
-Simply put, these can be split into two types, connection and datagram.
-Connection based can be split further into reliable and unreliable.
-Difference between reliable connection (RC) and unreliable connection (UC) is the use of ACK/NAK packets.
-With reliable transport types these are sent, while with unreliable these are not.
-This could result in packet loss.
+Simply put, these can be split into two types, connection and datagram, and reliable and unreliable.
+There are 3 main transportation types: reliable connection (RC), unreliable connection (UC), and unreliable datagram (UD).
+
+Firstly, unreliable protocols do not make use of ACK/NAK packets, while this is used for reliable, this could result in packet loss and unordered packets.
 However, it has been shown that this rarely occurs\cite{kalia2014using, kalia2016fasst}.
-Furthermore, unreliable transport types do not ensure correct ordering of packets, similar to UDP.
-As stated in \ref{subsec:queue-pairs}, this entails that the order of a RECV WR's might not be filled with the appropriate client SEND request.
-This rises issues when working with various buffer types, as a buffer could with incorrect data and/or size.
 Additionally, this could require application retransmission handling.
-This is done by the RNIC in the case of RC.
+With reliable protocol this is process is done by the RNIC, without OS or application involvement.
 
 As stated in the name, RC and UC need a connection between queue pairs (QP).
 Only one QP can be connected to another QP.
@@ -91,8 +93,8 @@ Contrasting this, unreliable datagram (UD) do not require a connection.
 This meaning that a UD QP can communicate with any other UD QP.
 UD therefore can make efficient use of a one-to-many network topology or application, and RNIC cache.
 Every QP has to be held by RNIC in cache, which is severely limited\cite{qiu2018toward}.
-A cache miss or many context switching in RNIC, would degregate performance.
-With the fan-in and fan-out effect present in many data center workloads, the potential scalability of connection oriented QP's is limited.
+A cache miss or many context switching in RNIC, would diminish performance.
+With the fan-in and fan-out effect present in many data center workloads\cite{vasudevan2009safe}, the potential scalability of connection oriented QP's is limited\cite{kalia2016fasst}.
 
 UD is limited however in the maximum transmission unit (MTU).
 As can be seen in table \ref{tab:transport-verb}, UD has a maximum message size of 4KB, beyond this and the message is divided into several packets.
