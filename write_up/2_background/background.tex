@@ -36,7 +36,7 @@ This figure will be used in the benchmarking design, see section \ref{sec:benchm
 Linux sockets are versatile programming API, offering for many types: files, IO, and lastly networking.
 Behind this socket interface, the kernel is tasked with data and memory, and connection management\cite{hanford2018survey, seth2009tcp}.
 This results in CPU cycles being used to process incoming packets and data copies, while these cycles could be used for other tasks.
-Linux takes an extensive route when dealing with packets, as shown by Hanford et. al. detailed investigation into this\cite{hanford2018survey}
+Linux takes an extensive route when dealing with packets, as shown by Hanford et. al. detailed investigation\cite{hanford2018survey}.
 Memory copies have been found to cause delay in Frey and Alonso's work\cite{frey2009minimizing}, however for small message sizes, Yasukata, and team, found this is insignificant\cite{yasukata2016stackmap}.
 TCP processing accounted for more than half of the overhead, after subtracting unavoidable PCIe latencies.
 
@@ -71,7 +71,7 @@ For signalled WR's, a completion event will be passed from RNIC to CPU, thus min
 
 \begin{figure}
     \centering
-    \includegraphics[width=\columnwidth]{/home/jtroo/Documents/VU/Thesis/RDMA-KV-store/write_up/figures/PDF/RDAM_SEND_RECV_drawing}
+    \includegraphics[width=\columnwidth]{figures/PDF/RDAM_SEND_RECV_drawing}
     \caption[Process overview of pre-posting and send from client to server.]{Process overview of pre-posting and send from client to server. add more explaination}
     \label{fig:send_recv_drawing}
 \end{figure}
