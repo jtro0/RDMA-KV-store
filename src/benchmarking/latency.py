@@ -47,6 +47,8 @@ plt.title(plot_title)
 # ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 plt.xlabel("Operation")
 plt.ylabel("Latency (usec)")
+plt.grid(linestyle='dotted')
+
 graph_filename = "../../benchmarking/graphs/%(type)s_Latency_%(clients)d.svg" % {"type":type_arg, "clients":number_clients_arg}
 plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
 
