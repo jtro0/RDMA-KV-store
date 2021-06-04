@@ -26,6 +26,25 @@ Therefore, a simplified KV store has been used.
 For this KV store, SET and GET instructions are mainly used, a long with other commands for testing purposes.
 
 \subsection{Requests}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[]{/home/jtroo/Documents/VU/Thesis/RDMA-KV-store/write_up/figures/PDF/request}
+        \caption{Request structure}
+        \label{fig:request}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics{/home/jtroo/Documents/VU/Thesis/RDMA-KV-store/write_up/figures/PDF/method}
+        \caption{Values for method}
+        \label{fig:method}
+    \end{subfigure}
+    \caption{Structure for request with accommodated method}
+\end{figure}
+
 For a client to interact with a KV server, the client has to send a request towards the server.
 A request is structured as shown in figure TODO MAKE FIGURE.
 Along with the command type, a key must be given.
@@ -42,9 +61,17 @@ Upon error, an error code will be sent back: PARSING\_ERROR, or UNKNOWN (UNK), l
 
 
 \subsection{Hash table}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\columnwidth]{figures/PDF/Client_to_hash_table}
+    \caption[Key value server layout]{Key value server layout. Process worker thread takes with incoming requests, and what response is sent. A successful SET request is shown in red, adding a value "Value Z" to the internal linked list, with key "Key Z". Blue is an unsuccessful GET where the key is not known.}
+    \label{fig:hash_table}
+\end{figure}
+
 Internally, a hash table with 1024 buckets is used.
 Each bucket contains a linked list of key-value pairs.
-Figure TODO MAKE FIGURE shows the structure of the KV store used.
+Figure \ref{fig:hash_table} shows the structure of the KV store used.
 It should be noted, a linked list approach, as used here, does not scale well.
 As buckets are filled, either due to a hash collisions or extensive use, GET requests can cause for significantly delay, especially when encountering a key miss.
 This can be partially solved with a large hash table, this however will not be a long term solution, along with strong hash function.
