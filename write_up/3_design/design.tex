@@ -29,19 +29,17 @@ For this KV store, SET and GET instructions are mainly used, a long with other c
 
 \begin{figure}
     \centering
-    \begin{subfigure}[b]{0.3\textwidth}
+    \subfigure[Request structure] {
         \centering
-        \includegraphics[]{/home/jtroo/Documents/VU/Thesis/RDMA-KV-store/write_up/figures/PDF/request}
-        \caption{Request structure}
+        \includegraphics{figures/PDF/request}
         \label{fig:request}
-    \end{subfigure}
+    }
     \hfill
-    \begin{subfigure}[b]{0.3\textwidth}
+    \subfigure[Values for method] {
         \centering
-        \includegraphics{/home/jtroo/Documents/VU/Thesis/RDMA-KV-store/write_up/figures/PDF/method}
-        \caption{Values for method}
+        \includegraphics{figures/PDF/method}
         \label{fig:method}
-    \end{subfigure}
+    }
     \caption{Structure for request with accommodated method}
 \end{figure}
 
@@ -53,6 +51,23 @@ A field for payload is always sent, however only used for SET commands.
 This is to have a constant data size.
 
 \subsection{Response}
+
+\begin{figure}
+    \centering
+    \subfigure[Response structure] {
+        \centering
+        \includegraphics{figures/PDF/response}
+        \label{fig:response}
+    }
+    \hfill
+    \subfigure[Respond codes] {
+        \centering
+        \includegraphics{figures/PDF/method}
+        \label{fig:codes}
+    }
+    \caption{Structure for response with accommodated response codes}
+\end{figure}
+
 After processing a request the server will always respond.
 The structure of which is shown in TODO MAKE FIGURE.
 In case of a successful execution, an OK code will be given.
