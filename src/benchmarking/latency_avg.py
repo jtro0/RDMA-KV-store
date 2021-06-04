@@ -73,6 +73,7 @@ plt.title("Overall latency per Transport Type")
 plt.legend(loc="upper left", bbox_to_anchor=(1, 0.5))
 plt.xlabel("Number of clients")
 plt.ylabel("Latency (usec)")
+plt.grid(linestyle='dotted')
 
 graph_filename = "../../benchmarking/graphs/Latency_avg_%d.svg" % max_clients
 plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
