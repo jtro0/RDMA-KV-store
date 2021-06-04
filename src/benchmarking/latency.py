@@ -19,33 +19,36 @@ for filename in filenames:
     
     df = pd.read_csv(filename)
     
-    if client_number == 0:
-        first_sec = df[:1]["start_sec"]
-        first_usec = df[:1]["start_usec"]
-    elif client_number == 9:
-        last_sec = df.tail(1)["end_sec"]
-        last_usec = df.tail(1)["end_usec"]
-        
-    current_first_sec = df.head(1)["start_sec"].at[0]
-    current_first_usec = df.head(1)["start_usec"].at[0]
-    current_last_sec = df.tail(1)["end_sec"].at[len(df.index)-1]
-    current_last_usec = df.tail(1)["end_usec"].at[len(df.index)-1]
+    # if client_number == 0:
+    #     first_sec = df[:1]["start_sec"]
+    #     first_usec = df[:1]["start_usec"]
+    # elif client_number == 9:
+    #     last_sec = df.tail(1)["end_sec"]
+    #     last_usec = df.tail(1)["end_usec"]
+    #
+    # current_first_sec = df.head(1)["start_sec"].at[0]
+    # current_first_usec = df.head(1)["start_usec"].at[0]
+    # current_last_sec = df.tail(1)["end_sec"].at[len(df.index)-1]
+    # current_last_usec = df.tail(1)["end_usec"].at[len(df.index)-1]
+    #
+    # time_taken_sec = util.calc_time_difference_sec(current_first_sec, current_first_usec, current_last_sec, current_last_usec)
+    #
+    print(df['latency'].mean())
+    latency_usec = df['latency'].div(1000)
+    print(latency_usec.mean())
+# ops_per_sec = len(df.index) / time_taken_sec
     
-    time_taken_sec = util.calc_time_difference_sec(current_first_sec, current_first_usec, current_last_sec, current_last_usec)
+    # plot_label = 'Client %(id)d: %(ops)d ops/sec' % {"id":client_number, "ops":ops_per_sec}
     
-    latency_msec = df['latency']
-    
-    ops_per_sec = len(df.index) / time_taken_sec
-    
-    plot_label = 'Client %(id)d: %(ops)d ops/sec' % {"id":client_number, "ops":ops_per_sec}
-    
-    ax.plot(latency_msec.index, latency_msec, label=plot_label)
+    ax.plot(latency_usec.index, latency_usec)
 
 plot_title = "%(type)s connection, %(clients)d clients: Latency per client" % {"type": type_arg, "clients":number_clients_arg}
 plt.title(plot_title)
-ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+# ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 plt.xlabel("Operation")
-plt.ylabel("Latency (ms)")
-graph_filename = "../../benchmarking/graphs/%(type)s_Latency_%(clients)d.png" % {"type":type_arg, "clients":number_clients_arg}
-plt.savefig(graph_filename, dpi=100)
+plt.ylabel("Latency (usec)")
+plt.grid(linestyle='dotted')
+
+graph_filename = "../../benchmarking/graphs/%(type)s_Latency_%(clients)d.svg" % {"type":type_arg, "clients":number_clients_arg}
+plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
 
