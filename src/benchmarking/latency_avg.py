@@ -43,28 +43,30 @@ for type in types:
             #ms = df.apply(lambda x:  util.time_in_msec(x[" diff_sec"], x[" diff_usec"]), axis=1)
             ms = df['latency']
             if len(ms) > 0:
-                print(ms)
+                # print(ms)
                 all_latencies.append(ms)
             
         if len(all_latencies) > 0:
             concat = pd.concat(all_latencies)
-            first_quartile.append(concat.quantile(.25) / 1000)
-            third_quartile.append(concat.quantile(.75) / 1000)
-            per_number_client.append(concat.mean()/1000)
-            std_deviation.append(concat.std()/1000)
+
+            data = [concat.quantile(.25) / 1000, concat.quantile(.75) / 1000, concat.mean()/1000]
+            print(type[0] + ', ' + current_number_clients + ': ' + str(data))
+            first_quartile.append(data[0])
+            third_quartile.append(data[1])
+            per_number_client.append(data[2])
+            # std_deviation.append(concat.std()/1000)
         # per_number_client[current_number_clients-1] = ops_per_sec
 
         
     if per_number_client:
         plot_label = type[0]
-        first_quartile_label = "First quartile %s" % type[0]
-        third_quartile_label = "Third quartile %s" % type[0]
+        first_quartile_label = "First and third quartile %s" % type[0]
 
-        x_plus_std = list(map(add, x_values, std_deviation))
-        x_min_std = list(map(sub, x_values, std_deviation))
+        # x_plus_std = list(map(add, x_values, std_deviation))
+        # x_min_std = list(map(sub, x_values, std_deviation))
         ax.plot(x_values, per_number_client, label=plot_label, marker=type[1], color=type[2])
-        ax.plot(x_values, first_quartile, label=first_quartile_label, linestyle='--', marker=type[1], color=type[2])
-        ax.plot(x_values, third_quartile, label=third_quartile, linestyle='--', marker=type[1], color=type[2])
+        ax.plot(x_values, first_quartile, label=first_quartile_label, linestyle='--', color=type[2])
+        ax.plot(x_values, third_quartile, linestyle='--', color=type[2])
         ax.fill_between(x_values, first_quartile, third_quartile, alpha=0.1, interpolate=True)
     
 plt.title("Overall latency per Transport Type")
