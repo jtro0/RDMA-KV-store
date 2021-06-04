@@ -75,7 +75,7 @@ plt.xlabel("Number of clients")
 plt.ylabel("Latency (usec)")
 plt.grid(linestyle='dotted')
 
-graph_filename = "../../benchmarking/graphs/Latency_avg_%d.svg" % max_clients
+graph_filename = "../../benchmarking/graphs/Latency_avg_%d.pdf" % max_clients
 plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
 #plt.show
 
