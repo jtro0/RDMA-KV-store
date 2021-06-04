@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 filenames = util.get_all_csv()
 
-types = ["TCP", "RC", "UC", "UD"]
+types = [["TCP", "o", "tab:blue"], ["RC", "^", "tab:orange"], ["UC", "P", "tab:red"], ["UD", "x", "tab:green"]]
 
 
 max_clients = int(sys.argv[1])
@@ -31,7 +31,7 @@ for type in types:
         for filename in filenames:
             type_file, number_clients, client_number, number_ops = util.get_parts(filename)
             
-            if (type != type_file) or number_clients != current_number_clients:
+            if (type[0] != type_file) or number_clients != current_number_clients:
                 continue
 
             df = pd.read_csv(filename)
@@ -56,7 +56,7 @@ for type in types:
                     current_end_usec = current_last_usec
             
         time_taken_sec = util.calc_time_difference_sec(current_start_sec, current_start_usec, current_end_sec, current_end_usec)
-        ops_per_sec = number_ops / time_taken_sec
+        ops_per_sec = (number_ops/1000) / time_taken_sec
         print(ops_per_sec)
         if ops_per_sec > 0:
             per_number_client.append(ops_per_sec)
@@ -64,15 +64,15 @@ for type in types:
 
         
     if per_number_client:
-        plot_label = type
-        plt.plot(x_values, per_number_client, label=plot_label)
-    
+        plot_label = type[0]
+        plt.plot(x_values, per_number_client, label=plot_label, marker=type[1], color=type[2])
+
 plt.title("Overall throughput per Transport Type")
 plt.legend(loc="upper left", bbox_to_anchor=(1, 0.5))
 plt.xlabel("Number of clients")
-plt.ylabel("Throughput (tasks/sec)")
+plt.ylabel("Throughput (kilo-tasks/sec)")
 
-graph_filename = "../../benchmarking/graphs/Throughput_%d.png" % max_clients
-plt.savefig(graph_filename, dpi=100)
+graph_filename = "../../benchmarking/graphs/Throughput_%d.svg" % max_clients
+plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
 
      
