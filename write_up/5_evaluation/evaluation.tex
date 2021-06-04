@@ -29,7 +29,7 @@ In short, the results show:
     UD performs best, with a maximum throughput of roughly 400 kilo-tasks/sec.
     Further details are given in section \ref{sec:throughput-analysis}.
     \item Latency increases across all transportation types, with increased number of clients.
-    Results are inversely comparable to throughput, again with UD performing best, with a latency of roughly 0.058 ms at 30 clients TODO ACCURATE.
+    Results are inversely comparable to throughput, again with UD performing best, with a latency of roughly 64 $\mu$sec at 30 clients.
     Section \ref{sec:latency:analysis} delves deeper.
 \end{itemize}
 
@@ -44,7 +44,7 @@ RC shows a mere 22.8\% maximum improvement over TCP.
 UD in turn offers a significant gain of 94.8\% over TCP.
 \begin{figure}
     \centering
-    \includegraphics[width=\columnwidth]{figures/PDF/Throughput_30}
+    \includegraphics[height=8cm]{figures/PDF/Throughput_30}
     \caption{Throughput of clients executing 10 million operations}
     \label{fig:throughput-30}
 \end{figure}
@@ -66,8 +66,8 @@ With both being a connection oriented protocol, each server thread being tied to
 The benefits of RDMA do reflect in these results, with the throughput of RC being on average 59.7 kilo-tasks/sec above TCP.
 Both protocol stabilizing after roughly 20 clients, with less than 5\% change for TCP and less than 2\% for RC.
 
-\subsection{Fairness between clients}
-TODO GENERATE GRAPH FOR THIS
+%\subsection{Fairness between clients}
+%TODO GENERATE GRAPH FOR THIS
 
 \section{Latency analysis}\label{sec:latency:analysis}
 An important factor to KV store is their quick response time, and therefore this should ideally scale similarly, preferably better, than throughput.
@@ -84,9 +84,9 @@ Along with the average latency, the first and third quartile are shown, to analy
 \end{figure}
 
 The latency between protocols is an inverse reflection of the throughput graph, scaling and overall performance.
-Similarly, TCP performed worst, with an average latency of 0.135ms TODO ACCURATE NUMBER at 30 clients.
-RC following the same path as TCP and hits an average of 0.11ms, also at 30 clients.
-UD again performing best, reaching 0.06ms on average.
+Similarly, TCP performed worst, with an average latency of 134.2 $\mu$sec at 30 clients.
+RC hits an average of 113.7 $\mu$sec, also at 30 clients.
+UD again performing best, reaching 64.4 $\mu$sec on average.
 This is an order of magnitude more than has been found in FaSST\cite{kalia2016fasst}, HERD\cite{kalia2014using}, and what should be theoretically possible.
 This could be due to lock contention with shared QP, and poor performance of KV store.
 A further examination of this could support this.
@@ -102,9 +102,34 @@ RC has a rapidly increasing variation.
 This is concerning for scalability and consistency, and could possibly be due to context switching.
 
 \subsection{All 30 clients and per operation latency}\label{subsec:all-30-clients-and-per-operation-latency}
-Figure TODO ADD REFERENCE TO GRAPH OF ALL 3 PER CLIENT LATENCY delves deeper into the details of the variation in latency.
-Within all protocols there are outliers and spikes in latency.
-Surprisingly, TCP has the least varying results, despite the few initial spikes.
+
+\begin{figure}
+    \centering
+    \subfigure[TCP] {
+        \centering
+        \includegraphics[width=0.47\columnwidth]{figures/PDF/TCP_Latency_30}
+        \label{fig:tcp_latency_30}
+    }
+    \subfigure[RC] {
+        \centering
+        \includegraphics[width=0.47\columnwidth]{figures/PDF/RC_Latency_30}
+        \label{fig:rc_latency_30}
+    }
+    \subfigure[UD] {
+        \centering
+        \includegraphics[width=0.47\columnwidth]{figures/PDF/UD_Latency_30}
+        \label{fig:ud_latency_30}
+    }
+    \caption{Structure for response with accommodated response codes}
+    \label{fig:latencies_30}
+\end{figure}
+
+
+Figure \ref{fig:latencies_30} delves deeper into the details of the latency outliers that are present.
+Note on the scale, not similar between protocols, and compared to figure \ref{fig:latency-30}.
+These outliers are the extreme outliers.
+TCP and RC see spikes up to 114185 $\mu$sec, or 114.2ms, and 32046 $\mu$sec, or 32.05ms.
+UD on the other only spikes to a maximum of 11702 $\mu$sec, or 11.7ms.
 
 \subsection{RDMA multiple QP's causing cache misses and context switching}
 In section \ref{subsec:transportation-types} the issue with holding multiple QP's within the RNIC, has been discussed.
@@ -116,7 +141,7 @@ With context switching, a large delay occurs, and harms the performance per clie
 For this reason, for large number of clients, a one-to-one QP is not advisable.
 
 \subsubsection{Cache misses as increased variation for RC}
-Furthermore, cache misses occur more often at the starting phase of KV store operations, as can be seen in section TODO PER CLIENT LATENCY above.
+Furthermore, cache misses occur more often at the starting phase of KV store operations, as can be seen in section \ref{fig:rc_latency_30} above.
 RC has consistently higher latency (0.75ms) for some clients at the start.
 Initially it was thought to be retransmissions, however for this was set to 67.1ms.
 Since this only occurs to some clients, and not all, this could be a result from the aforementioned context switching and RNIC cache misses.
@@ -124,7 +149,7 @@ At the start of operations, worker threads are operating in sync.
 This would result in RNIC processing multiple WR's concurrently.
 Some QP's will be cached and experience little cache misses throughout the starting phase, while others would encounter cache misses repeatedly.
 Once threads are out of sync and KV store operation latency increases (due to the increasing size of the hash table), the cache misses will occur for all QP's.
-This can be seen in figure TODO, as the latency in the final phase is randomized and less constant, compared to the starting phase.
+This can be seen in figure \ref{fig:rc_latency_30}, as the latency in the final phase is randomized and less constant, compared to the starting phase.
 
 With cache misses, latency per client varies, as some QP's would require further lookup after cache miss.
 This effect can be seen in figure \ref{fig:latency-30}, as increasing number of clients, and therefore QP's, increases the variation dramatically.

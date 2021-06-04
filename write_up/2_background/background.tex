@@ -69,14 +69,6 @@ Queue pairs are also linked with a completion queue (CQ).
 This queue is used as a notification queue, with the status of WR's.
 For signalled WR's, a completion event will be passed from RNIC to CPU, thus minor CPU involvement.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=\columnwidth]{figures/PDF/RDAM_SEND_RECV_drawing}
-    \caption[Process overview of pre-posting and send from client to server.]{Process overview of pre-posting and send from client to server. add more explaination}
-    \label{fig:send_recv_drawing}
-\end{figure}
-
-
 \subsection{Transportation types}\label{subsec:transportation-types}
 Much like traditional networking, RDMA can make use of several transport protocols.
 Simply put, these can be split into two types, connection and datagram, and reliable and unreliable.
@@ -95,6 +87,11 @@ UD therefore can make efficient use of a one-to-many network topology or applica
 Every QP has to be held by RNIC in cache, which is severely limited\cite{qiu2018toward}.
 A cache miss or many context switching in RNIC, would diminish performance.
 With the fan-in and fan-out effect present in many data center workloads\cite{vasudevan2009safe}, the potential scalability of connection oriented QP's is limited\cite{kalia2016fasst}.
+UD requires an adress handler (AH) to be passed along with its WR's.
+This is the route and the destination for a packet.
+The destination does not need to be a QP, but could also be a multicast group.
+Multiple clients can listen on the same channel, this is can be applied in applications where the same data can be used by multiple clients.
+An AH can be created from a previous work completion (WC), or via metadata exchange, see \ref{subsec:connecting-qp's}.
 
 UD is limited however in the maximum transmission unit (MTU).
 As can be seen in table \ref{tab:transport-verb}, UD has a maximum message size of 4KB, beyond this and the message is divided into several packets.
@@ -139,48 +136,46 @@ However, in some cases, a classical ethernet is not available.
 In these circumstances, a known QP, Communication Manager (CM), can be used.
 This is a QP which is always available when using RNIC, and can be used to communicate between RNICs.
 
+Unconnected datagrams also require metadata exchange, despite not being connected.
+Data such as QP number, and physical port, which is are needed to create AH, or join a multicast group.
+This can be achieved in the same way as with connected protocols.
+
 \subsection{Programming with RDMA}\label{subsec:programming-with-rdma}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\columnwidth]{figures/PDF/RDAM_SEND_RECV_drawing}
+    \caption[Process overview of SEND and RECV.]{Process overview of pre-posting receive and send from client to server. Numbered arrows have a corresponding function described in \ref{subsec:programming-with-rdma}. Numbered dashed lines are cache page entries for registered memory.}
+    \label{fig:send_recv_drawing}
+\end{figure}
+
 Unlike traditional sockets, much of RDMA's interfacing is open to the programmer, allowing for more detailed optimizations.
-The cost of this is the need for more memory management, which otherwise would be done by the kernel.
+The cost of this is the need for more memory management in userspace, which otherwise would be done by the kernel.
+In this section, this open interface will be discussed, what functions are needed to be done to make use of RDMA, and what happens internally.
+For this, figure \ref{fig:send_recv_drawing} illustrates the process of a send and receive operation, from client to server.
+It is assumed that client and server have successfully made a protection domain (PD), QP, and connect or exchanged data for these QP's, see section \ref{subsec:connecting-qp's} on how this can be done.
+The numbered arrows in figure \ref{fig:send_recv_drawing} correspond to the following:
 
-Each program should allocate a protection domain (PD) before any other RDMA operation, as this acts as the address space within an RNIC.
-Any queue or buffer is associated with a PD.
-A program can allocate many PDs, however cannot be used interchangeably.
-A buffer registered within one PD cannot be accesses by a queue pair from another PD, even within the same program.
-
-To create a "connection", first a QP should be created.
-QP's differ per transportation type, see section \ref{subsec:transportation-types}, and should be created accordingly.
-Along with send and receive queues, a completion queue is needed to inform the application when needed.
-To check for new WC's, the program can either block or poll on this CQ.
-The latter is preferred for lower latency.
-Checking the CQ is a thread safe operation, and a WC can only be consumed once and only once.
-This is important for the UD implementation used in this thesis, as multiple threads can poll CQ without conflicting.
-
-Before performing any DMA operations, memory should be registered to make this accessible by the RNIC.
-This is done within the PD, and creates a memory region (MR).
-This memory can then be used by the RNIC with DMA.
-Any given memory address can be registered multiple times.
-Memory registration is an intensive operation and should be used sparingly.
-
-After the setup processes, the application can perform RDMA operations.
-A WR should be created.
-This holds scatter-gather elements (SGE), used to identify which memory to access and what size, and the type of operation being performed, be it RDMA READ, WRITE, or SEND, RECV.
-A WR can be a linked list of multiple WR's.
-Along with this WR, a so-called "bad WR" should be included, for failed requests.
-A small payload can be attached to this WR, this is called inlining.
-This reduces the need for potential DMA operations, since some of the payload can be given along with the WR in one PIO operation.
-Program can post the WR and bad WR, on the send or receive queue of a QP.
-This operation is non-blocking, meaning the program can continue doing other instructions.
-
-The completion queue can be polled, or blocked, to review the status of the WR's.
-Once a WC is enqueued the status of the WR can be seen, either successful or unsuccessful.
-A successful WC for a receiving WR would entail that a SEND has been received, and the requested buffer has been filled.
-
-
-
-
-
-
+\begin{enumerate}
+    \item The server application should allocate memory for its receiving buffer.
+    \item This buffer should be registered in the RNIC under the PD used for this application.
+    By registering memory, a page table entry will be held in RNIC's cache.
+    \item Server pre-posts a receive.
+    This is needed to be able to receive before the client will send.
+    Usually this is done just before connecting, this way even if the receiving end lags behind, the RNIC will be ready to receive.
+    \item Client allocates the buffer that will be sent.
+    \item Also registering this buffer.
+    This can be done while the server is completing steps 1 and 2.
+    \item Posting a SEND WR to the RNIC.
+    This signals the RNIC that a given registered memory address will be sent via its QP.
+    \item The RNIC fetches this data in memory using DMA.
+    \item In step 8, this data is then sent over the network to the server.
+    \item The server's RNIC receives this data and performs an DMA operation to the buffer given by its RECV WR.
+    \item RNIC notifies with a completion event to the CPU, that it has a new event in its CQ.
+    \item RNIC also sends an completion event to the client.
+    \item This is passed along to the CPU.
+    \item The server can poll on the CQ, this tells the application that the RECV request has been completed.
+\end{enumerate}
 
 
 % ---------------------------------------------------------------------------

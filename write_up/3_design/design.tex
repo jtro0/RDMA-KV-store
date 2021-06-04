@@ -22,8 +22,9 @@ This can be used when comparisons are made with other findings.
 
 \section{Key value store}
 This thesis is focused on the scalability using RDMA, and will not focus on advancing KV-stores.
-Therefore, a simplified KV store has been used.
+Therefore, a trivial KV store has been used.
 For this KV store, SET and GET instructions are mainly used, a long with other commands for testing purposes.
+All possible commands can be seen in figure \ref{fig:method}.
 
 \subsection{Requests}
 
@@ -31,24 +32,22 @@ For this KV store, SET and GET instructions are mainly used, a long with other c
     \centering
     \subfigure[Request structure] {
         \centering
-        \includegraphics{figures/PDF/request}
+        \includegraphics[height=6cm]{figures/PDF/request}
         \label{fig:request}
     }
-    \hfill
     \subfigure[Values for method] {
         \centering
-        \includegraphics{figures/PDF/method}
+        \includegraphics[height=6cm]{figures/PDF/method}
         \label{fig:method}
     }
     \caption{Structure for request with accommodated method}
 \end{figure}
 
 For a client to interact with a KV server, the client has to send a request towards the server.
-A request is structured as shown in figure TODO MAKE FIGURE.
-Along with the command type, a key must be given.
-This key is used to identify the correct field within the hash table.
+A request is structured as shown in figure \ref{fig:request}.
+This key is used to identify the correct index within the hash table.
 A field for payload is always sent, however only used for SET commands.
-This is to have a constant data size.
+This is to have a constant data size, key having 64 bytes and message 256.
 
 \subsection{Response}
 
@@ -59,20 +58,20 @@ This is to have a constant data size.
         \includegraphics{figures/PDF/response}
         \label{fig:response}
     }
-    \hfill
     \subfigure[Respond codes] {
         \centering
-        \includegraphics{figures/PDF/method}
+        \includegraphics[height=6cm]{figures/PDF/response_code}
         \label{fig:codes}
     }
     \caption{Structure for response with accommodated response codes}
 \end{figure}
 
 After processing a request the server will always respond.
-The structure of which is shown in TODO MAKE FIGURE.
+The structure of which is shown in \ref{fig:response}.
 In case of a successful execution, an OK code will be given.
 For GET requests a payload is given along with this OK code, this is the value requested.
 Upon error, an error code will be sent back: PARSING\_ERROR, or UNKNOWN (UNK), latter of which is when the given command is unknown.
+Other response codes can be seen in \ref{fig:codes}
 
 
 \subsection{Hash table}
@@ -118,7 +117,7 @@ As stated in section \ref{sec:rdma}, any UD QP can communicate with any other UD
 This meaning, that the server only needs one QP for all clients.
 A worker thread is still created for every client, however, in the case of UD, all threads use a shared queue.
 
-TODO ADD MORE GRAPHICS
+%TODO ADD MORE GRAPHICS
 
 
 \section{Benchmark design}\label{sec:benchmark-design}
@@ -127,7 +126,7 @@ In total, 10 million tasks will be divided among clients.
 This number is constant to lessen the scalability issues with the underlying hash table.
 A task involves two operations, sending a request and receiving response.
 Only once a response is received from the server, can the client continue to the next task.
-This meaning that the full potential of RDMA is not being used, however it has been chosen for correctness, and such that latency can be evaluated accurately. TODO MAYBE I SHOULD CONTINUE?
+This meaning that the full potential of RDMA is not being used, however it has been chosen for correctness, and such that latency can be evaluated accurately. %TODO MAYBE I SHOULD CONTINUE?
 
 During client benchmark execution, the time will be taken at two points: before sending request, and after receiving response.
 With this, the throughput and latency of every client and every operation can be traced back.
