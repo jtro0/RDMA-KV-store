@@ -59,6 +59,7 @@ for type in types:
         ops_per_sec = (number_ops/1000) / time_taken_sec
         print(ops_per_sec)
         if ops_per_sec > 0:
+            print(type[0] + ', ' + str(current_number_clients) + ': ' + str(ops_per_sec))
             per_number_client.append(ops_per_sec)
         # per_number_client[current_number_clients-1] = ops_per_sec
 
