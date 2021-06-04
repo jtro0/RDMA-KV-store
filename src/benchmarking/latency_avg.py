@@ -50,7 +50,7 @@ for type in types:
             concat = pd.concat(all_latencies)
 
             data = [concat.quantile(.25) / 1000, concat.quantile(.75) / 1000, concat.mean()/1000]
-            print(type[0] + ', ' + current_number_clients + ': ' + str(data))
+            print(type[0] + ', ' + str(current_number_clients) + ': ' + str(data))
             first_quartile.append(data[0])
             third_quartile.append(data[1])
             per_number_client.append(data[2])
