@@ -33,6 +33,7 @@ for filename in filenames:
     #
     # time_taken_sec = util.calc_time_difference_sec(current_first_sec, current_first_usec, current_last_sec, current_last_usec)
     #
+    print(df['latency'].max)
     latency_msec = df['latency'].div(1000)
     
     # ops_per_sec = len(df.index) / time_taken_sec
