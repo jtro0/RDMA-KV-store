@@ -33,9 +33,9 @@ for filename in filenames:
     #
     # time_taken_sec = util.calc_time_difference_sec(current_first_sec, current_first_usec, current_last_sec, current_last_usec)
     #
-    print(df['latency'].max())
+    print(df['latency'].mean())
     latency_usec = df['latency'].div(1000)
-    print(latency_usec.max())
+    print(latency_usec.mean())
 # ops_per_sec = len(df.index) / time_taken_sec
     
     # plot_label = 'Client %(id)d: %(ops)d ops/sec' % {"id":client_number, "ops":ops_per_sec}
