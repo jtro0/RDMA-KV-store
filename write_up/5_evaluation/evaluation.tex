@@ -57,14 +57,14 @@ This is due the addition of threads for every new client.
 Since all these threads are actively working for all clients, this linear increase is to be expected.
 For the first 10 clients, UD increases its throughput by 23.4 kilo-tasks/sec per additional client.
 Compare this with 18.1 for RC and 10.9 kilo-tasks/sec for the baseline TCP.
-This shows strong scalability for UD with small number of clients.
+This shows strong scalability performance for UD with small number of clients.
 It is unclear from this graph if UD continues to scale beyond 30 clients.
 
 \subsection{Similarities between RC and TCP}
 It can also be seen in figure \ref{fig:throughput-30} that RC is similar to TCP in scalability.
-With both being a connection oriented protocol, each server thread being tied to a client, it shows similar performance.
-The benefits of RDMA do reflect in these results, with the throughput of RC being on average 59.7 kilo-tasks/sec above TCP.
-Both protocol stabilizing after roughly 20 clients, with less than 5\% change for TCP and less than 2\% for RC.
+With both being a connection oriented protocol, each server thread being tied to a client, resulting in less performance gain per additional worker thread.
+The benefits of RDMA does reflect in these results, with the throughput of RC being on average 59.7 kilo-tasks/sec above TCP.
+Both protocol stabilizing after roughly 20 clients, with less than 5\% change for TCP and less than 2\% for RC beyond 20 clients.
 
 %\subsection{Fairness between clients}
 %TODO GENERATE GRAPH FOR THIS
@@ -87,8 +87,9 @@ The latency between protocols is an inverse reflection of the throughput graph, 
 Similarly, TCP performed worst, with an average latency of 134.2 $\mu$sec at 30 clients.
 RC hits an average of 113.7 $\mu$sec, also at 30 clients.
 UD again performing best, reaching 64.4 $\mu$sec on average.
-This is an order of magnitude more than has been found in FaSST\cite{kalia2016fasst}, HERD\cite{kalia2014using}, and what should be theoretically possible.
-This could be due to lock contention with shared QP, and poor performance of KV store.
+
+Single client performance is lacking with HERD\cite{kalia2014using} and FaSST\cite{kalia2016fasst}, and from what should be theoretically possible, being in the order of sub-10 $\mu$sec latency.
+This could be due to lock contention with shared QP queues, in the case of UD, and/or poor performance of KV store.
 A further examination of this could support this.
 
 Similarly to throughput, UD scales relatively well, while RC and TCP scale linearly.
@@ -98,8 +99,9 @@ A near uniform latency for the first 15 clients, afterwards a gradual slope, com
 In figure \ref{fig:latency-30} the variation is given in form of first and third quartile.
 It can be seen that TCP and UD have a constant, a small, variation.
 TCP is skewed towards higher latencies at 30 clients, while UD, and RC, stay normally distributed throughout.
-RC has a rapidly increasing variation.
-This is concerning for scalability and consistency, and could possibly be due to context switching.
+RC has a rapidly increasing variation, which is concerning for scalability and consistency.
+As number of clients increases, the realised latency could vary drastically between tasks.
+These issues could possibly be due to context switching, more in subsection \ref{subsec:rdma-multiple-qp's-causing-cache-misses-and-context-switching} below.
 
 \subsection{All 30 clients and per operation latency}\label{subsec:all-30-clients-and-per-operation-latency}
 
@@ -127,18 +129,21 @@ This is concerning for scalability and consistency, and could possibly be due to
 
 Figure \ref{fig:latencies_30} delves deeper into the details of the latency outliers that are present.
 Note on the scale, not similar between protocols, and compared to figure \ref{fig:latency-30}.
-These outliers are the extreme outliers.
+These outliers are the extreme outliers, not displayed in figure \ref{fig:rc_latency_30}.
 TCP and RC see spikes up to 114185 $\mu$sec, or 114.2ms, and 32046 $\mu$sec, or 32.05ms.
 UD on the other only spikes to a maximum of 11702 $\mu$sec, or 11.7ms.
+These outliers have a significant impact on the realised performance.
+In the case of TCP and UD, these seem to occur at random.
+For RC this does not seem to be the case, which suggests a systematic error is at cause.
 
-\subsection{RDMA multiple QP's causing cache misses and context switching}
+\subsection{RDMA multiple QP's causing cache misses and context switching}\label{subsec:rdma-multiple-qp's-causing-cache-misses-and-context-switching}
 In section \ref{subsec:transportation-types} the issue with holding multiple QP's within the RNIC, has been discussed.
 The RNIC needs to perform context switching when changing QP.
-As the number of QP's increase, like with connection oriented transport types, the number of context switches needed increases.
+As the number of QP's increase, the number of context switches needed increases.
 Along this, the chance of cache misses are also increased.
 This decreases the performance, with increased latency, and in throughput as shown here.
 With context switching, a large delay occurs, and harms the performance per client, but also of the overall network.
-For this reason, for large number of clients, a one-to-one QP is not advisable.
+For this reason, for large number of clients, a one-to-one QP, such as RC and UC, is not advisable.
 
 \subsubsection{Cache misses as increased variation for RC}
 Furthermore, cache misses occur more often at the starting phase of KV store operations, as can be seen in section \ref{fig:rc_latency_30} above.
