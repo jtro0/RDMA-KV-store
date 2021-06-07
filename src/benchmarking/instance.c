@@ -21,6 +21,7 @@ void make_get_request(struct client_to_server_conn *conn, int count) {
             request = conn->rc_server_conn->request;
             break;
         case UC:
+            request = conn->uc_server_conn->request;
             break;
         case UD:
             request = conn->ud_server_conn->request;
@@ -44,6 +45,7 @@ void make_set_request(struct client_to_server_conn *conn, int count) {
             request = conn->rc_server_conn->request;
             break;
         case UC:
+            request = conn->uc_server_conn->request;
             break;
         case UD:
             request = conn->ud_server_conn->request;

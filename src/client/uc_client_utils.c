@@ -266,10 +266,10 @@ int uc_main(char *key, struct sockaddr_in *server_sockaddr) {
     struct uc_server_conn *server_conn = calloc(1, sizeof(struct uc_server_conn));
     server_conn->server_sockaddr = server_sockaddr;
 
-    ret = client_prepare_connection(server_conn);
+    ret = uc_client_prepare_connection(server_conn);
     check(ret, ret, "Failed to setup client connection , ret = %d \n", ret);
 
-    ret = client_connect_to_server(server_conn);
+    ret = uc_client_connect_to_server(server_conn);
     check(ret, ret, "Failed to setup client connection , ret = %d \n", ret);
 
     server_conn->request = allocate_request();
@@ -307,7 +307,7 @@ int uc_main(char *key, struct sockaddr_in *server_sockaddr) {
     print_response(server_conn->response);
     check(ret, ret, "Failed to receive second response ret = %d \n", ret);
 
-    ret = client_disconnect_and_clean(server_conn);
+    ret = uc_client_disconnect_and_clean(server_conn);
     check(ret, ret, "Failed to cleanly disconnect and clean up resources \n", ret);
 
     return ret;
