@@ -34,7 +34,7 @@ add_executable(kv_server ${SERVER_SOURCE} src/common.h src/common.c src/rdma_com
 add_executable(client src/client/run_client.c ${CLIENT_SOURCE} src/common.h src/common.c src/rdma_common.c src/rdma_common.h)
 add_executable(benchmark ${BENCHMARK_SOURCE} ${CLIENT_SOURCE} src/common.h src/common.c src/rdma_common.c src/rdma_common.h)
 
-#set_property(TARGET kv_server PROPERTY C_STANDARD 99)
-#set_property(TARGET client PROPERTY C_STANDARD 99)
-#set_property(TARGET benchmark PROPERTY C_STANDARD 99)
+set_property(TARGET kv_server PROPERTY C_STANDARD 99)
+set_property(TARGET client PROPERTY C_STANDARD 99)
+set_property(TARGET benchmark PROPERTY C_STANDARD 99)
 
