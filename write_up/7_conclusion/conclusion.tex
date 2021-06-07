@@ -1,0 +1,41 @@
+% this file is called up by thesis.tex
+% content in this file will be fed into the main document
+
+\chapter{Conclusion}\label{ch:conclusion} % top level followed by section, subsection
+
+
+% ----------------------- paths to graphics ------------------------
+
+% change according to folder and file names
+\ifpdf
+    \graphicspath{{7/figures/PNG/}{7/figures/PDF/}{7/figures/}}
+\else
+    \graphicspath{{7/figures/EPS/}{7/figures/}}
+\fi
+
+
+% ----------------------- contents from here ------------------------
+%
+RDMA has been shown to be a promising advancement for key values stores.
+The low latency that RDMA brings with it, opens op new possibilities and improved performance.
+RDMA also requires more design decision to be made, which transportation protocol to use, which optimizations to use, and which verbs to use.
+In this thesis, the transportation protocols RC and UD have been compared, on performance, to TCP.
+
+\textbf{RQ1:} In industry, KV stores require to be scalable and low latency.
+Connection based transportation (RC and UC) put stress on RNIC when using large number of clients, hindering performance with respect to throughput and scalability.
+RC has similar scalability to TCP, with a near 60 kilo-tasks/sec increase in throughput across all number of clients.
+Best performing transportation type is UD, with close to 400 kilo-tasks/sec throughput and 64 $\mu$sec at 30 clients.
+It has been shown that UD offers a 58.7\% improvement in throughput against RC, and 45.5\% improvement in latency.
+For scalability UD is recommended to use, as this offers the best overall performance and sustains this up to 30 clients, and has the potential for optimizations to further improve performance.
+
+\textbf{RQ2:} The advantages and disadvantages present with the different transportation types impact the KV store design choices.
+In context of KV stores, UD is a compelling transportation type, however does not offer RDMA verbs such as \textit{READ} and \textit{WRITE}, which could offer for improved performance.
+UD also allow for more optimizations, due to their one-to-many QP.
+UD performance in this thesis have found to be limited.
+Multiple UD QP's along with client grouping could continue scalability further.
+Connection based transportation types are limited by one-to-one QP, although also have some room for improvements.
+
+
+% ---------------------------------------------------------------------------
+% ----------------------- end of thesis sub-document ------------------------
+% ---------------------------------------------------------------------------

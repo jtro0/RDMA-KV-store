@@ -1,0 +1,26 @@
+
+% Thesis Abstract -----------------------------------------------------
+
+
+%\begin{abstractslong}    %uncommenting this line, gives a different abstract heading
+\begin{abstracts}        %this creates the heading for the abstract page
+
+    Seemingly ever growing tech giants, such as Facebook, Amazon and Google, require fast, reliable and scalable key-value storage (KV-store) to serve product recommendations, user preferences, and advertisements.
+    Past advancements of KV-stores have focussed on improving these underlying data structures.
+    Remote direct memory access (RDMA) networks have increasingly become more popular in commercial and academic data centers.
+    This relatively new technology offers lower latency and higher throughput performance compared to tradition sockets and network interface cards (NIC).
+    Scalability performance of RDMA transportation protocols has seen relatively little investigation, the majority of previous work focused on RDMA verb choice.
+
+    This paper focuses on this gap, evaluating scalability performance of RDMA transportation types.
+    These findings will be used to give recommendation for RDMA KV-store implementations.
+    Macro-level benchmarks have been conducted, with realistic KV-store workloads.
+    This has shown that RDMA offers a significant improvements compared to TCP.
+    UD has shown to perform best, with 94.8\% throughput improvement over TCP, and 58.7\% improvement over RC.
+    All the while offering consistent and gradually increasing latency up to 30 clients, reaching a maximum average latency of 64 $\mu$sec, which is an 52.0\% improvement over TCP.
+    Additionally, scalability issues of RC have been shown, and is not recommended in a KV-store application.
+
+\end{abstracts}
+%\end{abstractlongs}
+
+
+% ---------------------------------------------------------------------- 

@@ -69,3 +69,4 @@ Testing
 bin
 
 *.csv
+/out/

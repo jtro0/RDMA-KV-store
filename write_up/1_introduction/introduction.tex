@@ -1,0 +1,108 @@
+
+% this file is called up by thesis.tex
+% content in this file will be fed into the main document
+
+%: ----------------------- introduction file header -----------------------
+\chapter{Introduction}
+
+% the code below specifies where the figures are stored
+%\ifpdf
+%    \graphicspath{{1_introduction/figures/PNG/}{1_introduction/figures/PDF/}{1_introduction/figures/}}
+%\else
+%    \graphicspath{{1_introduction/figures/EPS/}{1_introduction/figures/}}
+%\fi
+
+% ----------------------------------------------------------------------
+%: ----------------------- introduction content ----------------------- 
+% ----------------------------------------------------------------------
+
+
+
+%: ----------------------- HELP: latex document organisation
+% the commands below help you to subdivide and organise your thesis
+%    \chapter{}       = level 1, top level
+%    \section{}       = level 2
+%    \subsection{}    = level 3
+%    \subsubsection{} = level 4
+% note that everything after the percentage sign is hidden from output
+
+
+
+\section{Context}
+Seemingly ever growing tech giants, such as Facebook, Amazon and Google, require fast, reliable and scalable key-value storage (KV-store) to serve product recommendations, user preferences, and advertisements\cite{decandia2007dynamo,geambasu2010comet}.
+A KV-store is a data storage type which aims to store many small values and provides a high throughput and low latency interface.
+KV-stores usually offer a simple interface using 3 commands: \textit{GET}, \textit{SET}, and \textit{DEL}.
+Typically, implemented with a hash-table, which matches the hash value of a given key, to the value associated with that key.
+Past advancements of KV-stores have focussed on improving these underlying data structures\cite{escriva2012hyperdex, lim2014mica}.
+Cuckoo and Hopscotch hashing\cite{kalia2014using, FaRM} have presented an alternative of an improved hash table algorithm.
+Nonetheless, with recent developments with RDMA networks, this has become a more attractive direction to improve KV-stores\cite{chen2019scalable}.
+
+Remote direct memory access (RDMA) networks have increasingly become more popular in commercial and academic data centers, due to the increase in availability and decrease in cost for RDMA capable network interface cards (RNICs)\cite{kalia2016design, chen2019scalable}.
+RDMA offers a more direct connection between two machines, by using direct memory acces (DMA), without the involvement of host CPU or OS.
+
+\section{Problem statement}
+Making efficient use of RDMA networks is a difficult task, and requires in-depth knowledge on the hardware constraints present in the RNICs \cite{kalia2016design, chen2019scalable}.
+Additionally, in a higher level sense, there are design choices to be made.
+RDMA networks can handle of various transportation types and so-called verbs, each with their own advantage and disadvantage.
+The impact of transportation types on scalability of an RDMA bases KV-store has not been explicitly examined.
+Previous work has focused on researching verb choices, less on transportation type\cite{kalia2014using, kalia2016fasst, mitchell2013using}.
+Scalability is an important factor for growing tech giants.
+These require a low latency and scale to reach large number of clients, all the while being highly available\cite{decandia2007dynamo}, which RDMA could provide.
+
+\section{Research Question}
+This paper will explore to what extent RDMA transportation types affect the performance and scalability of KV-store.
+For this, this research will answer the following questions:
+
+\begin{itemize}
+    \item[\textbf{RQ1}] How scalable are these transportation types?%, compared to traditional TCP?
+    This being an important factor for deploying KV stores.
+    RDMA design choice could affect this, but at what cost?
+    \item[\textbf{RQ2}] What are the advantages and disadvantages of RDMA transportation types on an KV-store?
+    This question aims to aid with design process of future RDMA KV stores.
+    By applying known ramifications of RDMA to that in a KV store use case
+    With supporting results, recommendations can be given, and possible design issues can be foreseen.
+\end{itemize}
+
+\section{Research Method}
+In this thesis the network performance of KV-store, with varying protocols, will be studied. 
+First an understanding of KV-stores is established.
+Along with discussing known issues with traditional networking, a relatively new technology, RDMA, will be introduced.
+Experiments will be performed to measure overall throughput and latency, with increasing number of clients.
+With this the possible scalability of each transport type will be shown.
+
+A prototype\cite{iosup2019atlarge,hamming1998art,peffers2007design} and experimental\cite{jain1990art,heiser2010,ousterhout2018always} approach is taken for this thesis:
+\begin{itemize}
+    \item[\textbf{M1}] A KV-store prototype will be implemented, with a flexible network interfacing, to include both traditional socket and RDMA interfacing.
+    This, and all other relevant project files, are open source and can be found on Github\cite{github}.
+    \item[\textbf{M2}] To investigate the performance and scalability between the various networking types, a workload realistic\cite{atikoglu2012workload} macro-level benchmark will be designed.
+\end{itemize}
+
+With the focus of this thesis being on the network implementation, a trivial KV-store will be used.
+This implementation does not offer strong performance and scalability, however these issues are minimized and kept consistent throughout experiments.
+
+All measurements hereafter are recorded on the DAS-5 computing cluster.
+This allows for a consistent working environment.
+Further details on this is shown in table \ref{tab:das5} and discussed in section \ref{subsec:experimental-setup}
+
+\section{Thesis Contributions}
+This thesis presents scalability performance of RC and UD are shown and compared to the well established TCP protocol.
+Additionally, recommendation as to which transportation protocol is best suited for an RDMA KV-store application.
+These findings can be used to further examine possible optimizations or RDMA verb choices, or aid in future RDMA KV-store implementations.
+The prototype and all project files can be found on Github\cite{github}.
+
+\section{Plagiarism Declaration}
+I herby declare that this thesis work, all data collected and findings are my own.
+
+For this thesis, the basic structure of KV store from course Operating Systems, at the VU, has been used.
+Along with basic RDMA functions from Dr. Trivedi's RDMA example\cite{rdma_example}.
+
+Note: permission incoming for use of KV store structure from OS course.
+
+\section{Thesis Structure}
+Section \ref{ch:background} will provide the necessarily background knowledge of KV-store, linux sockets, and RDMA.
+Next, section \ref{ch:design} will go over the design of the KV-store, networking interfacing, and benchmark.
+In section \ref{ch:design} this design will be taken and described the implementation in a more technical prospective.
+The benchmarking result will be presented and analyzed in section \ref{ch:evaluation}.
+Section \ref{ch:related-work} compares findings with that of previously done work.
+Future prospects will be given in section \ref{ch:future-improvements}.
+Closing off the thesis, section \ref{ch:conclusion} will go over the conclusion and provide recommendations.
