@@ -5,7 +5,7 @@
 #include "uc_client_utils.h"
 
 /* This function prepares client side connection resources for an RDMA connection */
-int uc_client_prepare_connection(struct uc_server_conn *server_conn) {
+int something_client_prepare_connection(struct uc_server_conn *server_conn) {
     struct rdma_cm_event *cm_event = NULL;
     int ret = -1;
     /*  Open a channel used to report asynchronous communication event */
@@ -122,7 +122,7 @@ int uc_client_prepare_connection(struct uc_server_conn *server_conn) {
 }
 
 /* Connects to the RDMA server */
-int uc_client_connect_to_server(struct uc_server_conn *server_conn) {
+int something_client_connect_to_server(struct uc_server_conn *server_conn) {
     struct rdma_conn_param conn_param;
     struct rdma_cm_event *cm_event = NULL;
     int ret = -1;
@@ -146,7 +146,7 @@ int uc_client_connect_to_server(struct uc_server_conn *server_conn) {
     return 0;
 }
 
-int uc_send_request(struct uc_server_conn *server_conn, struct request *request) {
+int something_send_request(struct uc_server_conn *server_conn, struct request *request) {
     int ret;
     struct ibv_wc wc;
 
@@ -181,7 +181,7 @@ int uc_pre_post_receive_response(struct uc_server_conn *server_conn, struct resp
     check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
 }
 
-int uc_receive_response(struct uc_server_conn *server_conn, struct response *response) {
+int something_receive_response(struct uc_server_conn *server_conn, struct response *response) {
     int ret;
     struct ibv_wc wc;
 
@@ -261,54 +261,54 @@ int uc_client_disconnect_and_clean(struct uc_server_conn *server_conn) {
     return 0;
 }
 
-int uc_main(char *key, struct sockaddr_in *server_sockaddr) {
-    int ret;
-    struct uc_server_conn *server_conn = calloc(1, sizeof(struct uc_server_conn));
-    server_conn->server_sockaddr = server_sockaddr;
-
-    ret = uc_client_prepare_connection(server_conn);
-    check(ret, ret, "Failed to setup client connection , ret = %d \n", ret);
-
-    ret = uc_client_connect_to_server(server_conn);
-    check(ret, ret, "Failed to setup client connection , ret = %d \n", ret);
-
-    server_conn->request = allocate_request();
-    bzero(server_conn->request, sizeof(struct request));
-    strncpy(server_conn->request->key, "testing", KEY_SIZE);
-    server_conn->request->key_len = strlen(server_conn->request->key);
-    server_conn->request->method = SET;
-    server_conn->request->msg_len = strlen("hello server");
-    strncpy(server_conn->request->msg, "hello server", MSG_SIZE);
-
-    print_request(server_conn->request);
-    ret = uc_send_request(server_conn, server_conn->request);
-    check(ret, ret, "Failed to get send request, ret = %d \n", ret);
-
-    server_conn->response = malloc(sizeof(struct response));
-    bzero(server_conn->response, sizeof(struct response));
-    ret = uc_receive_response(server_conn, server_conn->response);
-    print_response(server_conn->response);
-    check(ret, ret, "Failed to receive response, ret = %d \n", ret);
-
-    sleep(5);
-
-    server_conn->request = allocate_request();
-    bzero(server_conn->request, sizeof(struct request));
-    strncpy(server_conn->request->key, "testing", KEY_SIZE);
-    server_conn->request->key_len = strlen(server_conn->request->key);
-    server_conn->request->method = GET;
-    print_request(server_conn->request);
-
-    ret = uc_send_request(server_conn, server_conn->request);
-    check(ret, ret, "Failed to get send second request, ret = %d \n", ret);
-
-    bzero(server_conn->response, sizeof(struct response));
-    ret = uc_receive_response(server_conn, server_conn->response);
-    print_response(server_conn->response);
-    check(ret, ret, "Failed to receive second response ret = %d \n", ret);
-
-    ret = uc_client_disconnect_and_clean(server_conn);
-    check(ret, ret, "Failed to cleanly disconnect and clean up resources \n", ret);
-
-    return ret;
-}
+int uc_main(char *key, struct sockaddr_in *server_sockaddr) {}
+//    int ret;
+//    struct uc_server_conn *server_conn = calloc(1, sizeof(struct uc_server_conn));
+//    server_conn->server_sockaddr = server_sockaddr;
+//
+//    ret = uc_client_prepare_connection(server_conn);
+//    check(ret, ret, "Failed to setup client connection , ret = %d \n", ret);
+//
+//    ret = uc_client_connect_to_server(server_conn);
+//    check(ret, ret, "Failed to setup client connection , ret = %d \n", ret);
+//
+//    server_conn->request = allocate_request();
+//    bzero(server_conn->request, sizeof(struct request));
+//    strncpy(server_conn->request->key, "testing", KEY_SIZE);
+//    server_conn->request->key_len = strlen(server_conn->request->key);
+//    server_conn->request->method = SET;
+//    server_conn->request->msg_len = strlen("hello server");
+//    strncpy(server_conn->request->msg, "hello server", MSG_SIZE);
+//
+//    print_request(server_conn->request);
+//    ret = uc_send_request(server_conn, server_conn->request);
+//    check(ret, ret, "Failed to get send request, ret = %d \n", ret);
+//
+//    server_conn->response = malloc(sizeof(struct response));
+//    bzero(server_conn->response, sizeof(struct response));
+//    ret = uc_receive_response(server_conn, server_conn->response);
+//    print_response(server_conn->response);
+//    check(ret, ret, "Failed to receive response, ret = %d \n", ret);
+//
+//    sleep(5);
+//
+//    server_conn->request = allocate_request();
+//    bzero(server_conn->request, sizeof(struct request));
+//    strncpy(server_conn->request->key, "testing", KEY_SIZE);
+//    server_conn->request->key_len = strlen(server_conn->request->key);
+//    server_conn->request->method = GET;
+//    print_request(server_conn->request);
+//
+//    ret = uc_send_request(server_conn, server_conn->request);
+//    check(ret, ret, "Failed to get send second request, ret = %d \n", ret);
+//
+//    bzero(server_conn->response, sizeof(struct response));
+//    ret = uc_receive_response(server_conn, server_conn->response);
+//    print_response(server_conn->response);
+//    check(ret, ret, "Failed to receive second response ret = %d \n", ret);
+//
+//    ret = uc_client_disconnect_and_clean(server_conn);
+//    check(ret, ret, "Failed to cleanly disconnect and clean up resources \n", ret);
+//
+//    return ret;
+//}
