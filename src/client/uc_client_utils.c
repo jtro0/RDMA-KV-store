@@ -139,8 +139,8 @@ int something_client_connect_to_server(struct uc_server_conn *server_conn) {
                                 &cm_event);
     check(ret, ret, "Failed to get cm event, ret = %d \n", ret);
 
-    ret = rdma_ack_cm_event(cm_event);
-    check(ret, -errno, "Failed to acknowledge cm event, errno: %d\n", -errno);
+//    ret = rdma_ack_cm_event(cm_event);
+//    check(ret, -errno, "Failed to acknowledge cm event, errno: %d\n", -errno);
 
     printf("The client is connected successfully \n");
     return 0;

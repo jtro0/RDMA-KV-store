@@ -161,8 +161,8 @@ int uc_accept_new_connection(struct server_info *server, struct client_info *cli
      * must be made before acknowledgment. Like, we have already saved the
      * client id from "id" field before acknowledging the event.
      */
-    ret = rdma_ack_cm_event(cm_event);
-    check(ret, -errno, "Failed to acknowledge the cm event errno: %d \n", -errno);
+//    ret = rdma_ack_cm_event(cm_event);
+//    check(ret, -errno, "Failed to acknowledge the cm event errno: %d \n", -errno);
 
     pr_info("A new RDMA client connection id is stored at %p\n", client->uc_client->cm_client_id);
 
