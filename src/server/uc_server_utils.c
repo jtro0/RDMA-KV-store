@@ -103,7 +103,7 @@ int init_uc_server(struct server_info *server) {
      * to define an RDMA connection.
      */
     ret = rdma_create_id(server->uc_server_info->cm_event_channel, &server->uc_server_info->cm_server_id, NULL,
-                         RDMA_PS_TCP);
+                         RDMA_PS_IB);
     check(ret, -errno, "Creating server cm id failed with errno: %d ", -errno);
 
     pr_info("A RDMA connection id for the server is created \n");
