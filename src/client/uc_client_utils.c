@@ -17,7 +17,7 @@ int something_client_prepare_connection(struct uc_server_conn *server_conn) {
      */
     ret = rdma_create_id(server_conn->cm_event_channel, &server_conn->cm_client_id,
                          NULL,
-                         RDMA_PS_TCP);
+                         RDMA_PS_IB);
     check(ret, -errno, "Creating cm id failed with errno: %d \n", -errno);
     /* Resolve destination and optional source addresses from IP addresses  to
      * an RDMA address.  If successful, the specified rdma_cm_id will be bound
