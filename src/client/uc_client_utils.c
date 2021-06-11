@@ -60,7 +60,7 @@ int uc_client_prepare_connection(struct uc_server_conn *server_conn) {
     server_conn->qp_init_attr.cap.max_recv_wr = MAX_WR; /* Maximum receive posting capacity */
     server_conn->qp_init_attr.cap.max_send_sge = MAX_SGE; /* Maximum SGE per send posting */
     server_conn->qp_init_attr.cap.max_send_wr = MAX_WR; /* Maximum send posting capacity */
-    server_conn->qp_init_attr.qp_type = IBV_QPT_UD; /* QP type, UD = Unreliable datagram */
+    server_conn->qp_init_attr.qp_type = IBV_QPT_UC; /* QP type, UC = Unreliable connection */
     /* We use same completion queue, but one can use different queues */
     server_conn->qp_init_attr.recv_cq = server_conn->client_cq; /* Where should I notify for receive completion operations */
     server_conn->qp_init_attr.send_cq = server_conn->client_cq; /* Where should I notify for send completion operations */
