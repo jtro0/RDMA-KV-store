@@ -10,7 +10,7 @@
 
 int setup_uc_client_resources(struct uc_client_connection *client) {
     int ret = -1;
-    check(!client->cm_client_id, -EINVAL, "Client id is still NULL\n", -EINVAL);
+//    check(!client->cm_client_id, -EINVAL, "Client id is still NULL\n", -EINVAL);
 
     /* We have a valid connection identifier, lets start to allocate
      * resources. We need:
