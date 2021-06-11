@@ -23,7 +23,7 @@ int setup_uc_client_resources(struct uc_client_connection *client) {
      * And accessing recourses across PD will result in a protection fault.
      */
     pr_debug("allocating pd\n");
-    client->pd = ibv_alloc_pd(client->cm_client_id->verbs
+    client->pd = ibv_alloc_pd(client->context
             /* verbs defines a verb's provider,
              * i.e an RDMA device where the incoming
              * client connection came */);
@@ -37,8 +37,7 @@ int setup_uc_client_resources(struct uc_client_connection *client) {
      * A completion channel is also tied to an RDMA device, hence we will
      * use cm_client_id->verbs.
      */
-    client->io_completion_channel = ibv_create_comp_channel(
-            client->cm_client_id->verbs);
+    client->io_completion_channel = ibv_create_comp_channel(client->context);
     check(!client->io_completion_channel, -errno,
           "Failed to create an I/O completion event channel, %d\n",
           -errno);
@@ -51,7 +50,7 @@ int setup_uc_client_resources(struct uc_client_connection *client) {
      * information about the work completion. An I/O request in RDMA world
      * is called "work" ;)
      */
-    client->cq = ibv_create_cq(client->cm_client_id->verbs /* which device*/,
+    client->cq = ibv_create_cq(client->context /* which device*/,
                                CQ_CAPACITY /* maximum capacity*/,
                                NULL /* user context, not used here */,
                                client->io_completion_channel /* which IO completion channel */,
