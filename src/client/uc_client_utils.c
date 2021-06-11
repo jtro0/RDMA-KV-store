@@ -5,110 +5,87 @@
 #include "uc_client_utils.h"
 
 /* This function prepares client side connection resources for an RDMA connection */
-int something_client_prepare_connection(struct uc_server_conn *server_conn) {
-    struct rdma_cm_event *cm_event = NULL;
+int uc_client_prepare_connection(struct uc_server_conn *server_conn) {
     int ret = -1;
-    /*  Open a channel used to report asynchronous communication event */
-    server_conn->cm_event_channel = rdma_create_event_channel();
-    check(!server_conn->cm_event_channel, -errno, "Creating cm event channel failed, errno: %d \n", -errno);
-    pr_debug("RDMA CM event channel is created at : %p \n", server_conn->cm_event_channel);
-    /* rdma_cm_id is the connection identifier (like socket) which is used
-     * to define an RDMA connection.
-     */
-    ret = rdma_create_id(server_conn->cm_event_channel, &server_conn->cm_client_id,
-                         NULL,
-                         RDMA_PS_IB);
-    check(ret, -errno, "Creating cm id failed with errno: %d \n", -errno);
-    /* Resolve destination and optional source addresses from IP addresses  to
-     * an RDMA address.  If successful, the specified rdma_cm_id will be bound
-     * to a local device. */
-    ret = rdma_resolve_addr(server_conn->cm_client_id, NULL, (struct sockaddr *) server_conn->server_sockaddr, 2000);
 
-    check(ret, -errno, "Failed to resolve address, errno: %d \n", -errno);
-    pr_debug("waiting for cm event: RDMA_CM_EVENT_ADDR_RESOLVED\n");
-    ret = process_rdma_cm_event(server_conn->cm_event_channel,
-                                RDMA_CM_EVENT_ADDR_RESOLVED,
-                                &cm_event);
-    check(ret, ret, "Failed to receive a valid event, ret = %d \n", ret);
+    struct ibv_device **dev_list = ibv_get_device_list(NULL);
+    struct ibv_device *ib_dev = dev_list[0];
+    struct ibv_context *context = ibv_open_device(ib_dev);
 
-    /* we ack the event */
-    ret = rdma_ack_cm_event(cm_event);
-    check(ret, -errno, "Failed to acknowledge the CM event, errno: %d\n", -errno);
-    pr_debug("RDMA address is resolved \n");
-
-    /* Resolves an RDMA route to the destination address in order to
-     * establish a connection */
-    ret = rdma_resolve_route(server_conn->cm_client_id, 2000);
-    check(ret, -errno, "Failed to resolve route, erno: %d \n", -errno);
-    pr_debug("waiting for cm event: RDMA_CM_EVENT_ROUTE_RESOLVED\n");
-    ret = process_rdma_cm_event(server_conn->cm_event_channel,
-                                RDMA_CM_EVENT_ROUTE_RESOLVED,
-                                &cm_event);
-    check(ret, ret, "Failed to receive a valid event, ret = %d \n", ret);
-    /* we ack the event */
-    ret = rdma_ack_cm_event(cm_event);
-    check(ret, -errno, "Failed to acknowledge the CM event, errno: %d \n", -errno);
-
-    printf("Trying to connect to server at : %s port: %d \n",
-           inet_ntoa(server_conn->server_sockaddr->sin_addr),
-           ntohs(server_conn->server_sockaddr->sin_port));
-    /* Protection Domain (PD) is similar to a "process abstraction"
-     * in the operating system. All resources are tied to a particular PD.
-     * And accessing recourses across PD will result in a protection fault.
-     */
-    server_conn->pd = ibv_alloc_pd(server_conn->cm_client_id->verbs);
-    check(!server_conn->pd, -errno, "Failed to alloc pd, errno: %d \n", -errno);
-    pr_debug("pd allocated at %p \n", server_conn->pd);
-
-
-    pr_debug("here\n");
-        /* Now we need a completion channel, were the I/O completion
-         * notifications are sent. Remember, this is different from connection
-         * management (CM) event notifications.
-         * A completion channel is also tied to an RDMA device, hence we will
-         * use cm_client_id->verbs.
-         */
-    server_conn->io_completion_channel = ibv_create_comp_channel(server_conn->cm_client_id->verbs);
-    check(!server_conn->io_completion_channel, -errno, "Failed to create IO completion event channel, errno: %d\n",
+    server_conn->pd = ibv_alloc_pd(context);
+    check(!server_conn->pd, -errno, "Failed to allocate a protection domain errno: %d\n",
           -errno);
-    pr_debug("completion event channel created at : %p \n", server_conn->io_completion_channel);
+
+    pr_debug("A new protection domain is allocated at %p \n", server_conn->pd);
+    /* Now we need a completion channel, were the I/O completion
+     * notifications are sent. Remember, this is different from connection
+     * management (CM) event notifications.
+     * A completion channel is also tied to an RDMA device, hence we will
+     * use cm_client_id->verbs.
+     */
+    server_conn->io_completion_channel = ibv_create_comp_channel(context);
+    check(!server_conn->io_completion_channel, -errno,
+          "Failed to create an I/O completion event channel, %d\n",
+          -errno);
+
+    pr_debug("An I/O completion event channel is created at %p \n",
+             server_conn->io_completion_channel);
     /* Now we create a completion queue (CQ) where actual I/O
      * completion metadata is placed. The metadata is packed into a structure
      * called struct ibv_wc (wc = work completion). ibv_wc has detailed
      * information about the work completion. An I/O request in RDMA world
      * is called "work" ;)
      */
-    server_conn->client_cq = ibv_create_cq(server_conn->cm_client_id->verbs /* which device*/,
-                                           CQ_CAPACITY /* maximum capacity*/,
-                                           NULL /* user context, not used here */,
-                                           server_conn->io_completion_channel /* which IO completion channel */,
-                                           0 /* signaling vector, not used here*/);
-    check(!server_conn->client_cq, -errno, "Failed to create CQ, errno: %d \n", -errno);
-    pr_debug("CQ created at %p with %d elements \n", server_conn->client_cq, server_conn->client_cq->cqe);
+    server_conn->client_cq = ibv_create_cq(context /* which device*/,
+                                       CQ_CAPACITY /* maximum capacity*/,
+                                       NULL /* user context, not used here */,
+                                       server_conn->io_completion_channel /* which IO completion channel */,
+                                       0 /* signaling vector, not used here*/);
+    check(!server_conn->client_cq, -errno, "Failed to create a completion queue (cq), errno: %d\n",
+          -errno);
 
-    ret = ibv_req_notify_cq(server_conn->client_cq, 0);
-    check(ret, -errno, "Failed to request notifications, errno: %d\n", -errno);
+    pr_debug("Completion queue (CQ) is created at %p with %d elements \n",
+             server_conn->client_cq, server_conn->client_cq->cqe);
+    /* Ask for the event for all activities in the completion queue*/
+    ret = ibv_req_notify_cq(server_conn->client_cq /* on which CQ */,
+                            0 /* 0 = all event type, no filter*/);
+    check(ret, -errno, "Failed to request notifications on CQ errno: %d \n",
+          -errno);
 
     /* Now the last step, set up the queue pair (send, recv) queues and their capacity.
-      * The capacity here is define statically but this can be probed from the
-  * device. We just use a small number as defined in rdma_common.h */
+     * The capacity here is define statically but this can be probed from the
+     * device. We just use a small number as defined in rdma_common.h */
     bzero(&server_conn->qp_init_attr, sizeof server_conn->qp_init_attr);
     server_conn->qp_init_attr.cap.max_recv_sge = MAX_SGE; /* Maximum SGE per receive posting */
     server_conn->qp_init_attr.cap.max_recv_wr = MAX_WR; /* Maximum receive posting capacity */
     server_conn->qp_init_attr.cap.max_send_sge = MAX_SGE; /* Maximum SGE per send posting */
     server_conn->qp_init_attr.cap.max_send_wr = MAX_WR; /* Maximum send posting capacity */
-    server_conn->qp_init_attr.qp_type = IBV_QPT_UC; /* QP type, UC = Unreliable connection */
+    server_conn->qp_init_attr.qp_type = IBV_QPT_UD; /* QP type, UD = Unreliable datagram */
     /* We use same completion queue, but one can use different queues */
     server_conn->qp_init_attr.recv_cq = server_conn->client_cq; /* Where should I notify for receive completion operations */
     server_conn->qp_init_attr.send_cq = server_conn->client_cq; /* Where should I notify for send completion operations */
     /*Lets create a QP */
-    ret = rdma_create_qp(server_conn->cm_client_id /* which connection id */,
-                         server_conn->pd /* which protection domain*/,
-                         &server_conn->qp_init_attr /* Initial attributes */);
-    check(ret, -errno, "Failed to create QP, errno: %d \n", -errno);
+//    ret = rdma_create_qp(server_conn->cm_client_id /* which connection id TODO change this to ibv_create_qp*/,
+//                         server_conn->pd /* which protection domain*/,
+//                         &server_conn->qp_init_attr /* Initial attributes */);
+//    check(ret, -errno, "Failed to create QP due to errno: %d\n", -errno);
+//
+//    /* Save the reference for handy typing but is not required */
+//    server_conn->ud_qp = server_conn->cm_client_id->qp;
+//    pr_debug("Client QP created at %p\n", server_conn->ud_qp);
 
-    server_conn->client_qp = server_conn->cm_client_id->qp;
-    pr_debug("QP created at %p \n", server_conn->client_qp);
+    server_conn->client_qp = ibv_create_qp(server_conn->pd, &server_conn->qp_init_attr);
+    check(server_conn->client_qp == NULL, -errno, "Failed to create QP due to errno: %d\n", -errno);
+
+    uc_set_init_qp(server_conn->client_qp);
+
+    ibv_query_gid(context, IB_PHYS_PORT, 0, &server_conn->server_gid);
+    server_conn->local_qp_attrs.gid_global_interface_id = server_conn->server_gid.global.interface_id;
+    server_conn->local_qp_attrs.gid_global_subnet_prefix = server_conn->server_gid.global.subnet_prefix;
+    server_conn->local_qp_attrs.lid = get_local_lid(context);
+    server_conn->local_qp_attrs.qpn = server_conn->client_qp->qp_num;
+    server_conn->local_qp_attrs.psn = lrand48() & 0xffffff;
+
 
     server_conn->client_request_mr = rdma_buffer_register(server_conn->pd,
                                                           server_conn->request,
@@ -116,28 +93,170 @@ int something_client_prepare_connection(struct uc_server_conn *server_conn) {
                                                           (IBV_ACCESS_LOCAL_WRITE |
                                                            IBV_ACCESS_REMOTE_READ |
                                                            IBV_ACCESS_REMOTE_WRITE));
+    check(!server_conn->client_request_mr, -ENOMEM, "Failed to register client attr buffer\n", -ENOMEM);
     uc_pre_post_receive_response(server_conn, server_conn->response);
+
+
+
+
+
+
+//
+//    struct rdma_cm_event *cm_event = NULL;
+//    int ret = -1;
+//    /*  Open a channel used to report asynchronous communication event */
+//    server_conn->cm_event_channel = rdma_create_event_channel();
+//    check(!server_conn->cm_event_channel, -errno, "Creating cm event channel failed, errno: %d \n", -errno);
+//    pr_debug("RDMA CM event channel is created at : %p \n", server_conn->cm_event_channel);
+//    /* rdma_cm_id is the connection identifier (like socket) which is used
+//     * to define an RDMA connection.
+//     */
+//    ret = rdma_create_id(server_conn->cm_event_channel, &server_conn->cm_client_id,
+//                         NULL,
+//                         RDMA_PS_IB);
+//    check(ret, -errno, "Creating cm id failed with errno: %d \n", -errno);
+//    /* Resolve destination and optional source addresses from IP addresses  to
+//     * an RDMA address.  If successful, the specified rdma_cm_id will be bound
+//     * to a local device. */
+//    ret = rdma_resolve_addr(server_conn->cm_client_id, NULL, (struct sockaddr *) server_conn->server_sockaddr, 2000);
+//
+//    check(ret, -errno, "Failed to resolve address, errno: %d \n", -errno);
+//    pr_debug("waiting for cm event: RDMA_CM_EVENT_ADDR_RESOLVED\n");
+//    ret = process_rdma_cm_event(server_conn->cm_event_channel,
+//                                RDMA_CM_EVENT_ADDR_RESOLVED,
+//                                &cm_event);
+//    check(ret, ret, "Failed to receive a valid event, ret = %d \n", ret);
+//
+//    /* we ack the event */
+//    ret = rdma_ack_cm_event(cm_event);
+//    check(ret, -errno, "Failed to acknowledge the CM event, errno: %d\n", -errno);
+//    pr_debug("RDMA address is resolved \n");
+//
+//    /* Resolves an RDMA route to the destination address in order to
+//     * establish a connection */
+//    ret = rdma_resolve_route(server_conn->cm_client_id, 2000);
+//    check(ret, -errno, "Failed to resolve route, erno: %d \n", -errno);
+//    pr_debug("waiting for cm event: RDMA_CM_EVENT_ROUTE_RESOLVED\n");
+//    ret = process_rdma_cm_event(server_conn->cm_event_channel,
+//                                RDMA_CM_EVENT_ROUTE_RESOLVED,
+//                                &cm_event);
+//    check(ret, ret, "Failed to receive a valid event, ret = %d \n", ret);
+//    /* we ack the event */
+//    ret = rdma_ack_cm_event(cm_event);
+//    check(ret, -errno, "Failed to acknowledge the CM event, errno: %d \n", -errno);
+//
+//    printf("Trying to connect to server at : %s port: %d \n",
+//           inet_ntoa(server_conn->server_sockaddr->sin_addr),
+//           ntohs(server_conn->server_sockaddr->sin_port));
+//    /* Protection Domain (PD) is similar to a "process abstraction"
+//     * in the operating system. All resources are tied to a particular PD.
+//     * And accessing recourses across PD will result in a protection fault.
+//     */
+//    server_conn->pd = ibv_alloc_pd(server_conn->cm_client_id->verbs);
+//    check(!server_conn->pd, -errno, "Failed to alloc pd, errno: %d \n", -errno);
+//    pr_debug("pd allocated at %p \n", server_conn->pd);
+//
+//
+//    pr_debug("here\n");
+//        /* Now we need a completion channel, were the I/O completion
+//         * notifications are sent. Remember, this is different from connection
+//         * management (CM) event notifications.
+//         * A completion channel is also tied to an RDMA device, hence we will
+//         * use cm_client_id->verbs.
+//         */
+//    server_conn->io_completion_channel = ibv_create_comp_channel(server_conn->cm_client_id->verbs);
+//    check(!server_conn->io_completion_channel, -errno, "Failed to create IO completion event channel, errno: %d\n",
+//          -errno);
+//    pr_debug("completion event channel created at : %p \n", server_conn->io_completion_channel);
+//    /* Now we create a completion queue (CQ) where actual I/O
+//     * completion metadata is placed. The metadata is packed into a structure
+//     * called struct ibv_wc (wc = work completion). ibv_wc has detailed
+//     * information about the work completion. An I/O request in RDMA world
+//     * is called "work" ;)
+//     */
+//    server_conn->client_cq = ibv_create_cq(server_conn->cm_client_id->verbs /* which device*/,
+//                                           CQ_CAPACITY /* maximum capacity*/,
+//                                           NULL /* user context, not used here */,
+//                                           server_conn->io_completion_channel /* which IO completion channel */,
+//                                           0 /* signaling vector, not used here*/);
+//    check(!server_conn->client_cq, -errno, "Failed to create CQ, errno: %d \n", -errno);
+//    pr_debug("CQ created at %p with %d elements \n", server_conn->client_cq, server_conn->client_cq->cqe);
+//
+//    ret = ibv_req_notify_cq(server_conn->client_cq, 0);
+//    check(ret, -errno, "Failed to request notifications, errno: %d\n", -errno);
+//
+//    /* Now the last step, set up the queue pair (send, recv) queues and their capacity.
+//      * The capacity here is define statically but this can be probed from the
+//  * device. We just use a small number as defined in rdma_common.h */
+//    bzero(&server_conn->qp_init_attr, sizeof server_conn->qp_init_attr);
+//    server_conn->qp_init_attr.cap.max_recv_sge = MAX_SGE; /* Maximum SGE per receive posting */
+//    server_conn->qp_init_attr.cap.max_recv_wr = MAX_WR; /* Maximum receive posting capacity */
+//    server_conn->qp_init_attr.cap.max_send_sge = MAX_SGE; /* Maximum SGE per send posting */
+//    server_conn->qp_init_attr.cap.max_send_wr = MAX_WR; /* Maximum send posting capacity */
+//    server_conn->qp_init_attr.qp_type = IBV_QPT_UC; /* QP type, UC = Unreliable connection */
+//    /* We use same completion queue, but one can use different queues */
+//    server_conn->qp_init_attr.recv_cq = server_conn->client_cq; /* Where should I notify for receive completion operations */
+//    server_conn->qp_init_attr.send_cq = server_conn->client_cq; /* Where should I notify for send completion operations */
+//    /*Lets create a QP */
+//    ret = rdma_create_qp(server_conn->cm_client_id /* which connection id */,
+//                         server_conn->pd /* which protection domain*/,
+//                         &server_conn->qp_init_attr /* Initial attributes */);
+//    check(ret, -errno, "Failed to create QP, errno: %d \n", -errno);
+//
+//    server_conn->client_qp = server_conn->cm_client_id->qp;
+//    pr_debug("QP created at %p \n", server_conn->client_qp);
+//
+//    server_conn->client_request_mr = rdma_buffer_register(server_conn->pd,
+//                                                          server_conn->request,
+//                                                          sizeof(struct request),
+//                                                          (IBV_ACCESS_LOCAL_WRITE |
+//                                                           IBV_ACCESS_REMOTE_READ |
+//                                                           IBV_ACCESS_REMOTE_WRITE));
+//    uc_pre_post_receive_response(server_conn, server_conn->response);
 
     return 0;
 }
 
 /* Connects to the RDMA server */
-int something_client_connect_to_server(struct uc_server_conn *server_conn) {
-    struct rdma_conn_param conn_param;
-    struct rdma_cm_event *cm_event = NULL;
+int uc_client_connect_to_server(struct uc_server_conn *server_conn) {
     int ret = -1;
-    bzero(&conn_param, sizeof(conn_param));
-    conn_param.initiator_depth = 3;
-    conn_param.responder_resources = 3;
-    conn_param.retry_count = 3; // if fail, then how many times to retry
-    ret = rdma_connect(server_conn->cm_client_id, &conn_param);
-    check(ret, -errno, "Failed to connect to remote host , errno: %d\n", -errno);
 
-    pr_debug("waiting for cm event: RDMA_CM_EVENT_ESTABLISHED\n");
-    ret = process_rdma_cm_event(server_conn->cm_event_channel,
-                                RDMA_CM_EVENT_ESTABLISHED,
-                                &cm_event);
-    check(ret, ret, "Failed to get cm event, ret = %d \n", ret);
+    server_conn->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    check(server_conn->socket_fd < 0, -1, "Socket could not be made: %d\n", server_conn->socket_fd);
+
+    pr_info("connecting\n");
+//  Check if a connection can be made
+    check(connect(server_conn->socket_fd, (struct sockaddr *) server_conn->server_sockaddr, sizeof(struct sockaddr_in)), -1, "Connection failed!\n", NULL);
+    pr_info("connected\n");
+    if (write(server_conn->socket_fd, &server_conn->local_qp_attrs, sizeof(struct qp_attr)) < 0) {
+        pr_debug("Could not write queue pair attributes to server\n");
+    }
+
+    if (read(server_conn->socket_fd, &server_conn->remote_qp_attrs, sizeof(struct qp_attr)) < 0) {
+        pr_debug("Could not read servers queue pair attributes\n");
+    }
+
+    pr_info("%d %d %d\n", server_conn->remote_qp_attrs.lid, server_conn->remote_qp_attrs.qpn, server_conn->remote_qp_attrs.psn);
+    ret = connect_qp(server_conn->client_qp, &server_conn->local_qp_attrs, &server_conn->remote_qp_attrs);
+    check(ret, ret, "Could not connect qp\n", NULL);
+
+
+
+//    struct rdma_conn_param conn_param;
+//    struct rdma_cm_event *cm_event = NULL;
+//    int ret = -1;
+//    bzero(&conn_param, sizeof(conn_param));
+//    conn_param.initiator_depth = 3;
+//    conn_param.responder_resources = 3;
+//    conn_param.retry_count = 3; // if fail, then how many times to retry
+//    ret = rdma_connect(server_conn->cm_client_id, &conn_param);
+//    check(ret, -errno, "Failed to connect to remote host , errno: %d\n", -errno);
+//
+//    pr_debug("waiting for cm event: RDMA_CM_EVENT_ESTABLISHED\n");
+//    ret = process_rdma_cm_event(server_conn->cm_event_channel,
+//                                RDMA_CM_EVENT_ESTABLISHED,
+//                                &cm_event);
+//    check(ret, ret, "Failed to get cm event, ret = %d \n", ret);
 
 //    ret = rdma_ack_cm_event(cm_event);
 //    check(ret, -errno, "Failed to acknowledge cm event, errno: %d\n", -errno);
@@ -146,7 +265,7 @@ int something_client_connect_to_server(struct uc_server_conn *server_conn) {
     return 0;
 }
 
-int something_send_request(struct uc_server_conn *server_conn, struct request *request) {
+int uc_send_request(struct uc_server_conn *server_conn, struct request *request) {
     int ret;
     struct ibv_wc wc;
 
@@ -181,7 +300,7 @@ int uc_pre_post_receive_response(struct uc_server_conn *server_conn, struct resp
     check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
 }
 
-int something_receive_response(struct uc_server_conn *server_conn, struct response *response) {
+int uc_receive_response(struct uc_server_conn *server_conn, struct response *response) {
     int ret;
     struct ibv_wc wc;
 

@@ -298,10 +298,10 @@ int ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, 
 
 int ud_set_init_qp(struct ibv_qp *qp) {
     struct ibv_qp_attr dgram_attr = {
-            .qp_state		= IBV_QPS_INIT,
-            .pkey_index		= 0,
-            .port_num		= IB_PHYS_PORT,
-            .qkey 			= 0x11111111
+            .qp_state        = IBV_QPS_INIT,
+            .pkey_index        = 0,
+            .port_num        = IB_PHYS_PORT,
+            .qkey            = 0x11111111
     };
     pr_info("In here\n");
 
@@ -329,6 +329,22 @@ int ud_set_rts_qp(struct ibv_qp *qp, int psn) {
     return 0;
 }
 
+int uc_set_init_qp(struct ibv_qp *qp) {
+    int ret = 0;
+    struct ibv_qp_attr conn_attr = {
+            .qp_state		= IBV_QPS_INIT,
+            .pkey_index		= 0,
+            .port_num		= IB_PHYS_PORT,
+            .qp_access_flags = 0
+    };
+
+    ret = ibv_modify_qp(qp, &conn_attr,
+                  IBV_QP_STATE | IBV_QP_PKEY_INDEX | IBV_QP_PORT | IBV_QP_ACCESS_FLAGS);
+    check(ret, ret, "Failed to modify conn. QP to INIT\n", NULL);
+
+    return ret;
+}
+
 uint16_t get_local_lid(struct ibv_context *context)
 {
     struct ibv_port_attr attr;
@@ -337,4 +353,35 @@ uint16_t get_local_lid(struct ibv_context *context)
         return 0;
 
     return attr.lid;
+}
+
+
+int connect_qp(struct ibv_qp *conn_qp, struct qp_attr *local, struct qp_attr *remote) {
+    int ret = 0;
+    struct ibv_qp_attr conn_attr = {
+            .qp_state = IBV_QPS_RTR,
+            .path_mtu = IBV_MTU_4096,
+            .dest_qp_num = remote->qpn,
+            .rq_psn = remote->psn,
+            .ah_attr = {
+                    .is_global = 0,
+                    .dlid = remote->lid,
+                    .sl = 0,
+                    .src_path_bits = 0,
+                    .port_num = IB_PHYS_PORT
+            }
+    };
+
+    int rtr_flags = IBV_QP_STATE | IBV_QP_AV | IBV_QP_PATH_MTU | IBV_QP_DEST_QPN
+                    | IBV_QP_RQ_PSN;
+    ret = ibv_modify_qp(conn_qp, &conn_attr, rtr_flags);
+    check(ret, ret, "Failed to modify QP to RTR\n", NULL);
+
+    memset(&conn_attr, 0, sizeof(conn_attr));
+    conn_attr.qp_state	    = IBV_QPS_RTS;
+    conn_attr.sq_psn	    = local->psn;
+
+    int rts_flags = IBV_QP_STATE | IBV_QP_SQ_PSN;
+    ret = ibv_modify_qp(conn_qp, &conn_attr, rts_flags);
+    check(ret, ret, "Failed to modify QP to RTS\n", NULL);
 }

@@ -2,6 +2,9 @@
 // Created by jtroo on 15-04-21.
 //
 
+#include <signal.h>
+#include <netinet/tcp.h>
+
 #include "uc_server_utils.h"
 #include "rdma_common.h"
 
@@ -76,14 +79,24 @@ int setup_uc_client_resources(struct uc_client_connection *client) {
     /* We use same completion queue, but one can use different queues */
     client->qp_init_attr.recv_cq = client->cq; /* Where should I notify for receive completion operations */
     client->qp_init_attr.send_cq = client->cq; /* Where should I notify for send completion operations */
-    /*Lets create a QP */
-    ret = rdma_create_qp(client->cm_client_id /* which connection id */,
-                         client->pd /* which protection domain*/,
-                         &client->qp_init_attr /* Initial attributes */);
-    check(ret, -errno, "Failed to create QP due to errno: %d\n", -errno);
+//    /*Lets create a QP */
+//    ret = rdma_create_qp(client->cm_client_id /* which connection id */,
+//                         client->pd /* which protection domain*/,
+//                         &client->qp_init_attr /* Initial attributes */);
+//    check(ret, -errno, "Failed to create QP due to errno: %d\n", -errno);
 
     /* Save the reference for handy typing but is not required */
-    client->client_qp = client->cm_client_id->qp;
+//    client->client_qp = client->cm_client_id->qp;
+    client->client_qp = ibv_create_qp(client->pd, &client->qp_init_attr);
+    check(client->client_qp == NULL, -errno, "Failed to create QP due to errno: %d\n", -errno);
+    uc_set_init_qp(client->client_qp);
+
+    client->local_qp_attrs.gid_global_interface_id = client->server_gid.global.interface_id;
+    client->local_qp_attrs.gid_global_subnet_prefix = client->server_gid.global.subnet_prefix;
+    client->local_qp_attrs.lid = get_local_lid(client->context);
+    client->local_qp_attrs.qpn = client->client_qp->qp_num;
+    client->local_qp_attrs.psn = lrand48() & 0xffffff;
+
     pr_debug("Client QP created at %p\n", client->client_qp);
     return ret;
 }
@@ -91,38 +104,87 @@ int setup_uc_client_resources(struct uc_client_connection *client) {
 int init_uc_server(struct server_info *server) {
     int ret = -1;
 
-    /*  Open a channel used to report asynchronous communication event */
-    server->uc_server_info->cm_event_channel = rdma_create_event_channel();
-    check(!server->uc_server_info->cm_event_channel, -errno,
-          "Creating cm event channel failed with errno : (%d)", -errno);
+//    /*  Open a channel used to report asynchronous communication event */
+//    server->uc_server_info->cm_event_channel = rdma_create_event_channel();
+//    check(!server->uc_server_info->cm_event_channel, -errno,
+//          "Creating cm event channel failed with errno : (%d)", -errno);
+//
+//    pr_info("RDMA CM event channel is created successfully at %p \n",
+//            server->uc_server_info->cm_event_channel);
+//
+//    /* rdma_cm_id is the connection identifier (like socket) which is used
+//     * to define an RDMA connection.
+//     */
+//    ret = rdma_create_id(server->uc_server_info->cm_event_channel, &server->uc_server_info->cm_server_id, NULL,
+//                         RDMA_PS_IB);
+//    check(ret, -errno, "Creating server cm id failed with errno: %d ", -errno);
+//
+//    pr_info("A RDMA connection id for the server is created \n");
+//
+//    /* Explicit binding of rdma cm id to the socket credentials */
+//    ret = rdma_bind_addr(server->uc_server_info->cm_server_id, (struct sockaddr *) &server->addr);
+//    check(ret, -errno, "Failed to bind server address, errno: %d \n", -errno);
+//
+//    pr_info("Server RDMA CM id is successfully bound \n");
+//
+    struct ibv_device **dev_list = ibv_get_device_list(NULL);
+    struct ibv_device *ib_dev = dev_list[0];
+    server->uc_server_info->context = ibv_open_device(ib_dev);
 
-    pr_info("RDMA CM event channel is created successfully at %p \n",
-            server->uc_server_info->cm_event_channel);
+    ibv_query_gid(server->uc_server_info->context, IB_PHYS_PORT, 0, &server->uc_server_info->server_gid);
 
-    /* rdma_cm_id is the connection identifier (like socket) which is used
-     * to define an RDMA connection.
-     */
-    ret = rdma_create_id(server->uc_server_info->cm_event_channel, &server->uc_server_info->cm_server_id, NULL,
-                         RDMA_PS_IB);
-    check(ret, -errno, "Creating server cm id failed with errno: %d ", -errno);
 
-    pr_info("A RDMA connection id for the server is created \n");
+//    // TODO put this into accept? for multiple clients?
+//    /* Now we start to listen on the passed IP and port. However unlike
+//     * normal TCP listen, this is a non-blocking call. When a new client is
+//     * connected, a new connection management (CM) event is generated on the
+//     * RDMA CM event channel from where the listening id was created. Here we
+//     * have only one channel, so it is easy. */
+//    ret = rdma_listen(server->uc_server_info->cm_server_id, 8); /* backlog = 8 clients, same as TCP, see man listen*/
+//    check(ret, -errno, "rdma_listen failed to listen on server address, errno: %d ",
+//          -errno);
 
-    /* Explicit binding of rdma cm id to the socket credentials */
-    ret = rdma_bind_addr(server->uc_server_info->cm_server_id, (struct sockaddr *) &server->addr);
-    check(ret, -errno, "Failed to bind server address, errno: %d \n", -errno);
+    // Set up TCP server to accept new clients
+    int option = 1;
+    /* TCP connection */
+    server->uc_server_info->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server->uc_server_info->socket_fd == -1) {
+        perror("socket cannot be created\n");
+        exit(EXIT_FAILURE);
+    }
 
-    pr_info("Server RDMA CM id is successfully bound \n");
+    /* if the port is busy and in the TIME_WAIT state, reuse it anyway. */
+    if (setsockopt(server->uc_server_info->socket_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &option,
+                   sizeof(option)) < 0) {
+        close(server->uc_server_info->socket_fd);
+        perror("setsockopt failed\n");
+        exit(EXIT_FAILURE);
+    }
 
-    // TODO put this into accept? for multiple clients?
-    /* Now we start to listen on the passed IP and port. However unlike
-     * normal TCP listen, this is a non-blocking call. When a new client is
-     * connected, a new connection management (CM) event is generated on the
-     * RDMA CM event channel from where the listening id was created. Here we
-     * have only one channel, so it is easy. */
-    ret = rdma_listen(server->uc_server_info->cm_server_id, 8); /* backlog = 8 clients, same as TCP, see man listen*/
-    check(ret, -errno, "rdma_listen failed to listen on server address, errno: %d ",
-          -errno);
+    if ((bind(server->uc_server_info->socket_fd, (struct sockaddr *) &server->addr,
+              sizeof(server->addr))) < 0) {
+        perror("address and port binding failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    socklen_t addr_len = sizeof(server->addr);
+    if (getsockname(server->uc_server_info->socket_fd, (struct sockaddr *) &server->addr, &addr_len)
+        == -1) {
+        perror("address and port binding failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    pr_info("[%s] Pid:%d bind on socket:%d Port:%d\n", SERVER,
+            (int) getpid(), server->uc_server_info->socket_fd, ntohs(server->addr.sin_port));
+
+    if (listen(server->uc_server_info->socket_fd, BACKLOG) < 0) {
+        perror("Cannot listen on socket");
+        exit(EXIT_FAILURE);
+    }
+
+    pr_info("Listening socket n. %d\n", server->uc_server_info->socket_fd);
+    signal(SIGPIPE, SIG_IGN);
+
 
     printf("Server is listening successfully at: %s , port: %d \n",
            inet_ntoa(server->addr.sin_addr),
@@ -132,27 +194,28 @@ int init_uc_server(struct server_info *server) {
 }
 
 int uc_accept_new_connection(struct server_info *server, struct client_info *client) {
-    struct rdma_conn_param conn_param;
-    struct rdma_cm_event *cm_event = NULL;
+//    struct rdma_conn_param conn_param;
+//    struct rdma_cm_event *cm_event = NULL;
     struct sockaddr_in remote_sockaddr;
     int ret = -1;
 
-    /* now, we expect a client to connect and generate a RDMA_CM_EVNET_CONNECT_REQUEST
-     * We wait (block) on the connection management event channel for
-     * the connect event.
-     */
-    ret = process_rdma_cm_event(server->uc_server_info->cm_event_channel,
-                                RDMA_CM_EVENT_CONNECT_REQUEST,
-                                &cm_event);
-    check(ret, ret, "Failed to get cm event, ret = %d \n", ret);
+//    /* now, we expect a client to connect and generate a RDMA_CM_EVNET_CONNECT_REQUEST
+//     * We wait (block) on the connection management event channel for
+//     * the connect event.
+//     */
+//    ret = process_rdma_cm_event(server->uc_server_info->cm_event_channel,
+//                                RDMA_CM_EVENT_CONNECT_REQUEST,
+//                                &cm_event);
+//    check(ret, ret, "Failed to get cm event, ret = %d \n", ret);
+//
+//    pr_info("connected and setting client id\n");
+//    /* Much like TCP connection, listening returns a new connection identifier
+//     * for newly connected client. In the case of RDMA, this is stored in id
+//     * field. For more details: man rdma_get_cm_event
+//     */
+//    client->uc_client->cm_client_id = cm_event->id;
 
-    pr_info("connected and setting client id\n");
-    /* Much like TCP connection, listening returns a new connection identifier
-     * for newly connected client. In the case of RDMA, this is stored in id
-     * field. For more details: man rdma_get_cm_event
-     */
-    client->uc_client->cm_client_id = cm_event->id;
-
+    client->uc_client->server_gid = server->uc_server_info->server_gid;
     pr_debug("setting client resources\n");
     setup_uc_client_resources(client->uc_client);
 
@@ -166,8 +229,8 @@ int uc_accept_new_connection(struct server_info *server, struct client_info *cli
 
     pr_info("A new RDMA client connection id is stored at %p\n", client->uc_client->cm_client_id);
 
-    check(!client->uc_client->cm_client_id || !client->uc_client->cm_client_id, -EINVAL,
-          "Client resources are not properly setup\n", -EINVAL);
+//    check(!client->uc_client->cm_client_id || !client->uc_client->cm_client_id, -EINVAL,
+//          "Client resources are not properly setup\n", -EINVAL);
     /* we prepare the receive buffer in which we will receive the client request*/
     client->uc_client->request_mr = rdma_buffer_register(client->uc_client->pd /* which protection domain */,
                                                       client->request/* what memory */,
@@ -191,36 +254,79 @@ int uc_accept_new_connection(struct server_info *server, struct client_info *cli
                                                           IBV_ACCESS_LOCAL_WRITE);
     check(!client->uc_client->response_mr, ret, "Failed to register the client metadata buffer, ret = %d \n", ret);
 
-    pr_info("Receive buffer pre-posting is successful \n");
-    /* Now we accept the connection. Recall we have not accepted the connection
-     * yet because we have to do lots of resource pre-allocation */
-    memset(&conn_param, 0, sizeof(conn_param));
-    /* this tell how many outstanding requests can we handle */
-    conn_param.initiator_depth = 3; /* For this exercise, we put a small number here */
-    /* This tell how many outstanding requests we expect other side to handle */
-    conn_param.responder_resources = 3; /* For this exercise, we put a small number */
-    ret = rdma_accept(client->uc_client->cm_client_id, &conn_param);
+//    ud_set_rts_qp(client->uc_client->client_qp, client->uc_client->local_qp_attrs.psn);
 
-    check(ret, -errno, "Failed to accept the connection, errno: %d \n", -errno);
+    pr_info("Receive buffer pre-posting is successful \n");
+
+    struct qp_attr remote_qp_attrs;
+
+    int nodelay = 1;
+    socklen_t addrlen = sizeof(server->addr);
+
+    pr_info("Accepting UC\n");
+    if ((client->uc_client->socket_fd =
+                 accept(server->uc_server_info->socket_fd, (struct sockaddr *) &server->addr,
+                        &addrlen)) < 0) {
+        error("Cannot accept new connection\n");
+        return -1;
+    }
+    pr_info("Accepted UD\n");
+
+    if (setsockopt
+                (client->uc_client->socket_fd, IPPROTO_TCP, TCP_NODELAY, &nodelay,
+                 sizeof(nodelay)) < 0) {
+        perror("setsockopt TCP_NODELAT");
+        return -1;
+    }
+
+    pr_info("set sock UD, going to read\n");
+
+    ret = read(client->uc_client->socket_fd, &remote_qp_attrs,
+               sizeof(struct qp_attr));
+    if (ret < 0) {
+        pr_debug("Could not read queue pair attributes from socket\n");
+    }
+    pr_info("Got qp attributes from client\n");
+
+    ret = write(client->uc_client->socket_fd, &client->uc_client->local_qp_attrs, sizeof(struct qp_attr));
+    if (ret < 0) {
+        pr_debug("Could not write queue pair attributes to client\n");
+    }
+    pr_info("Sent qp attributes to client\n");
+
+    ret = connect_qp(client->uc_client->client_qp, &client->uc_client->local_qp_attrs, &remote_qp_attrs);
+    check(ret, ret, "Could not connect qp\n", NULL);
+
+
+//    /* Now we accept the connection. Recall we have not accepted the connection
+//     * yet because we have to do lots of resource pre-allocation */
+//    memset(&conn_param, 0, sizeof(conn_param));
+//    /* this tell how many outstanding requests can we handle */
+//    conn_param.initiator_depth = 3; /* For this exercise, we put a small number here */
+//    /* This tell how many outstanding requests we expect other side to handle */
+//    conn_param.responder_resources = 3; /* For this exercise, we put a small number */
+//    ret = rdma_accept(client->uc_client->cm_client_id, &conn_param);
+//
+//    check(ret, -errno, "Failed to accept the connection, errno: %d \n", -errno);
 
     /* We expect an RDMA_CM_EVNET_ESTABLISHED to indicate that the RDMA
  * connection has been established and everything is fine on both, server
  * as well as the client sides.
  */
-    pr_info("Going to wait for : RDMA_CM_EVENT_ESTABLISHED event \n");
-    ret = process_rdma_cm_event(server->uc_server_info->cm_event_channel,
-                                RDMA_CM_EVENT_ESTABLISHED,
-                                &cm_event);
-    check(ret, -errno, "Failed to get the cm event, errno: %d \n", -errno);
-    /* We acknowledge the event */
-    ret = rdma_ack_cm_event(cm_event);
-    check(ret, -errno, "Failed to acknowledge the cm event %d\n", -errno);
-    /* Just FYI: How to extract connection information */
-    memcpy(&remote_sockaddr /* where to save */,
-           rdma_get_peer_addr(client->uc_client->cm_client_id) /* gives you remote sockaddr */,
-           sizeof(struct sockaddr_in) /* max size */);
-    printf("A new connection is accepted from %s \n",
-           inet_ntoa(remote_sockaddr.sin_addr));
+//    pr_info("Going to wait for : RDMA_CM_EVENT_ESTABLISHED event \n");
+//    ret = process_rdma_cm_event(server->uc_server_info->cm_event_channel,
+//                                RDMA_CM_EVENT_ESTABLISHED,
+//                                &cm_event);
+//    check(ret, -errno, "Failed to get the cm event, errno: %d \n", -errno);
+//    /* We acknowledge the event */
+//    ret = rdma_ack_cm_event(cm_event);
+//    check(ret, -errno, "Failed to acknowledge the cm event %d\n", -errno);
+//    /* Just FYI: How to extract connection information */
+//    memcpy(&remote_sockaddr /* where to save */,
+//           rdma_get_peer_addr(client->uc_client->cm_client_id) /* gives you remote sockaddr */,
+//           sizeof(struct sockaddr_in) /* max size */);
+//    printf("A new connection is accepted from %s \n",
+//           inet_ntoa(remote_sockaddr.sin_addr));
     return ret;
 }
 

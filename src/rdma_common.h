@@ -164,4 +164,6 @@ ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void
 int ud_set_init_qp(struct ibv_qp *qp);
 int ud_set_rts_qp(struct ibv_qp *qp, int psn);
 uint16_t get_local_lid(struct ibv_context *context);
+int connect_qp(struct ibv_qp *conn_qp, struct qp_attr *local, struct qp_attr *remote);
+int uc_set_init_qp(struct ibv_qp *qp);
 #endif //RDMA_KV_STORE_RDMA_COMMON_H
