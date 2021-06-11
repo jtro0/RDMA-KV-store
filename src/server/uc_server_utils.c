@@ -215,6 +215,7 @@ int uc_accept_new_connection(struct server_info *server, struct client_info *cli
 //    client->uc_client->cm_client_id = cm_event->id;
 
     client->uc_client->server_gid = server->uc_server_info->server_gid;
+    client->uc_client->context = server->uc_server_info->context;
     pr_debug("setting client resources\n");
     setup_uc_client_resources(client->uc_client);
 
