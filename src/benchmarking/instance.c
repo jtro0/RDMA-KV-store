@@ -125,6 +125,7 @@ void* start_instance(void *arguments) {
             conn.uc_server_conn->request = calloc(1, sizeof(struct request));
             conn.uc_server_conn->response = calloc(1, sizeof(struct response));
             conn.uc_server_conn->expected_response = calloc(1, sizeof(struct response));
+            pr_info("Preparing\n");
             returned = uc_client_prepare_connection(conn.uc_server_conn);
             check(returned, NULL, "Failed to setup client connection , returned = %d \n", returned);
             pr_debug("prepared\n");
