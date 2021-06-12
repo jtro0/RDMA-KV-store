@@ -296,7 +296,7 @@ int ud_send_response(struct client_info *client) {
     struct ibv_wc wc;
 
     pr_info("sending to client %d\n", client->ud_client->client_handling);
-    pr_debug("ah for client is %p\n", client->ud_client->ud_server->ah[client->ud_client->client_handling])
+    pr_debug("ah for client is %p\n", client->ud_client->ud_server->ah[client->ud_client->client_handling]);
     ret = ud_post_send(sizeof(struct response), client->ud_client->response_mr->lkey, 0, client->ud_client->ud_server->ud_qp, client->response,
                         client->ud_client->ud_server->ah[client->ud_client->client_handling], client->ud_client->ud_server->remote_dgram_qp_attrs[client->ud_client->client_handling].qpn);
     ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel_send, &wc, 1, client->ud_client->ud_server->ud_send_cq);
