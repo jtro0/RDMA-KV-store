@@ -125,7 +125,7 @@ int init_ud_server(struct server_info *server) {
     server->ud_server_info->local_dgram_qp_attrs.gid_global_subnet_prefix = server->ud_server_info->server_gid.global.subnet_prefix;
     server->ud_server_info->local_dgram_qp_attrs.lid = get_local_lid(context);
     server->ud_server_info->local_dgram_qp_attrs.qpn = server->ud_server_info->ud_qp->qp_num;
-    server->ud_server_info->local_dgram_qp_attrs.psn = lrand48() & 0xffffff;
+    server->ud_server_info->local_dgram_qp_attrs.psn = rand() & 0xffffff;
 
     pr_info("%d %d %d\n", server->ud_server_info->local_dgram_qp_attrs.lid, server->ud_server_info->local_dgram_qp_attrs.qpn, server->ud_server_info->local_dgram_qp_attrs.psn);
     server->ud_server_info->request = calloc(MAX_CLIENTS, sizeof(struct ud_request));

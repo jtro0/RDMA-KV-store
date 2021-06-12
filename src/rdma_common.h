@@ -79,7 +79,7 @@ struct qp_attr {
     uint64_t gid_global_subnet_prefix; 	// don't like unions. Needed for RoCE only
 
     int lid;							// A queue pair is identified by the local id (lid)
-    int qpn;							// of the device port and its queue pair number (qpn)
+    unsigned int qpn;							// of the device port and its queue pair number (qpn)
     int psn;
 };
 
