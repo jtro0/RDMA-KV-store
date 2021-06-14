@@ -299,6 +299,8 @@ int ud_send_response(struct client_info *client) {
     int ret = -1;
     struct ibv_wc wc;
 
+    fprintf(stderr, "client handling %d with ah %p\n", client->ud_client->client_handling, client->ud_client->ud_server->ah[client->ud_client->client_handling]);
+
     if (client->ud_client->ud_server->ah[client->ud_client->client_handling] == NULL) {
         fprintf(stderr,"Failing %d client\n", client->ud_client->client_handling);
         for (int i=0; i<client->ud_client->ud_server->client_counter; i++) {
