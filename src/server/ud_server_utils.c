@@ -253,11 +253,10 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
     pr_debug("ah for new client is %p before\n", server->ud_server_info->ah[server->ud_server_info->client_counter]);
     server->ud_server_info->ah[server->ud_server_info->client_counter] = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
     pr_debug("ah for new client is %p after %d\n", server->ud_server_info->ah[server->ud_server_info->client_counter], server->ud_server_info->client_counter);
-    server->ud_server_info->client_counter++;
 
     check(!server->ud_server_info->ah[server->ud_server_info->client_counter], -1, "Could not create AH from the info given\n", NULL)
 //    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, client->ud_client->wc, 1, client->ud_client->ud_server->ud_cq);
-
+    server->ud_server_info->client_counter++;
     printf("A new connection is accepted from\n");
 
     return ret;
