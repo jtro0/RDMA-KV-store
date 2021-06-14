@@ -167,6 +167,7 @@ int main(int argc, char *argv[]) {
         pr_info("Accepting new connection\n");
         if (accept_new_connection(server_connection, client) < 0) {
             pr_info("no new connection");
+            exit(EXIT_FAILURE);
             continue;
 //            return 0;
         }
