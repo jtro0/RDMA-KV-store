@@ -299,6 +299,12 @@ int ud_send_response(struct client_info *client) {
     int ret = -1;
     struct ibv_wc wc;
 
+    if (!client->ud_client->ud_server->ah[client->ud_client->client_handling]) {
+        printf("Failing %d client\n", client->ud_client->client_handling);
+        for (int i=0; i<client->ud_client->ud_server->client_counter; i++) {
+            printf("array client %d has ah %p\n", i, client->ud_client->ud_server->ah[i]);
+        }
+    }
     pr_info("sending to client %d\n", client->ud_client->client_handling);
     pr_debug("ah for client is %p\n", client->ud_client->ud_server->ah[client->ud_client->client_handling]);
     ret = ud_post_send(sizeof(struct response), client->ud_client->response_mr->lkey, 0, client->ud_client->ud_server->ud_qp, client->response,
