@@ -290,7 +290,7 @@ int ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, 
             .wr.ud.remote_qkey = 0x11111111
     };
 
-    if (!ah) {
+    if (ah == NULL) {
         printf("send %p %p %p %p %p\n", buf, &send_wr, &bad_send_wr, qp, ah);
     }
     pr_debug("send %p %p %p %p %p\n", buf, &send_wr, &bad_send_wr, qp, ah);
