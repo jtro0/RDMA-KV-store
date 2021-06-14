@@ -300,9 +300,9 @@ int ud_send_response(struct client_info *client) {
     struct ibv_wc wc;
 
     if (client->ud_client->ud_server->ah[client->ud_client->client_handling] == NULL) {
-        printf("Failing %d client\n", client->ud_client->client_handling);
+        fprintf(stderr,"Failing %d client\n", client->ud_client->client_handling);
         for (int i=0; i<client->ud_client->ud_server->client_counter; i++) {
-            printf("array client %d has ah %p\n", i, client->ud_client->ud_server->ah[i]);
+            fprintf(stderr,"array client %d has ah %p\n", i, client->ud_client->ud_server->ah[i]);
         }
     }
     pr_info("sending to client %d\n", client->ud_client->client_handling);
