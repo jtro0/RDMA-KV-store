@@ -32,6 +32,7 @@ struct ud_server_conn {
     int client_counter;
     int request_count;
     struct ibv_ah *ah;
+    int client_id;
 };
 
 int ud_main(char *key, struct sockaddr_in *server_sockaddr);

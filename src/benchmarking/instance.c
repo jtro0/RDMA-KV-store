@@ -138,6 +138,7 @@ void* start_instance(void *arguments) {
             conn.ud_server_conn->request = calloc(1, sizeof(struct request));
             conn.ud_server_conn->response = calloc(1, sizeof(struct ud_response));
             conn.ud_server_conn->expected_response = calloc(1, sizeof(struct ud_response));
+            conn.ud_server_conn->client_id = instance_nr;
             returned = ud_prepare_client(conn.ud_server_conn);
             check(returned, NULL, "Failed to setup client connection , returned = %d \n", returned);
             pr_debug("prepared\n");

@@ -245,16 +245,18 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
     }
     pr_info("Sent qp attributes to client %d\n", server->ud_server_info->client_counter);
 
+    int client_id = server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter].client_id;
+
     struct ibv_ah_attr ah_attr;
     bzero(&ah_attr, sizeof ah_attr);
     ah_attr.dlid = server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter].lid;
     ah_attr.port_num = IB_PHYS_PORT;
 
-    pr_debug("ah for new client is %p before\n", server->ud_server_info->ah[server->ud_server_info->client_counter]);
-    server->ud_server_info->ah[server->ud_server_info->client_counter] = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
-    pr_debug("ah for new client is %p after %d\n", server->ud_server_info->ah[server->ud_server_info->client_counter], server->ud_server_info->client_counter);
+    pr_debug("ah for new client is %p before\n", server->ud_server_info->ah[client_id]);
+    server->ud_server_info->ah[client_id] = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
+    pr_debug("ah for new client is %p after %d\n", server->ud_server_info->ah[client_id], client_id);
 
-    check(!server->ud_server_info->ah[server->ud_server_info->client_counter], -1, "Could not create AH from the info given\n", NULL)
+    check(server->ud_server_info->ah[client_id] == NULL, -1, "Could not create AH from the info given\n", NULL)
 //    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, client->ud_client->wc, 1, client->ud_client->ud_server->ud_cq);
     server->ud_server_info->client_counter++;
     printf("A new connection is accepted from\n");
