@@ -113,7 +113,7 @@ hash_item_t *get_key_entry(char *key, size_t key_len) {
         memcpy(entry->key, key, key_len);
         entry->key[key_len] = '\0';
 //        entry->user = calloc(1, sizeof(struct user_item));
-        entry->value = malloc(MSG_SIZE);
+//        entry->value = malloc(MSG_SIZE);
         entry->prev = NULL;
         entry->next = NULL;
         entry->value = NULL;

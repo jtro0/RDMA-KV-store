@@ -29,7 +29,7 @@ int set_request(struct client_info *client, struct request *request, struct resp
 
         return -1;
     }
-//    item->value = malloc(1, expected_len); // maybe +1 for \0
+    item->value = malloc(MSG_SIZE); // maybe +1 for \0
 
     if (client->is_test) {
         read_payload(client, request, expected_len - len, item->value + len);
