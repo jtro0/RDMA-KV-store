@@ -56,7 +56,10 @@ for type in types:
             per_number_client.append(data[2])
             # std_deviation.append(concat.std()/1000)
         # per_number_client[current_number_clients-1] = ops_per_sec
-
+        else:
+            per_number_client.append(0)
+            first_quartile.append(0)
+            third_quartile.append(0)
         
     if per_number_client:
         plot_label = type[0]
