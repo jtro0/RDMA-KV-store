@@ -72,9 +72,9 @@ for type in types:
         # x_plus_std = list(map(add, x_values, std_deviation))
         # x_min_std = list(map(sub, x_values, std_deviation))
         ax.plot(x_values, per_number_client, label=plot_label, marker=type[1], color=type[2])
-        ax.plot(x_values, first_quartile, label=first_quartile_label, linestyle='--', color=type[2])
-        ax.plot(x_values, third_quartile, linestyle='--', color=type[2])
-        ax.fill_between(x_values, first_quartile, third_quartile, alpha=0.1, interpolate=True)
+        # ax.plot(x_values, first_quartile, label=first_quartile_label, linestyle='--', color=type[2])
+        # ax.plot(x_values, third_quartile, linestyle='--', color=type[2])
+        # ax.fill_between(x_values, first_quartile, third_quartile, alpha=0.1, interpolate=True)
     
 plt.title("Overall latency per Transport Type")
 plt.legend(loc="upper left", bbox_to_anchor=(1, 0.5))
