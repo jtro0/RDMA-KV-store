@@ -49,7 +49,11 @@ for type in types:
         if len(all_latencies) > 0:
             concat = pd.concat(all_latencies)
 
-            data = [concat.quantile(.25) / 1000, concat.quantile(.75) / 1000, concat.mean()/1000]
+            if type[0] == "TCP":
+                data = [concat.quantile(.25) / 1000, concat.quantile(.75) / 1000, concat.mean()/1000]
+            else:
+                data = [concat.quantile(.25) * 1000, concat.quantile(.75) * 1000, concat.mean()*1000]
+
             print(type[0] + ', ' + str(current_number_clients) + ': ' + str(data))
             first_quartile.append(data[0])
             third_quartile.append(data[1])
