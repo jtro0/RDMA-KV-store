@@ -43,7 +43,7 @@ for filename in filenames:
 # ops_per_sec = len(df.index) / time_taken_sec
     
     # plot_label = 'Client %(id)d: %(ops)d ops/sec' % {"id":client_number, "ops":ops_per_sec}
-concat = pd.concat(all_latencies)
+concat = pd.concat(all_latencies, columns=['latency'])
 print(concat)
 stats = concat.groupby('latency')['latency'].agg('count').pipe(pd.DataFrame).rename(columns = {'latency' : 'frequency'})
 
