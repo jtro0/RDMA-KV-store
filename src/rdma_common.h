@@ -55,7 +55,7 @@
 
 #define IB_PHYS_PORT 1			// HERD, Primary physical port number for qps
 
-#define MAX_POLL_CQ_TIMEOUT 5
+#define MAX_POLL_CQ_TIMEOUT 1000
 /*
  * We use attribute so that compiler does not step in and try to pad the structure.
  * We use this structure to exchange information between the server and the client.
@@ -78,8 +78,9 @@ struct qp_attr {
     uint64_t gid_global_interface_id;	// Store the gid fields separately because I
     uint64_t gid_global_subnet_prefix; 	// don't like unions. Needed for RoCE only
 
+    int client_id;
     int lid;							// A queue pair is identified by the local id (lid)
-    int qpn;							// of the device port and its queue pair number (qpn)
+    unsigned int qpn;							// of the device port and its queue pair number (qpn)
     int psn;
 };
 
@@ -164,4 +165,6 @@ ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void
 int ud_set_init_qp(struct ibv_qp *qp);
 int ud_set_rts_qp(struct ibv_qp *qp, int psn);
 uint16_t get_local_lid(struct ibv_context *context);
+int connect_qp(struct ibv_qp *conn_qp, struct qp_attr *local, struct qp_attr *remote);
+int uc_set_init_qp(struct ibv_qp *qp);
 #endif //RDMA_KV_STORE_RDMA_COMMON_H

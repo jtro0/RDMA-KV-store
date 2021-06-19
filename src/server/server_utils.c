@@ -18,6 +18,7 @@
 
 #include "tcp_server_utils.h"
 #include "rc_server_utils.h"
+#include "uc_server_utils.h"
 #include "ud_server_utils.h"
 
 int debug = 0;
@@ -106,6 +107,8 @@ struct server_info *server_init(int argc, char *argv[]) {
             init_rc_server(connInfo);
             break;
         case UC:
+            connInfo->uc_server_info = calloc(1, sizeof(struct uc_server_info));
+            init_uc_server(connInfo);
             break;
         case UD:
             connInfo->ud_server_info = calloc(1, sizeof(struct ud_server_info));
@@ -131,6 +134,8 @@ int accept_new_connection(struct server_info *server, struct client_info *client
             pr_debug("accepted new connection\n");
             break;
         case UC:
+            client->uc_client = malloc(sizeof(struct uc_client_connection));
+            ret = uc_accept_new_connection(server, client);
             break;
         case UD:
             client->ud_client = malloc(sizeof(struct ud_client_connection));
@@ -162,6 +167,7 @@ int prepare_for_next_request(struct client_info *client) {
             ret = rc_post_receive_request(client);
             break;
         case UC:
+            ret = uc_post_receive_request(client);
             break;
         case UD:
 //            ret = ud_post_receive_request(client->ud_client->ud_server);
@@ -208,6 +214,7 @@ int receive_header(struct client_info *client) {
             recved = rc_receive_header(client);
             break;
         case UC:
+            recved = uc_receive_header(client);
             break;
         case UD:
             recved = ud_receive_header(client);
@@ -289,6 +296,7 @@ int send_response_to_client(struct client_info *client) {
             ret = rc_send_response(client);
             break;
         case UC:
+            ret = uc_send_response(client);
             break;
         case UD:
             ret = ud_send_response(client);

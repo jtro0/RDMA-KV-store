@@ -39,10 +39,34 @@ struct rc_client_connection {
     struct ibv_mr *request_mr, *response_mr;
 };
 
+struct uc_client_connection {
+    int socket_fd;
+    struct ibv_pd *pd;
+    struct ibv_comp_channel *io_completion_channel;
+    struct ibv_cq *cq;
+    struct ibv_qp_init_attr qp_init_attr;
+    struct rdma_cm_id *cm_client_id;
+    struct ibv_qp *client_qp;
+    struct ibv_mr *request_mr, *response_mr;
+    union ibv_gid server_gid;
+    struct ibv_context *context;
+    struct qp_attr local_qp_attrs;
+};
+
 
 struct rc_server_info {
     struct rdma_event_channel *cm_event_channel;
     struct rdma_cm_id *cm_server_id;
+};
+
+struct uc_server_info {
+    int socket_fd;
+
+
+    struct rdma_event_channel *cm_event_channel;
+    struct rdma_cm_id *cm_server_id;
+    union ibv_gid server_gid;
+    struct ibv_context *context;
 };
 
 // TODO similar to rc? Make a common rdma?
@@ -86,6 +110,7 @@ struct client_info {
 
     struct tcp_client_info *tcp_client;
     struct rc_client_connection *rc_client;
+    struct uc_client_connection *uc_client;
     struct ud_client_connection *ud_client;
 
     int client_nr;
@@ -99,6 +124,7 @@ struct server_info {
 
     struct tcp_conn_info *tcp_server_info;
     struct rc_server_info *rc_server_info;
+    struct uc_server_info *uc_server_info;
     struct ud_server_info *ud_server_info;
 
 //    struct client_info *client;// Make array when doing multi clients

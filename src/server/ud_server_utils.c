@@ -125,7 +125,7 @@ int init_ud_server(struct server_info *server) {
     server->ud_server_info->local_dgram_qp_attrs.gid_global_subnet_prefix = server->ud_server_info->server_gid.global.subnet_prefix;
     server->ud_server_info->local_dgram_qp_attrs.lid = get_local_lid(context);
     server->ud_server_info->local_dgram_qp_attrs.qpn = server->ud_server_info->ud_qp->qp_num;
-    server->ud_server_info->local_dgram_qp_attrs.psn = lrand48() & 0xffffff;
+    server->ud_server_info->local_dgram_qp_attrs.psn = rand() & 0xffffff;
 
     pr_info("%d %d %d\n", server->ud_server_info->local_dgram_qp_attrs.lid, server->ud_server_info->local_dgram_qp_attrs.qpn, server->ud_server_info->local_dgram_qp_attrs.psn);
     server->ud_server_info->request = calloc(MAX_CLIENTS, sizeof(struct ud_request));
@@ -245,15 +245,19 @@ int ud_accept_new_connection(struct server_info *server, struct client_info *cli
     }
     pr_info("Sent qp attributes to client %d\n", server->ud_server_info->client_counter);
 
+    int client_id = server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter].client_id;
+
     struct ibv_ah_attr ah_attr;
     bzero(&ah_attr, sizeof ah_attr);
     ah_attr.dlid = server->ud_server_info->remote_dgram_qp_attrs[server->ud_server_info->client_counter].lid;
     ah_attr.port_num = IB_PHYS_PORT;
 
-    server->ud_server_info->ah[server->ud_server_info->client_counter] = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
-    check(!server->ud_server_info->ah[server->ud_server_info->client_counter], -1, "Could not create AH from the info given\n", NULL)
-//    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, client->ud_client->wc, 1, client->ud_client->ud_server->ud_cq);
+    pr_debug("ah for new client is %p before\n", server->ud_server_info->ah[client_id]);
+    server->ud_server_info->ah[client_id] = ibv_create_ah(server->ud_server_info->pd, &ah_attr);
+    pr_debug("ah for new client is %p after %d\n", server->ud_server_info->ah[client_id], client_id);
 
+    check(server->ud_server_info->ah[client_id] == NULL, -1, "Could not create AH from the info given\n", NULL)
+//    ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel, client->ud_client->wc, 1, client->ud_client->ud_server->ud_cq);
     server->ud_server_info->client_counter++;
     printf("A new connection is accepted from\n");
 
@@ -295,7 +299,19 @@ int ud_send_response(struct client_info *client) {
     int ret = -1;
     struct ibv_wc wc;
 
+//    fprintf(stderr, "client handling %d\n", client->ud_client->client_handling);//, client->ud_client->ud_server->ah[client->ud_client->client_handling]);
+//    fprintf(stderr, "with server %p\n", client->ud_client->ud_server);
+//    fprintf(stderr, "with ah array %p\n", client->ud_client->ud_server->ah);
+//    fprintf(stderr, "with ah %p\n", client->ud_client->ud_server->ah[client->ud_client->client_handling]);
+
+//    if (client->ud_client->ud_server->ah[client->ud_client->client_handling] == NULL) {
+//        fprintf(stderr,"Failing %d client\n", client->ud_client->client_handling);
+//        for (int i=0; i<client->ud_client->ud_server->client_counter; i++) {
+//            fprintf(stderr,"array client %d has ah %p\n", i, client->ud_client->ud_server->ah[i]);
+//        }
+//    }
     pr_info("sending to client %d\n", client->ud_client->client_handling);
+    pr_debug("ah for client is %p\n", client->ud_client->ud_server->ah[client->ud_client->client_handling]);
     ret = ud_post_send(sizeof(struct response), client->ud_client->response_mr->lkey, 0, client->ud_client->ud_server->ud_qp, client->response,
                         client->ud_client->ud_server->ah[client->ud_client->client_handling], client->ud_client->ud_server->remote_dgram_qp_attrs[client->ud_client->client_handling].qpn);
     ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel_send, &wc, 1, client->ud_client->ud_server->ud_send_cq);

@@ -15,6 +15,7 @@ int send_request(struct client_to_server_conn *conn) {
             ret = rc_send_request(conn->rc_server_conn, conn->rc_server_conn->request);
             break;
         case UC:
+            ret = uc_send_request(conn->uc_server_conn, conn->uc_server_conn->request);
             break;
         case UD:
             ret = ud_send_request(conn->ud_server_conn, conn->ud_server_conn->request);
@@ -33,6 +34,7 @@ int receive_response(struct client_to_server_conn *conn) {
             ret = rc_receive_response(conn->rc_server_conn, conn->rc_server_conn->response);
             break;
         case UC:
+            ret = uc_receive_response(conn->uc_server_conn, conn->uc_server_conn->response);
             break;
         case UD:
             ret = ud_receive_response(conn->ud_server_conn, conn->ud_server_conn->response);

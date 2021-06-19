@@ -102,6 +102,7 @@ int main(int argc, char *argv[]) {
             rc_main(key, &server_sockaddr);
             break;
         case UC:
+            uc_main(key, &server_sockaddr);
             break;
         case UD:
             ud_main(key, &server_sockaddr);

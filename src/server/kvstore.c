@@ -29,7 +29,7 @@ int set_request(struct client_info *client, struct request *request, struct resp
 
         return -1;
     }
-    item->value = calloc(1, expected_len); // maybe +1 for \0
+    item->value = malloc(MSG_SIZE); // maybe +1 for \0
 
     if (client->is_test) {
         read_payload(client, request, expected_len - len, item->value + len);
@@ -167,6 +167,7 @@ int main(int argc, char *argv[]) {
         pr_info("Accepting new connection\n");
         if (accept_new_connection(server_connection, client) < 0) {
             pr_info("no new connection");
+//            exit(EXIT_FAILURE);
             continue;
 //            return 0;
         }

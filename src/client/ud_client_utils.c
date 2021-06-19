@@ -85,7 +85,7 @@ int ud_prepare_client(struct ud_server_conn *server_conn) {
     server_conn->local_dgram_qp_attrs.lid = get_local_lid(context);
     server_conn->local_dgram_qp_attrs.qpn = server_conn->ud_qp->qp_num;
     server_conn->local_dgram_qp_attrs.psn = lrand48() & 0xffffff;
-
+    server_conn->local_dgram_qp_attrs.client_id = server_conn->client_id;
 
     server_conn->client_request_mr = rdma_buffer_register(server_conn->pd,
                                                           server_conn->request,
