@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy
+from scipy.stats import norm
 import util
 import sys
 
@@ -53,7 +53,7 @@ stats = stats.reset_index()
 
 #stats.plot(x = 'latency', y = 'cdf', grid=True)
 
-#norm_cdf = scipy.stats.norm.cdf(concat)
+#norm_cdf = norm.cdf(concat)
 ax.plot(stats['latency'], stats['cdf'])
 
 plot_title = "%(type)s connection, %(clients)d clients: Latency CDF" % {"type": type_arg, "clients":number_clients_arg}
