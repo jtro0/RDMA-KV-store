@@ -44,7 +44,7 @@ for filename in filenames:
     
     # plot_label = 'Client %(id)d: %(ops)d ops/sec' % {"id":client_number, "ops":ops_per_sec}
 concat = pd.concat(all_latencies)
-norm_cdf = scipy.stats.norm.cdf(concat)
+norm_cdf = norm.cdf(concat)
 ax.plot(concat, norm_cdf)
 
 plot_title = "%(type)s connection, %(clients)d clients: Latency CDF" % {"type": type_arg, "clients":number_clients_arg}
