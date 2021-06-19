@@ -44,26 +44,26 @@ for filename in filenames:
     
     # plot_label = 'Client %(id)d: %(ops)d ops/sec' % {"id":client_number, "ops":ops_per_sec}
 concat = pd.concat(all_latencies).to_frame(name='latency')
-print(concat)
-stats = concat.groupby('latency')['latency'].agg('count').pipe(pd.DataFrame).rename(columns = {'latency' : 'frequency'})
+#print(concat)
+#stats = concat.groupby('latency')['latency'].agg('count').pipe(pd.DataFrame).rename(columns = {'latency' : 'frequency'})
 
-stats['pdf'] = stats['frequency'] / sum(stats['frequency'])
+#stats['pdf'] = stats['frequency'] / sum(stats['frequency'])
 
-stats['cdf'] = stats['pdf'].cumsum()
-stats = stats.reset_index()
+#stats['cdf'] = stats['pdf'].cumsum()
+#stats = stats.reset_index()
 
 #stats.plot(x = 'latency', y = 'cdf', grid=True)
 
 #norm_cdf = norm.cdf(concat)
-ax.plot(stats['latency'], stats['cdf'])
-
-plot_title = "%(type)s connection, %(clients)d clients: Latency CDF" % {"type": type_arg, "clients":number_clients_arg}
+#ax.plot(stats['latency'], stats['cdf'])
+ax = concat.hist()
+plot_title = "%(type)s connection, %(clients)d clients: Latency histogram" % {"type": type_arg, "clients":number_clients_arg}
 plt.title(plot_title)
 # ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 plt.xlabel("Latency (usec)")
 plt.ylabel("Probability")
 plt.grid(linestyle='dotted')
 
-graph_filename = "../../benchmarking/graphs/%(type)s_Latency_cdf_%(clients)d.pdf" % {"type":type_arg, "clients":number_clients_arg}
+graph_filename = "../../benchmarking/graphs/%(type)s_Latency_hist_%(clients)d.pdf" % {"type":type_arg, "clients":number_clients_arg}
 plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
 
