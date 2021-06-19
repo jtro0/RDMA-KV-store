@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy
+from scipy.stats import norm
 import util
 import sys
 
@@ -40,7 +40,7 @@ for filename in filenames:
 # ops_per_sec = len(df.index) / time_taken_sec
     
     # plot_label = 'Client %(id)d: %(ops)d ops/sec' % {"id":client_number, "ops":ops_per_sec}
-    norm_cdf = scipy.stats.norm.cdf(latency_usec)
+    norm_cdf = norm.cdf(latency_usec)
     ax.plot(latency_usec, norm_cdf)
 
 plot_title = "%(type)s connection, %(clients)d clients: Latency CDF" % {"type": type_arg, "clients":number_clients_arg}
