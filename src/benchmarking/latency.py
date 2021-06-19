@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy
 import util
 import sys
 
@@ -34,21 +35,21 @@ for filename in filenames:
     # time_taken_sec = util.calc_time_difference_sec(current_first_sec, current_first_usec, current_last_sec, current_last_usec)
     #
     print(df['latency'].mean())
-    latency_usec = df['latency'].div(1000)
+    latency_usec = df['latency'].mul(1000)
     print(latency_usec.mean())
 # ops_per_sec = len(df.index) / time_taken_sec
     
     # plot_label = 'Client %(id)d: %(ops)d ops/sec' % {"id":client_number, "ops":ops_per_sec}
-    
-    ax.plot(latency_usec.index, latency_usec)
+    norm_cdf = scipy.stats.norm.cdf(latency_usec)
+    ax.plot(latency_usec, norm_cdf)
 
-plot_title = "%(type)s connection, %(clients)d clients: Latency per client" % {"type": type_arg, "clients":number_clients_arg}
+plot_title = "%(type)s connection, %(clients)d clients: Latency CDF" % {"type": type_arg, "clients":number_clients_arg}
 plt.title(plot_title)
 # ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-plt.xlabel("Operation")
-plt.ylabel("Latency (usec)")
+plt.xlabel("Latency (usec)")
+plt.ylabel("Probability")
 plt.grid(linestyle='dotted')
 
-graph_filename = "../../benchmarking/graphs/%(type)s_Latency_%(clients)d.pdf" % {"type":type_arg, "clients":number_clients_arg}
+graph_filename = "../../benchmarking/graphs/%(type)s_Latency_cdf_%(clients)d.pdf" % {"type":type_arg, "clients":number_clients_arg}
 plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
 
