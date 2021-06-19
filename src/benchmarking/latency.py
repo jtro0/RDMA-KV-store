@@ -12,6 +12,8 @@ number_clients_arg = int(sys.argv[2])
     
 fig = plt.figure()
 ax = fig.add_axes([0.1, 0.1, 0.6, 0.75])
+
+all_latencies = []
 for filename in filenames:
     type, number_clients, client_number, number_ops = util.get_parts(filename)
     
@@ -37,11 +39,13 @@ for filename in filenames:
     print(df['latency'].mean())
     latency_usec = df['latency'].mul(1000)
     print(latency_usec.mean())
+    all_latencies.append(latency_usec)
 # ops_per_sec = len(df.index) / time_taken_sec
     
     # plot_label = 'Client %(id)d: %(ops)d ops/sec' % {"id":client_number, "ops":ops_per_sec}
-    norm_cdf = norm.cdf(latency_usec)
-    ax.plot(latency_usec, norm_cdf)
+concat = pd.concat(all_latencies)
+norm_cdf = scipy.stats.norm.cdf(concat)
+ax.plot(concat, norm_cdf)
 
 plot_title = "%(type)s connection, %(clients)d clients: Latency CDF" % {"type": type_arg, "clients":number_clients_arg}
 plt.title(plot_title)
