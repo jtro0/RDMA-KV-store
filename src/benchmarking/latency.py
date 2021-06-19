@@ -56,7 +56,7 @@ concat = pd.concat(all_latencies).to_frame(name='latency')
 
 #norm_cdf = norm.cdf(concat)
 #ax.plot(stats['latency'], stats['cdf'])
-ax = concat.hist()
+ax = concat.boxplot()
 plot_title = "%(type)s connection, %(clients)d clients: Latency histogram" % {"type": type_arg, "clients":number_clients_arg}
 plt.title(plot_title)
 # ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
@@ -64,6 +64,6 @@ plt.xlabel("Latency (usec)")
 plt.ylabel("Probability")
 plt.grid(linestyle='dotted')
 
-graph_filename = "../../benchmarking/graphs/%(type)s_Latency_hist_%(clients)d.pdf" % {"type":type_arg, "clients":number_clients_arg}
+graph_filename = "../../benchmarking/graphs/%(type)s_Latency_box_%(clients)d.pdf" % {"type":type_arg, "clients":number_clients_arg}
 plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
 
