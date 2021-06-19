@@ -44,8 +44,17 @@ for filename in filenames:
     
     # plot_label = 'Client %(id)d: %(ops)d ops/sec' % {"id":client_number, "ops":ops_per_sec}
 concat = pd.concat(all_latencies)
-norm_cdf = scipy.stats.norm.cdf(concat)
-ax.plot(concat, norm_cdf)
+stats = concat.groupby('latency')['latency'].agg('count').pipe(pd.DataFrame).rename(columns = {'latency' : 'frequency'})
+
+stats['pdf'] = stats['frequency'] / sum(stats['frequency'])
+
+stats['cdf'] = stats['pdf'].cumsum()
+stats = stats.reset_index()
+
+#stats.plot(x = 'latency', y = 'cdf', grid=True)
+
+#norm_cdf = scipy.stats.norm.cdf(concat)
+ax.plot(stats['latency'], stats['cdf'])
 
 plot_title = "%(type)s connection, %(clients)d clients: Latency CDF" % {"type": type_arg, "clients":number_clients_arg}
 plt.title(plot_title)
