@@ -29,10 +29,7 @@ for type in types:
         df = pd.read_csv(filename)
 
         print(df['latency'].mean())
-        if (type[0] == 'TCP'):
-            latency_usec = df['latency'].div(1000)
-        else:
-            latency_usec = df['latency'].mul(1000)
+        latency_usec = df['latency'].mul(1000)
         print(latency_usec.mean())
         all_latencies.append(latency_usec)
 
