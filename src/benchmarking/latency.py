@@ -15,7 +15,8 @@ types = [["TCP", "o", "tab:blue"], ["RC", "^", "tab:orange"], ["UC", "P", "tab:r
 fig = plt.figure()
 ax = fig.add_axes([0.1, 0.1, 0.6, 0.75])
 
-all_types = []
+all_types_df = pd.DataFrame(columns=['TCP', 'RC', 'UC', 'UD'])
+# all_types = []
 for type in types:
     all_latencies = []
     print(type[0])
@@ -39,10 +40,9 @@ for type in types:
         print("append %s" % type[0])
         concated = pd.concat(all_latencies)
         print(concated)
-        all_types.append(concated)
+        all_types_df[type[0]] = concated
 
-print(str(len(all_types)))
-all_types_df = pd.DataFrame(all_types, columns=['TCP', 'RC', 'UC', 'UD'])
+print(all_types_df)
 ax = all_types_df.boxplot()
 plot_title = "Latency box plot with %(clients)d clients" % { "clients":number_clients_arg}
 plt.title(plot_title)
