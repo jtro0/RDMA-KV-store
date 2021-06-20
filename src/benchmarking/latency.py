@@ -18,7 +18,9 @@ ax = fig.add_axes([0.1, 0.1, 0.6, 0.75])
 all_types = []
 for type in types:
     all_latencies = []
+    print(type[0])
     for filename in filenames:
+        print(filename)
         type_file, number_clients, client_number, number_ops = util.get_parts(filename)
 
         if (type != type_file) or (number_clients_arg != number_clients):
@@ -33,6 +35,7 @@ for type in types:
             latency_usec = df['latency'].mul(1000)
         print(latency_usec.mean())
         all_latencies.append(latency_usec)
+
     if len(all_latencies) > 0:
         print("append %s" % type[0])
         all_types.append(pd.concat(all_latencies))
