@@ -40,7 +40,7 @@ for type in types:
         all_types_df[type[0]] = concated
 
 print(all_types_df)
-ax = all_types_df.boxplot()
+ax = all_types_df.boxplot(showfliers=False)
 plot_title = "Latency box plot with %(clients)d clients" % { "clients":number_clients_arg}
 plt.title(plot_title)
 # ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
@@ -48,6 +48,6 @@ plt.xlabel("Transportation type")
 plt.ylabel("Latency (usec)")
 plt.grid(linestyle='dotted')
 
-graph_filename = "../../benchmarking/graphs/Latency_box_%(clients)d.pdf" % {"clients":number_clients_arg}
+graph_filename = "../../benchmarking/graphs/Latency_box_no_out_%(clients)d.pdf" % {"clients":number_clients_arg}
 plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
 
