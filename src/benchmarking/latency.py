@@ -20,12 +20,12 @@ for type in types:
     all_latencies = []
     print(type[0])
     for filename in filenames:
-        print(filename)
+        # print(filename)
         type_file, number_clients, client_number, number_ops = util.get_parts(filename)
 
         if (type != type_file) or (number_clients_arg != number_clients):
             continue
-
+        print("GOTCHA")
         df = pd.read_csv(filename)
 
         print(df['latency'].mean())
