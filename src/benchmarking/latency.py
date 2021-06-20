@@ -8,7 +8,7 @@ import sys
 filenames = util.get_all_csv()
 
 #type_arg = str(sys.argv[1])
-number_clients_arg = int(sys.argv[2])
+number_clients_arg = int(sys.argv[1])
 
 types = [["TCP", "o", "tab:blue"], ["RC", "^", "tab:orange"], ["UC", "P", "tab:red"], ["UD", "x", "tab:green"]]
 
@@ -33,8 +33,9 @@ for type in types:
             latency_usec = df['latency'].mul(1000)
         print(latency_usec.mean())
         all_latencies.append(latency_usec)
-
-    all_types.append(pd.concat(all_latencies))
+    if len(all_latencies) > 0:
+        print("append %s" % type[0])
+        all_types.append(pd.concat(all_latencies))
 
 all_types_df = pd.DataFrame(all_types, columns=['TCP', 'RC', 'UC', 'UD'])
 ax = all_types_df.boxplot()
