@@ -25,7 +25,6 @@ for type in types:
 
         if (type[0] != type_file) or (number_clients_arg != number_clients):
             continue
-        print("GOTCHA")
         df = pd.read_csv(filename)
 
         print(df['latency'].mean())
@@ -38,8 +37,11 @@ for type in types:
 
     if len(all_latencies) > 0:
         print("append %s" % type[0])
-        all_types.append(pd.concat(all_latencies))
+        concated = pd.concat(all_latencies)
+        print(concated)
+        all_types.append(concated)
 
+print(str(len(all_types)))
 all_types_df = pd.DataFrame(all_types, columns=['TCP', 'RC', 'UC', 'UD'])
 ax = all_types_df.boxplot()
 plot_title = "Latency box plot with %(clients)d clients" % { "clients":number_clients_arg}
