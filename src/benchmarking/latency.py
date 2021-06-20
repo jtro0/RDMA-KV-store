@@ -23,7 +23,7 @@ for type in types:
         # print(filename)
         type_file, number_clients, client_number, number_ops = util.get_parts(filename)
 
-        if (type != type_file) or (number_clients_arg != number_clients):
+        if (type[0] != type_file) or (number_clients_arg != number_clients):
             continue
         print("GOTCHA")
         df = pd.read_csv(filename)
