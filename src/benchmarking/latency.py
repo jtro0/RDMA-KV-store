@@ -7,63 +7,44 @@ import sys
 
 filenames = util.get_all_csv()
 
-type_arg = str(sys.argv[1])
+#type_arg = str(sys.argv[1])
 number_clients_arg = int(sys.argv[2])
-    
+
+types = [["TCP", "o", "tab:blue"], ["RC", "^", "tab:orange"], ["UC", "P", "tab:red"], ["UD", "x", "tab:green"]]
+
 fig = plt.figure()
 ax = fig.add_axes([0.1, 0.1, 0.6, 0.75])
 
-all_latencies = []
-for filename in filenames:
-    type, number_clients, client_number, number_ops = util.get_parts(filename)
-    
-    if (type_arg != type) or (number_clients_arg != number_clients):
-        continue
-    
-    df = pd.read_csv(filename)
-    
-    # if client_number == 0:
-    #     first_sec = df[:1]["start_sec"]
-    #     first_usec = df[:1]["start_usec"]
-    # elif client_number == 9:
-    #     last_sec = df.tail(1)["end_sec"]
-    #     last_usec = df.tail(1)["end_usec"]
-    #
-    # current_first_sec = df.head(1)["start_sec"].at[0]
-    # current_first_usec = df.head(1)["start_usec"].at[0]
-    # current_last_sec = df.tail(1)["end_sec"].at[len(df.index)-1]
-    # current_last_usec = df.tail(1)["end_usec"].at[len(df.index)-1]
-    #
-    # time_taken_sec = util.calc_time_difference_sec(current_first_sec, current_first_usec, current_last_sec, current_last_usec)
-    #
-    print(df['latency'].mean())
-    latency_usec = df['latency'].mul(1000)
-    print(latency_usec.mean())
-    all_latencies.append(latency_usec)
-# ops_per_sec = len(df.index) / time_taken_sec
-    
-    # plot_label = 'Client %(id)d: %(ops)d ops/sec' % {"id":client_number, "ops":ops_per_sec}
-concat = pd.concat(all_latencies).to_frame(name='latency')
-#print(concat)
-#stats = concat.groupby('latency')['latency'].agg('count').pipe(pd.DataFrame).rename(columns = {'latency' : 'frequency'})
+all_types = []
+for type in types:
+    all_latencies = []
+    for filename in filenames:
+        type_file, number_clients, client_number, number_ops = util.get_parts(filename)
 
-#stats['pdf'] = stats['frequency'] / sum(stats['frequency'])
+        if (type != type_file) or (number_clients_arg != number_clients):
+            continue
 
-#stats['cdf'] = stats['pdf'].cumsum()
-#stats = stats.reset_index()
+        df = pd.read_csv(filename)
 
-#stats.plot(x = 'latency', y = 'cdf', grid=True)
+        print(df['latency'].mean())
+        if (type[0] == 'TCP'):
+            latency_usec = df['latency'].div(1000)
+        else:
+            latency_usec = df['latency'].mul(1000)
+        print(latency_usec.mean())
+        all_latencies.append(latency_usec)
 
-#norm_cdf = norm.cdf(concat)
-#ax.plot(stats['latency'], stats['cdf'])
-ax = concat.boxplot()
-plot_title = "%(type)s connection, %(clients)d clients: Latency histogram" % {"type": type_arg, "clients":number_clients_arg}
+    all_types.append(pd.concat(all_latencies))
+
+all_types_df = pd.DataFrame(all_types, columns=['TCP', 'RC', 'UC', 'UD'])
+ax = all_types_df.boxplot()
+plot_title = "Latency box plot with %(clients)d clients" % { "clients":number_clients_arg}
 plt.title(plot_title)
 # ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-plt.xlabel("Latency (usec)")
-plt.ylabel("Probability")
+plt.xlabel("Transportation type")
+plt.ylabel("Latency (usec)")
 plt.grid(linestyle='dotted')
 
-graph_filename = "../../benchmarking/graphs/%(type)s_Latency_box_%(clients)d.pdf" % {"type":type_arg, "clients":number_clients_arg}
+graph_filename = "../../benchmarking/graphs/Latency_box_%(clients)d.pdf" % {"clients":number_clients_arg}
 plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
 
