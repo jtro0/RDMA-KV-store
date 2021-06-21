@@ -60,7 +60,7 @@ for type in types:
         ax.plot(stats['latency'], stats['cdf'], label=plot_label, color=type[2])
 
 
-plt.xlim(0, 800)
+plt.xlim(0, 500)
 plot_title = "%(clients)d clients: Latency CDF" % {"clients":number_clients_arg}
 plt.title(plot_title)
 ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
