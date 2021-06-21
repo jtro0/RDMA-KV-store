@@ -28,19 +28,23 @@ for type in types:
             continue
         df = pd.read_csv(filename)
 
-        print(df['latency'].mean())
+        # print(df['latency'].mean())
         latency_usec = df['latency'].mul(1000)
-        print(latency_usec.mean())
+        # print(latency_usec.mean())
         all_latencies.append(latency_usec)
 
     if len(all_latencies) > 0:
-        print("append %s" % type[0])
         concated = pd.concat(all_latencies)
-        print(concated)
+        mean = concated.mean()
+        min = concated.min()
+        max = concated.max()
+        q_one = concated.quartile(0.25)
+        q_three = concated.quartile(0.75)
+        std = concated.std()
+        print("mean: %d, min: %d, max: %d, q1: %d, q3: %d, std: %d" % mean, min, max, q_one, q_three, std)
         all_types_df[type[0]] = concated
 
-print(all_types_df)
-ax = all_types_df.boxplot()
+ax = all_types_df.boxplot(showfliers=False)
 plot_title = "Latency box plot with %(clients)d clients" % { "clients":number_clients_arg}
 plt.title(plot_title)
 # ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
