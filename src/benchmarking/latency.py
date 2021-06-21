@@ -38,8 +38,8 @@ for type in types:
         mean = concated.mean()
         min = concated.min()
         max = concated.max()
-        q_one = concated.quartile(0.25)
-        q_three = concated.quartile(0.75)
+        q_one = concated.quantile(0.25)
+        q_three = concated.quantile(0.75)
         std = concated.std()
         print("mean: %d, min: %d, max: %d, q1: %d, q3: %d, std: %d" % mean, min, max, q_one, q_three, std)
         all_types_df[type[0]] = concated
