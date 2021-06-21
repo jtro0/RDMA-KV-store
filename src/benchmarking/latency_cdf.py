@@ -61,12 +61,12 @@ for type in types:
 
 
 plt.xlim(0, 5000)
-plot_title = "%(type)s connection, %(clients)d clients: Latency CDF" % {"type": type_arg, "clients":number_clients_arg}
+plot_title = "%(clients)d clients: Latency CDF" % {"clients":number_clients_arg}
 plt.title(plot_title)
 # ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 plt.xlabel("Latency (usec)")
 plt.ylabel("Probability")
 plt.grid(linestyle='dotted')
 
-graph_filename = "../../benchmarking/graphs/%(type)s_Latency_cdf_%(clients)d.pdf" % {"type":type_arg, "clients":number_clients_arg}
+graph_filename = "../../benchmarking/graphs/Latency_cdf_%(clients)d.pdf" % {"clients":number_clients_arg}
 plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
