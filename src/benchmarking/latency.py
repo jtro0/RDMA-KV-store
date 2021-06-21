@@ -41,7 +41,7 @@ for type in types:
         q_one = concated.quantile(0.25)
         q_three = concated.quantile(0.75)
         std = concated.std()
-        print("mean: %d, min: %d, max: %d, q1: %d, q3: %d, std: %d" % mean, min, max, q_one, q_three, std)
+        print(f"mean: {mean}, min: {min}, max: {max}, q1: {q_one}, q3: {q_three}, std: {std}")
         all_types_df[type[0]] = concated
 
 ax = all_types_df.boxplot(showfliers=False)
