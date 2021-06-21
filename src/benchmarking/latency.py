@@ -52,6 +52,6 @@ plt.xlabel("Transportation type")
 plt.ylabel("Latency (usec)")
 plt.grid(linestyle='dotted')
 
-graph_filename = "../../benchmarking/graphs/Latency_box_%(clients)d.pdf" % {"clients":number_clients_arg}
+graph_filename = "../../benchmarking/graphs/Latency_box_no_out_%(clients)d.pdf" % {"clients":number_clients_arg}
 plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
 
