@@ -130,13 +130,15 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
     void *context = NULL;
     int ret = -1, i, total_wc = 0;
 
-    pthread_mutex_lock(lock);
+    if (lock != NULL)
+        pthread_mutex_lock(lock);
     /* We wait for the notification on the CQ channel */
     ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
                            &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
                            &context); /* Associated CQ user context, which we did set */
     check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
-    pthread_mutex_unlock(lock);
+    if (lock != NULL)
+        pthread_mutex_unlock(lock);
     /* Request for more notifications. */
     ret = ibv_req_notify_cq(cq_ptr, 0);
     check(ret, -errno, "Failed to request further notifications %d \n", -errno);
