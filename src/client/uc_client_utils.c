@@ -309,7 +309,7 @@ int uc_receive_response(struct uc_server_conn *server_conn, struct response *res
     check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
 
     /* at this point we are expecting 1 work completion for the write */
-    ret = process_work_completion_events_with_timeout(&wc, 1, server_conn->client_cq);
+    ret = process_work_completion_events_with_timeout(&wc, 1, server_conn->client_cq, server_conn->io_completion_channel);
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 

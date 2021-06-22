@@ -125,19 +125,19 @@ int process_rdma_cm_event(struct rdma_event_channel *echannel,
 
 
 int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct ibv_wc *wc, int max_wc,
-                                   struct ibv_cq *cq_ptr) {
-//    struct ibv_cq *cq_ptr = NULL;
+                                   struct ibv_cq *cq_ptr_temp) {
+    struct ibv_cq *cq_ptr = NULL;
     void *context = NULL;
     int ret = -1, i, total_wc = 0;
     /* We wait for the notification on the CQ channel */
-//    ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
-//                           &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
-//                           &context); /* Associated CQ user context, which we did set */
-//    check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
-//
-//    /* Request for more notifications. */
-//    ret = ibv_req_notify_cq(cq_ptr, 0);
-//    check(ret, -errno, "Failed to request further notifications %d \n", -errno);
+    ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
+                           &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
+                           &context); /* Associated CQ user context, which we did set */
+    check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
+
+    /* Request for more notifications. */
+    ret = ibv_req_notify_cq(cq_ptr, 0);
+    check(ret, -errno, "Failed to request further notifications %d \n", -errno);
 
     /* We got notification. We reap the work completion (WC) element. It is
  * unlikely but a good practice it write the CQ polling code that
@@ -169,17 +169,26 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
     return total_wc;
 }
 
-int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc,
-                                   struct ibv_cq *cq_ptr) {
-//    struct ibv_cq *cq_ptr = NULL;
+int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, struct ibv_cq *cq_ptr_temp,
+                                                struct ibv_comp_channel *comp_channel) {
+    struct ibv_cq *cq_ptr = NULL;
     void *context = NULL;
     int ret = -1, i, total_wc = 0;
+    /* We wait for the notification on the CQ channel */
+    ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
+                           &cq_ptr_temp, /* which CQ has an activity. This should be the same as CQ we created before */
+                           &context); /* Associated CQ user context, which we did set */
+    check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
+
+    /* Request for more notifications. */
+    ret = ibv_req_notify_cq(cq_ptr_temp, 0);
+    check(ret, -errno, "Failed to request further notifications %d \n", -errno);
 
     struct timeval time;
     unsigned long start_time_msec, current_time_msec;
 
-    gettimeofday(&time, NULL);
-    start_time_msec = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+//    gettimeofday(&time, NULL);
+//    start_time_msec = (time.tv_sec * 1000) + (time.tv_usec / 1000);
 
     /* We got notification. We reap the work completion (WC) element. It is
  * unlikely but a good practice it write the CQ polling code that
@@ -188,13 +197,13 @@ int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc,
  */
     total_wc = 0;
     do {
-        ret = ibv_poll_cq(cq_ptr /* the CQ, we got notification for */,
+        ret = ibv_poll_cq(cq_ptr_temp /* the CQ, we got notification for */,
                           max_wc - total_wc /* number of remaining WC elements*/,
                           wc + total_wc/* where to store */);
         check(ret < 0, ret, "Failed to poll cq for wc due to %d \n", ret);
         total_wc += ret;
-        gettimeofday(&time, NULL);
-        current_time_msec = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+//        gettimeofday(&time, NULL);
+//        current_time_msec = (time.tv_sec * 1000) + (time.tv_usec / 1000);
     } while (total_wc < max_wc && ((current_time_msec - start_time_msec) < MAX_POLL_CQ_TIMEOUT));
     pr_debug("%d WC are completed \n", total_wc);
     /* Now we check validity and status of I/O work completions */
@@ -207,9 +216,9 @@ int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc,
         }
     }
     /* Similar to connection management events, we need to acknowledge CQ events */
-//    ibv_ack_cq_events(cq_ptr,
-//                      1 /* we received one event notification. This is not
-//		       number of WC elements */);
+    ibv_ack_cq_events(cq_ptr,
+                      1 /* we received one event notification. This is not
+		       number of WC elements */);
     return total_wc;
 }
 
