@@ -187,8 +187,8 @@ int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, s
     struct timeval time;
     unsigned long start_time_msec, current_time_msec;
 
-//    gettimeofday(&time, NULL);
-//    start_time_msec = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+    gettimeofday(&time, NULL);
+    start_time_msec = (time.tv_sec * 1000) + (time.tv_usec / 1000);
 
     /* We got notification. We reap the work completion (WC) element. It is
  * unlikely but a good practice it write the CQ polling code that
@@ -202,8 +202,8 @@ int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, s
                           wc + total_wc/* where to store */);
         check(ret < 0, ret, "Failed to poll cq for wc due to %d \n", ret);
         total_wc += ret;
-//        gettimeofday(&time, NULL);
-//        current_time_msec = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+        gettimeofday(&time, NULL);
+        current_time_msec = (time.tv_sec * 1000) + (time.tv_usec / 1000);
     } while (total_wc < max_wc && ((current_time_msec - start_time_msec) < MAX_POLL_CQ_TIMEOUT));
     pr_debug("%d WC are completed \n", total_wc);
     /* Now we check validity and status of I/O work completions */
