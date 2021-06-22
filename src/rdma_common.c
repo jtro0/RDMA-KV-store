@@ -133,15 +133,19 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
     if (lock != NULL)
         pthread_mutex_lock(lock);
     /* We wait for the notification on the CQ channel */
+    pr_debug("Getting cq event");
     ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
                            &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
                            &context); /* Associated CQ user context, which we did set */
     check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
+    pr_debug("Got cq event");
     if (lock != NULL)
         pthread_mutex_unlock(lock);
     /* Request for more notifications. */
+    pr_debug("Requesting another cq event");
     ret = ibv_req_notify_cq(cq_ptr, 0);
     check(ret, -errno, "Failed to request further notifications %d \n", -errno);
+    pr_debug("Requested cq event");
 
     /* We got notification. We reap the work completion (WC) element. It is
  * unlikely but a good practice it write the CQ polling code that
@@ -150,6 +154,7 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
  */
     total_wc = 0;
     do {
+        pr_debug("Loop");
         ret = ibv_poll_cq(cq_ptr /* the CQ, we got notification for */,
                           max_wc - total_wc /* number of remaining WC elements*/,
                           wc + total_wc/* where to store */);
@@ -167,9 +172,11 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
         }
     }
     /* Similar to connection management events, we need to acknowledge CQ events */
+    pr_debug("Send ack");
     ibv_ack_cq_events(cq_ptr,
                       1 /* we received one event notification. This is not
 		       number of WC elements */);
+    pr_debug("Sent ack");
     return total_wc;
 }
 
