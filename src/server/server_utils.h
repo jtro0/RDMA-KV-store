@@ -99,6 +99,8 @@ struct ud_server_info {
     int request_count;
     struct ibv_ah *ah[MAX_CLIENTS];
     pthread_mutex_t lock;
+    pthread_mutex_t lock_proc_wc;
+
 };
 
 struct client_info {

@@ -125,16 +125,18 @@ int process_rdma_cm_event(struct rdma_event_channel *echannel,
 
 
 int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct ibv_wc *wc, int max_wc,
-                                   struct ibv_cq *cq_ptr_temp) {
+                                   struct ibv_cq *cq_ptr_temp, pthread_mutex_t *lock) {
     struct ibv_cq *cq_ptr = NULL;
     void *context = NULL;
     int ret = -1, i, total_wc = 0;
+
+    pthread_mutex_lock(lock);
     /* We wait for the notification on the CQ channel */
     ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
                            &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
                            &context); /* Associated CQ user context, which we did set */
     check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
-
+    pthread_mutex_unlock(lock);
     /* Request for more notifications. */
     ret = ibv_req_notify_cq(cq_ptr, 0);
     check(ret, -errno, "Failed to request further notifications %d \n", -errno);

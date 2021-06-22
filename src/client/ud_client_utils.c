@@ -146,7 +146,7 @@ int ud_send_request(struct ud_server_conn *server_conn, struct request *request)
     pr_info("Do we need this?\n");
     /* at this point we are expecting 1 work completion for the write */
     ret = process_work_completion_events(server_conn->io_completion_channel,
-                                         &wc, 1, server_conn->ud_cq);
+                                         &wc, 1, server_conn->ud_cq, NULL);
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 
