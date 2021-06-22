@@ -176,12 +176,12 @@ int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, s
     int ret = -1, i, total_wc = 0;
     /* We wait for the notification on the CQ channel */
     ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
-                           &cq_ptr_temp, /* which CQ has an activity. This should be the same as CQ we created before */
+                           &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
                            &context); /* Associated CQ user context, which we did set */
     check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
 
     /* Request for more notifications. */
-    ret = ibv_req_notify_cq(cq_ptr_temp, 0);
+    ret = ibv_req_notify_cq(cq_ptr, 0);
     check(ret, -errno, "Failed to request further notifications %d \n", -errno);
 
     struct timeval time;
@@ -197,7 +197,7 @@ int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, s
  */
     total_wc = 0;
     do {
-        ret = ibv_poll_cq(cq_ptr_temp /* the CQ, we got notification for */,
+        ret = ibv_poll_cq(cq_ptr /* the CQ, we got notification for */,
                           max_wc - total_wc /* number of remaining WC elements*/,
                           wc + total_wc/* where to store */);
         check(ret < 0, ret, "Failed to poll cq for wc due to %d \n", ret);
