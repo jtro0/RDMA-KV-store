@@ -274,7 +274,7 @@ int ud_receive_header(struct client_info *client) {
 //    print_request(&client->ud_client->ud_server->request[client->ud_client->ud_server->request_count].request);
 
     ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel_recv,
-                                         client->ud_client->wc, 1, client->ud_client->ud_server->ud_recv_cq, client->ud_client->ud_server->lock_proc_wc);
+                                         client->ud_client->wc, 1, client->ud_client->ud_server->ud_recv_cq, &client->ud_client->ud_server->lock_proc_wc);
     pthread_mutex_lock(&client->ud_client->ud_server->lock);
     check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
     pr_info("wc wr id: %lu, request count: %d\n", client->ud_client->wc->wr_id, client->request_count);
