@@ -139,8 +139,7 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
                            &context); /* Associated CQ user context, which we did set */
     check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
     pr_debug("Got cq event");
-    if (lock != NULL)
-        pthread_mutex_unlock(lock);
+
     /* Request for more notifications. */
     pr_debug("Requesting another cq event");
     ret = ibv_req_notify_cq(cq_ptr, 0);
@@ -177,6 +176,8 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
                       1 /* we received one event notification. This is not
 		       number of WC elements */);
     pr_debug("Sent ack");
+    if (lock != NULL)
+        pthread_mutex_unlock(lock);
     return total_wc;
 }
 
