@@ -18,7 +18,7 @@
 %
 %
 In this section, background information on key value stores, which is the backbone of this thesis, will be given.
-Also, the issues with commonly used linux sockets, will be explained.
+Also, the issues with commonly used Linux socket, will be explained.
 Further, RDMA is thoroughly explained, as this is crucial to the understanding of this paper, and how it addresses issues facing sockets.
 
 \section[KV-store]{Key Value Store}\label{sec:kv-store}
@@ -32,9 +32,9 @@ It has been found that typical work loads consist mostly of \textit{GET} request
 Atikoglu et. al. analysed workloads on Memcached systems, and have found that on average a 30:1 (95\%) \textit{GET}/\textit{SET} ratio\cite{atikoglu2012workload}.
 This figure will be used in the benchmarking design, see section \ref{sec:benchmark-design}.
 
-\section[Linux scokets and TCP]{Linux sockets and TCP network stack}\label{sec:linux-sockets}
+\section[Linux scoket and TCP]{Linux sockets and TCP network stack}\label{sec:linux-sockets}
 Linux sockets are versatile programming API, offering a simple interface to network communication.
-Behind this socket interface, the kernel is tasked with data and memory, and connection management\cite{hanford2018survey,seth2009tcp} .
+Behind this socket interface, the kernel is tasked with data and memory, and connection management\cite{hanford2018survey,seth2009tcp}.
 This results in CPU cycles being used to process incoming packets and data copies, while these cycles could be used for other tasks.
 Linux takes an extensive route when dealing with packets, as shown by Hanford et. al. detailed investigation\cite{hanford2018survey}.
 Memory copies have been found to cause delay in Frey and Alonso's work\cite{frey2009minimizing}, however for small message sizes, Yasukata, and team, found this is insignificant\cite{yasukata2016stackmap}.
@@ -89,7 +89,7 @@ UD therefore can make efficient use of a one-to-many network topology or applica
 Every QP has to be held by RNIC in cache, which is severely limited\cite{qiu2018toward}.
 A cache miss or many context switching in RNIC, would diminish performance.
 With the fan-in and fan-out effect present in many data center workloads\cite{vasudevan2009safe}, the potential scalability of connection oriented QP's is limited\cite{kalia2016fasst}.
-UD requires an adress handler (AH) to be passed along with its WR's.
+UD requires an address handler (AH) to be passed along with its WR's.
 This is the route and the destination for a packet.
 The destination does not need to be a QP, but could also be a multicast group.
 Multiple clients can listen on the same channel, this is can be applied in applications where the same data can be used by multiple clients.
@@ -109,7 +109,7 @@ Read and write (\textit{READ} and \textit{WRITE}) follow so-called memory semant
 Memory semantics require the destination memory address to be known.
 This meaning, to be able to perform a RDMA read of a remote memory location, the memory address of the requested memory needs to be known.
 
-Channel semantics are similar to sockets, in the sense that the remote memory address does not need to be known.
+Channel semantics are similar to socket, in the sense that the remote memory address does not need to be known.
 However, to perform a \textit{SEND} operation, the receiving end must post a \textit{RECV} WR before the \textit{SEND} WR is sent, this is called pre-posting.
 This tells the server's RNIC which memory location the application expects the next incoming message to be place.
 
@@ -180,7 +180,7 @@ The numbered arrows in figure \ref{fig:send_recv_drawing} correspond to the foll
     \item The server can poll on the CQ, this tells the application that the \textit{RECV} request has been completed, and can now be read with the same data as was in the clients buffer.
 \end{enumerate}
 
-For more insight in which functions are avaliable, see RDMA programming guid \cite{mellanox_prog_guide} or the OpenFabric Alliance\cite{openfab} which develop kernel bypassing API for RDMA aware networks.
+For more insight in which functions are avaliable, see RDMA programming guide\cite{mellanox_prog_guide} or the OpenFabric Alliance\cite{openfab} which develop kernel bypassing API for RDMA aware networks.
 % ---------------------------------------------------------------------------
 % ----------------------- end of thesis sub-document ------------------------
 % ---------------------------------------------------------------------------

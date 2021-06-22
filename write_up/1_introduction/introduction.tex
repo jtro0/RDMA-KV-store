@@ -54,19 +54,19 @@ This paper will explore to what extent RDMA transportation types affect the perf
 For this, this research will answer the following questions:
 
 \begin{itemize}
-    \item[\textbf{RQ1}] How scalable are these transportation types?%, compared to traditional TCP?
+    \item[\textbf{RQ1}] How scalable are the RDMA transportation types: reliable connection (RC), unreliable connection (UC), and unreliable datagram (UD)?%, compared to traditional TCP?
     This being an important factor for deploying KV stores.
     RDMA design choice could affect this, but at what cost?
     \item[\textbf{RQ2}] What are the advantages and disadvantages of RDMA transportation types on an KV-store?
     This question aims to aid with design process of future RDMA KV stores.
-    By applying known ramifications of RDMA to that in a KV store use case
+    By applying known ramifications of RDMA to that in a KV store use case.
     With supporting results, recommendations can be given, and possible design issues can be foreseen.
 \end{itemize}
 
-\section{Research Method}
-In this thesis the network performance of KV-store, with varying protocols, will be studied. 
+\section{Research Methods}
+In this thesis the network performance of KV-store, with varying network protocols, will be studied.
 First an understanding of KV-stores is established.
-Along with discussing known issues with traditional networking, a relatively new technology, RDMA, will be introduced.
+Along with discussing known issues with traditional networking, RDMA will be introduced.
 Experiments will be performed to measure overall throughput and latency, with increasing number of clients.
 With this the possible scalability of each transport type will be shown.
 
