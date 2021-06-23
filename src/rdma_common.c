@@ -125,12 +125,13 @@ int process_rdma_cm_event(struct rdma_event_channel *echannel,
 
 
 int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct ibv_wc *wc, int max_wc,
-                                   struct ibv_cq *cq_ptr_temp, pthread_mutex_t *lock, int blocking) {
-    struct ibv_cq *cq_ptr = NULL;
+                                   struct ibv_cq *cq_ptr, pthread_mutex_t *lock, int blocking) {
+//    struct ibv_cq *cq_ptr = NULL;
     void *context = NULL;
     int ret = -1, i, total_wc = 0;
 
     if (blocking) {
+        cq_ptr = NULL;
         if (lock != NULL)
             pthread_mutex_lock(lock);
         /* We wait for the notification on the CQ channel */
@@ -184,13 +185,14 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
     return total_wc;
 }
 
-int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, struct ibv_cq *cq_ptr_temp,
+int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, struct ibv_cq *cq_ptr,
                                                 struct ibv_comp_channel *comp_channel, int blocking) {
-    struct ibv_cq *cq_ptr = NULL;
+//    struct ibv_cq *cq_ptr = NULL;
     void *context = NULL;
     int ret = -1, i, total_wc = 0;
 
     if (blocking) {
+        cq_ptr = NULL;
         /* We wait for the notification on the CQ channel */
         ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
                                &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
