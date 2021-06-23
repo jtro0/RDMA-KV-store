@@ -45,6 +45,10 @@ double time_in_msec(struct timeval *time) {
     return time->tv_sec * 1000.0 + time->tv_usec / 1000.0;
 }
 
+double time_in_usec(struct timeval *time) {
+    return time->tv_sec * 1000000.0 + time->tv_usec;
+}
+
 int data_processing(struct operation *ops, int client_number) {
     int count = 0;
     struct operation first = ops[count];
@@ -54,10 +58,10 @@ int data_processing(struct operation *ops, int client_number) {
         char *file_name = malloc(255 * sizeof(char));
         if (blocking)
             snprintf(file_name, 255, "./benchmarking/data/cmt2054/blocking/%s_%d_client_%d_%d.csv",
-                     connection_type_to_str(connectionType), clients, client_number, num_ops);
+                     connection_type_to_str(connectionType), clients, client_number, num_ops / clients);
         else
             snprintf(file_name, 255, "./benchmarking/data/cmt2054/%s_%d_client_%d_%d.csv",
-                    connection_type_to_str(connectionType), clients, client_number, num_ops);
+                    connection_type_to_str(connectionType), clients, client_number, num_ops / clients);
         char *suffix = &file_name[strlen(file_name) - 4];
         if (strncmp(".csv", suffix, 4) != 0) {
             fprintf(stderr, "File name is not correct!\n");
@@ -78,12 +82,12 @@ int data_processing(struct operation *ops, int client_number) {
         }
         struct timeval *time_taken = malloc(sizeof(struct timeval));
         timersub(op.end, op.start, time_taken);
-        double ms = time_in_msec(time_taken);
+        double latency = time_in_usec(time_taken);
 
         if (save) {
             fprintf(file, "%ld,%ld,%ld,%ld,%f\n", op.start->tv_sec, op.start->tv_usec, op.end->tv_sec,
                     op.end->tv_usec,
-                    ms);
+                    latency);
         }
         count++;
         last = op;

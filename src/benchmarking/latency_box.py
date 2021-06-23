@@ -5,12 +5,19 @@ from scipy.stats import norm
 import util
 import sys
 
-filenames = util.get_all_csv()
-
-#type_arg = str(sys.argv[1])
-number_clients_arg = int(sys.argv[1])
 
 types = [["TCP", "o", "tab:blue"], ["RC", "^", "tab:orange"], ["UC", "P", "tab:red"], ["UD", "x", "tab:green"]]
+
+# Change to use getopt?
+max_clients = int(sys.argv[1])
+blocking_arg = ""
+if len(sys.argv) > 2:
+    blocking_arg = str(sys.argv[2])
+
+if blocking_arg == "blocking":
+    filenames = util.get_all_csv_blocking()
+else:
+    filenames = util.get_all_csv()
 
 fig = plt.figure()
 ax = fig.add_axes([0.1, 0.1, 0.6, 0.75])
@@ -24,12 +31,12 @@ for type in types:
         # print(filename)
         type_file, number_clients, client_number, number_ops = util.get_parts(filename)
 
-        if (type[0] != type_file) or (number_clients_arg != number_clients):
+        if (type[0] != type_file) or (max_clients != number_clients):
             continue
         df = pd.read_csv(filename)
 
         # print(df['latency'].mean())
-        latency_usec = df['latency'].mul(1000)
+        latency_usec = df['latency']
         # print(latency_usec.mean())
         all_latencies.append(latency_usec)
 
@@ -44,14 +51,21 @@ for type in types:
         print(f"mean: {mean}, min: {min}, max: {max}, q1: {q_one}, q3: {q_three}, std: {std}")
         all_types_df[type[0]] = concated
 
+
+if blocking_arg == "blocking":
+    plot_title = "Latency box plot with %(clients)d clients and blocking for WC" % { "clients":max_clients}
+    filename_addition = "_blocking"
+else:
+    plot_title = "Latency box plot with %(clients)d clients" % { "clients":max_clients}
+    filename_addition = ""
+
 ax = all_types_df.boxplot(showfliers=False)
-plot_title = "Latency box plot with %(clients)d clients" % { "clients":number_clients_arg}
 plt.title(plot_title)
 # ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 plt.xlabel("Transportation type")
 plt.ylabel("Latency (usec)")
 plt.grid(linestyle='dotted')
 
-graph_filename = "../../benchmarking/graphs/Latency_box_no_out_%(clients)d.pdf" % {"clients":number_clients_arg}
+graph_filename = "../../benchmarking/graphs/Latency_box_no_out_%(clients)d%(add)s.pdf" % {"clients":max_clients, "add":filename_addition}
 plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
 

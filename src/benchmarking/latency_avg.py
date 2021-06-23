@@ -4,11 +4,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from operator import add, sub
 
-filenames = util.get_all_csv()
-
 types = [["TCP", "o", "tab:blue"], ["RC", "^", "tab:orange"], ["UC", "P", "tab:red"], ["UD", "x", "tab:green"]]
 
+# Change to use getopt?
 max_clients = int(sys.argv[1])
+blocking_arg = ""
+if len(sys.argv) > 2:
+    blocking_arg = str(sys.argv[2])
+
+if blocking_arg == "blocking":
+    filenames = util.get_all_csv_blocking()
+else:
+    filenames = util.get_all_csv()
 
 fig = plt.figure()
 ax = fig.add_axes([0.1, 0.1, 0.6, 0.75])
@@ -75,14 +82,21 @@ for type in types:
         # ax.plot(x_values, first_quartile, label=first_quartile_label, linestyle='--', color=type[2])
         # ax.plot(x_values, third_quartile, linestyle='--', color=type[2])
         # ax.fill_between(x_values, first_quartile, third_quartile, alpha=0.1, interpolate=True)
-    
-plt.title("Overall latency per Transport Type")
+
+if blocking_arg == "blocking":
+    plot_title = "Overall latency per Transport Type while Blocking for WC"
+    filename_addition = "_blocking"
+else:
+    plot_title = "Overall latency per Transport Type"
+    filename_addition = ""
+
+plt.title(plot_title)
 plt.legend(loc="upper left", bbox_to_anchor=(1, 0.5))
 plt.xlabel("Number of clients")
 plt.ylabel("Latency (usec)")
 plt.grid(linestyle='dotted')
 
-graph_filename = "../../benchmarking/graphs/Latency_avg_%d.pdf" % max_clients
+graph_filename = "../../benchmarking/graphs/Latency_avg_%d%s.pdf" % max_clients, filename_addition
 plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
 #plt.show
 
