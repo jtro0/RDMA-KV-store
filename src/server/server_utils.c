@@ -24,7 +24,6 @@
 int debug = 0;
 int verbose = 0;
 
-
 void usage(char *prog) {
     fprintf(stderr, "Usage %s [--help -h] [--verbose -v] [--debug -d] "
                     "[--port -p] [--rdma -r]\n", prog);
@@ -35,6 +34,8 @@ void usage(char *prog) {
             "--port -p\n\t Port to bind on. Default: pick the first available port\n");
     fprintf(stderr,
             "--rdma -r\n\t Use RDMA. Choose rc, uc, or ud.\n");
+    fprintf(stderr,
+            "--blocking -b\n\t Use completion events for RDMA. This will cause threads to block until new completion event is generated.\n");
 }
 
 struct server_info *server_init(int argc, char *argv[]) {
@@ -42,6 +43,7 @@ struct server_info *server_init(int argc, char *argv[]) {
     connInfo->port = PORT;
     connInfo->type = TCP;
     char *rdma_type;
+    connInfo->blocking = 0;
 
     const struct option long_options[] = {
             {"help",    no_argument,       NULL, 'h'},
@@ -49,13 +51,14 @@ struct server_info *server_init(int argc, char *argv[]) {
             {"debug",   no_argument,       NULL, 'd'},
             {"port",    required_argument, NULL, 'p'},
             {"rdma",    required_argument, NULL, 'r'},
-            {0, 0, 0,                            0}
+            {"blocking",no_argument,       NULL, 'b'},
+            {0,  0,                0,      0}
     };
 
     for (;;) {
         int option_index = 0;
         int c;
-        c = getopt_long(argc, argv, "hvdp:r:t", long_options,
+        c = getopt_long(argc, argv, "hvdp:r:to", long_options,
                         &option_index);
         if (c == -1)
             break;
@@ -84,6 +87,9 @@ struct server_info *server_init(int argc, char *argv[]) {
                 }
             case 't':
                 connInfo->is_test = true;
+                break;
+            case 'b':
+                connInfo->blocking = 1;
                 break;
             case 'h':
             default:
@@ -121,6 +127,8 @@ struct server_info *server_init(int argc, char *argv[]) {
 
 int accept_new_connection(struct server_info *server, struct client_info *client) {
     int ret;
+
+    client->blocking = server->blocking;
 
     switch (server->type) {
         case TCP:

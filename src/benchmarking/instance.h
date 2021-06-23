@@ -11,6 +11,7 @@ struct thread_args {
     struct sockaddr_in *server_addr;
     unsigned int num_ops;
     int instance_nr;
+    int blocking;
 };
 
 void * start_instance(void *args);

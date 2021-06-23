@@ -151,9 +151,9 @@ void rdma_buffer_deregister(struct ibv_mr *mr);
  *          atleast this size.
  */
 int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct ibv_wc *wc, int max_wc,
-                                   struct ibv_cq *cq_ptr_temp, pthread_mutex_t *lock);
+                                   struct ibv_cq *cq_ptr_temp, pthread_mutex_t *lock, int blocking);
 int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, struct ibv_cq *cq_ptr_temp,
-                                                struct ibv_comp_channel *comp_channel);
+                                                struct ibv_comp_channel *comp_channel, int blocking);
 /* prints some details from the cm id */
 void show_rdma_cmid(struct rdma_cm_id *id);
 

@@ -116,6 +116,7 @@ struct client_info {
     struct ud_client_connection *ud_client;
 
     int client_nr;
+    int blocking;
 };
 
 struct server_info {
@@ -130,6 +131,7 @@ struct server_info {
     struct ud_server_info *ud_server_info;
 
 //    struct client_info *client;// Make array when doing multi clients
+    int blocking;
 };
 
 struct server_info *server_init(int argc, char *arg[]);

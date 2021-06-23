@@ -274,7 +274,8 @@ int ud_receive_header(struct client_info *client) {
 //    print_request(&client->ud_client->ud_server->request[client->ud_client->ud_server->request_count].request);
 
     ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel_recv,
-                                         client->ud_client->wc, 1, client->ud_client->ud_server->ud_recv_cq, &client->ud_client->ud_server->lock_proc_wc);
+                                         client->ud_client->wc, 1, client->ud_client->ud_server->ud_recv_cq,
+                                         &client->ud_client->ud_server->lock_proc_wc, client->blocking);
     pthread_mutex_lock(&client->ud_client->ud_server->lock);
     check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
     pr_info("wc wr id: %lu, request count: %d\n", client->ud_client->wc->wr_id, client->request_count);
@@ -316,7 +317,7 @@ int ud_send_response(struct client_info *client) {
     ret = ud_post_send(sizeof(struct response), client->ud_client->response_mr->lkey, 0, client->ud_client->ud_server->ud_qp, client->response,
                         client->ud_client->ud_server->ah[client->ud_client->client_handling], client->ud_client->ud_server->remote_dgram_qp_attrs[client->ud_client->client_handling].qpn);
     ret = process_work_completion_events(client->ud_client->ud_server->io_completion_channel_send, &wc, 1,
-                                         client->ud_client->ud_server->ud_send_cq, NULL);
+                                         client->ud_client->ud_server->ud_send_cq, NULL, client->blocking);
     check(ret < 0, -errno, "Failed to send response: %d\n", ret);
     return ret;
 }

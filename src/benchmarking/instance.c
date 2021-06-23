@@ -93,12 +93,14 @@ void* start_instance(void *arguments) {
     struct sockaddr_in *server_addr = args->server_addr;
     unsigned int num_ops = args->num_ops;
     int instance_nr = args->instance_nr;
+    int blocking = args->blocking;
 
     int returned;
     struct client_to_server_conn conn;
     conn.conn_t = conn_t;
     conn.server_addr = server_addr;
     conn.instance_nr = instance_nr;
+    conn.blocking = blocking;
 
     switch (conn_t) {
         case TCP:
