@@ -20,28 +20,44 @@ In this section, the experimental results are presented.
 %First a baseline of RDMA performance on DAS is given.
 %This will be used to compare a KV store use case to maximum performance that can be achieved on DAS.
 The RDMA transportation types are compared within and against the baseline TCP implementation.
-Throughput and latency are mainly used to analysis the scalability of these transportation types.
-The same raw data is used for both measurements, thus can be put alongside each other.
+Throughput and latency are mainly used to analysis the multicore scalability of these transportation types; with increasing number of clients, and therefore threads.
+For latency three figures have been used to evaluate: average latency, boxplot without outliers, and cumulative distribution function (CDF).
+The same raw data is used for both measurements, thus can be compared alongside each other.
+
+The two designs are analyzed, with and without blocking for completion event.
+For TCP the same data has been used for evaluation of both designs, as this is used as baseline.
 
 In short, the results show:
 \begin{itemize}
-    \item Throughput reaches an equilibrium with all transportation types up to 30 clients.
-    UD performs best, with a maximum throughput of roughly 400 kilo-tasks/sec.
+    \item Without blocking, throughput reaches an peak, with all transportation types, at roughly 32 clients.
+    UC performs best, with a maximum throughput of 370185 ops/sec at 33 clients.
     Further details are given in section \ref{sec:throughput-analysis}.
-    \item Latency increases across all transportation types, with increased number of clients.
-    Results are inversely comparable to throughput, again with UD performing best, with a latency of roughly 64 $\mu$sec at 30 clients.
+    \item With blocking, throughput reaches an equilibrium up to 70 clients.
+    UC, again, performance best, stabilizing at roughly x ops/sec.
+    \item Latency increases across all transportation types, with increased number of clients, and both with and without blocking.
+    Results are inversely comparable to throughput, again with UC performing best.
+    Without blocking: UC has a average latency of roughly 49.2 $\mu$sec at 32 clients and 179.7 $\mu$sec at 60 clients.
+    The spread also increases: standard deviation ranges from 46.6 $\mu$sec at 32 clients, to 1628.2 $\mu$sec at 60 clients.
+    UC also performance best due to the stable 95th persentile, which is 110 $\mu$sec for both 32 and 60 clients.
+    \item
+    With blocking: UD has a average latency of roughly x $\mu$sec at 32 clients and x $\mu$sec at 60 clients.
+    The spread also increases: inner quartile range ranges from x $\mu$sec at y clients, to x $\mu$sec at y clients.
+
     Section \ref{sec:latency:analysis} delves deeper.
 \end{itemize}
 
 To recall the benchmarking setup:
-Ten million tasks are divided equally between \textit{n}-clients.
-A task is defined as a request and response, and are equal to two operations.
+Ten million KV-store operations are divided equally between \textit{n}-clients.
 
 \section{Throughput analysis}\label{sec:throughput-analysis}
-We compare the average throughput between TCP, RC, and UD with up to 30 clients.
-From figure \ref{fig:throughput-30}, the maximum average throughput is observed to be roughly 205 kilo-tasks/sec for TCP, 251 kilo-tasks/sec for RC, both at 30 clients, and 399 kilo-tasks/sec for UD at 25 clients.
-RC shows a mere 22.8\% maximum improvement over TCP.
-UD in turn offers a significant gain of 94.8\% over TCP.
+To compare the overall throughput between TCP, RC, UC, and UD with up to 70 clients.
+With non-blocking design, peak throughput performance is realised at roughly 32 clients.
+This can be seen in figure \ref{fig:throughput-30}.
+For RC, maximum throughput is roughly 247782 ops/sec at 32 clients.
+While for UC, maximum throughput is roughly 370185 ops/sec at 33 clients, and for UD this is at roughly 357019 ops/sec at 31 clients.
+The maximum throughput TCP achieves in this number of clients range, is 206750 ops/sec at 33 clients.
+For RC, UC, and UD this is a percentage increase over TCP of: 19.85\%, 79.05\%, and 72.68\%.
+However, after 32 clients, throughput has a sharp decline, with RC failing to connect properly above 60 clients, resulting in incomplete data at these points.
 \begin{figure}
     \centering
     \includegraphics[height=8cm]{figures/PDF/Throughput_30}
@@ -50,31 +66,47 @@ UD in turn offers a significant gain of 94.8\% over TCP.
 \end{figure}
 
 \subsection{Scalability rate}\label{subsec:scalability-rate}
-It can be observed from figure \ref{fig:throughput-30} that all transportation types scale up to roughly 20 clients before settling.
-UD outperforms the other types, in both throughput and initial rate of scalability.
-A near linear scalability rate can be seen in the first 15 clients for UD.
-This is due the addition of threads for every new client.
-Since all these threads are actively working for all clients, this linear increase is to be expected.
-For the first 10 clients, UD increases its throughput by 23.4 kilo-tasks/sec per additional client.
-Compare this with 18.1 for RC and 10.9 kilo-tasks/sec for the baseline TCP.
-This shows strong scalability performance for UD with small number of clients.
-It is unclear from this graph if UD continues to scale beyond 30 clients.
+Multicore scalability of all RDMA transportation types, without blocking, is poor.
+Up to roughly 15 clients, throughput performance increases at a linear rate.
+For TCP, there is an average increase of 10246 ops/sec per additional client.
+For the RDMA transport types, for RC this is 16726 ops/sec per additional client, 21462 ops/sec for UC, and 21067 ops/sec for UD.
+This shows that unreliable transport types, UC and UD, scale better per additional client and worker thread, compared to RC and TCP.
+However, after 15 threads, performance begins to plateau for all transportation types and TCP, showing that the used KV-store is CPU bound.
+This is due to the pthread locking, used to provide isolation with concurrent threads operating on the KV-store.
 
-\subsection{Similarities between RC and TCP}
-It can also be seen in figure \ref{fig:throughput-30} that RC is similar to TCP in scalability.
-With both being a connection oriented protocol, each server thread being tied to a client, resulting in less performance gain per additional worker thread.
-The benefits of RDMA does reflect in these results, with the throughput of RC being on average 59.7 kilo-tasks/sec above TCP.
-Both protocol stabilizing after roughly 20 clients, with less than 5\% change for TCP and less than 2\% for RC beyond 20 clients.
+After 32 clients and worker threads, multicore performance weakens, and dropping in performance.
+This is due to the non-blocked design, and 32 physical threads being the maximum on a single DAS-5 node.
+Without this blocking or scheduling, threads take CPU cycles while polling on the receive queue.
+With only a limited number of CPU cycles, this is not used efficiently, resulting in drop in performance for all worker threads.
+
+
+\begin{table}
+    \begin{tabular}{ccccc}
+        Clients & TCP & RC & UC & UD \\
+        1 & & & & \\
+        2 & 6531.571861 & 24686.53216 & 24638.92191 & 26502.60875 \\
+        3 & 13594.18984 & 23770.88044 & 24785.06225 & 28301.22973 \\
+        4 & 4297.07597 & 24568.10076 & 27795.82235 & 23489.22267 \\
+        5 & 7363.59922 & 17665.61705 & 19850.77766 & 22090.10711 \\
+        6 & 6521.771444 & 16064.3204 & 20579.02917 & 24167.81283 \\
+        7 & 11672.14625 & 13975.27874 & 21439.07072 & 16246.34785 \\
+        8 & 18989.11049 & 14401.88884 & 17510.50509 & 14201.32075 \\
+        9 & 12033.20216 & 4957.154159 & 17930.69447 & 21432.34552 \\
+        10 & 11858.04359 & 18916.31359 & 20129.9112 & 17827.70575 \\
+        15 & 9603.176325 & 8252.113695 & 19962.02981 & 16410.46889 \\
+    \end{tabular}
+    \caption{Throughput increase per additional client}
+    \label{tab:throughput_add_client}
+\end{table}
 
 %\subsection{Fairness between clients}
 %TODO GENERATE GRAPH FOR THIS
 
 \section{Latency analysis}\label{sec:latency:analysis}
-An important factor to KV store is their quick response time, and therefore this should ideally scale similarly, preferably better, than throughput.
+An important factor to KV-store is their quick response time.
+Latency should ideally scale similarly, preferably better, than throughput, such that with an increased number of clients, latency changes are unnoticed to the clients.
 RDMA offers fast response time due to the lack of CPU and kernel involvement.
-To see how this is translated per transportation type, the average latency of all 10 million tasks were measured, from request sent to response received.
-Results can be seen in figure \ref{fig:latency-30}.
-Along with the average latency, the first and third quartile are shown, to analyze the variation of latencies.
+This can be seen in \ref{fig:rc_latency_30}, where RDMA transportation types perform better than TCP up to 55 clients, after which UD performs worse, and RC following this trend.
 
 \begin{figure}
     \centering
@@ -82,6 +114,23 @@ Along with the average latency, the first and third quartile are shown, to analy
     \caption{Latency of clients executing 10 million operations}
     \label{fig:latency-30}
 \end{figure}
+
+At roughly 32 clients, relative performance is similar to throughput as seen in figure \ref{fig:throughput-30}.
+Results show that TCP has an average latency of 138.0 $\mu$sec at 32 clients.
+RC has an average latency of 115.1 $\mu$sec, a 16.61\% improvement relative to TCP.
+UC performs best at 32 clients, with an average latency of 49.24 $\mu$sec, which is an 64.33\% improvement over TCP.
+Finally, UD has an average latency of 65.5 $\mu$sec, which is an improvement of 52.5\% over TCP.
+
+It can also be observed that latency scales proportional with the number of clients for TCP, while this is only the case for RDMA up to roughly 32 clients.
+The average rate of change for TCP, RC, UC, and UD up to 32 clients is: 2.31 $\mu$sec, 2.00 $\mu$sec, 0.37 $\mu$sec, and 0.72 $\mu$sec.
+This shows that UC scales favorably up to 32 clients, closely followed by UD.
+After 32 clients, RDMA transportation types scale worse, with UD surpassing TCP's average latency at 60 clients.
+RC is trending towards surpassing TCP after 60 clients, however, this data could not be collected reliably.
+Lastly, UC still performs favorably compared to TCP at 70 clients, however, relative performance is now at 21.98\%.
+
+
+
+
 
 The latency between protocols is an inverse reflection of the throughput graph, scaling and overall performance.
 Similarly, TCP performed worst, with an average latency of 134.2 $\mu$sec at 30 clients.
@@ -95,7 +144,93 @@ A further examination of this could support this.
 Similarly to throughput, UD scales relatively well, while RC and TCP scale linearly.
 A near uniform latency for the first 15 clients, afterwards a gradual slope, compared to TCP and RC.
 
+
+
+
+
 \subsection{Variation from average}
+Consistent latency is important for clients, such that performance is predictable.
+Therefore, a box plot and CDF graph is used to examine the spread of latency at three points: 5 clients, 32 clients and 60 clients.
+Additionally, the median, innerquartile range, 95th and 99th percentile, and standard deviation, is used to examine the spread numerically.
+This numeric data can be found in table \ref{tab:num_stats}.
+The complete table, with number of clients up to 70, can be found in table INSERT TABLE in the appendix.
+\begin{table}
+    \subtable[TCP] {
+        \centering
+        \begin{tabular}{rrrrrr}
+            \toprule
+            \textbf{Clients} & \textbf{Median} & \textbf{IQR} & \textbf{95th percentile} & \textbf{99th percentile} & \textbf{Standard deviation} \\
+            \midrule
+            5 & 62 & 55 & 126 & 152 & 33.50 \\
+            32 & 129 & 40 & 192 & 233 & 268.86 \\
+            60 & 238 & 65 & 318 & 368 & 275.85 \\
+            \bottomrule
+        \end{tabular}
+        \label{tab:num_stats_tcp}
+    }
+
+    \subtable[RC] {
+        \centering
+        \begin{tabular}{rrrrrr}
+            \toprule
+            \textbf{Clients} & \textbf{Median} & \textbf{IQR} & \textbf{95th percentile} & \textbf{99th percentile} & \textbf{Standard deviation} \\
+            \midrule
+            5 & 31 & 43 & 88 & 99 & 29.33 \\
+            32 & 112 & 149 & 227 & 231 & 83.10 \\
+            60 & 48 & 56 & 120 & 7852.41 & 1662.83 \\
+            \bottomrule
+        \end{tabular}
+        \label{tab:num_stats_rc}
+    }
+
+    \subtable[UC] {
+        \centering
+        \begin{tabular}{rrrrrr}
+            \toprule
+            \textbf{Clients} & \textbf{Median} & \textbf{IQR} & \textbf{95th percentile} & \textbf{99th percentile} & \textbf{Standard deviation} \\
+            \midrule
+            5 & 29 & 49 & 84 & 95 & 29.26 \\
+            32 & 39 & 70 & 110 & 122 & 46.59 \\
+            60 & 35 & 56 & 110 & 1296 & 1629.16 \\
+            \bottomrule
+        \end{tabular}
+        \label{tab:num_stats_uc}
+    }
+
+    \subtable[UD] {
+        \centering
+        \begin{tabular}{rrrrrr}
+            \toprule
+            \textbf{Clients} & \textbf{Median} & \textbf{IQR} & \textbf{95th percentile} & \textbf{99th percentile} & \textbf{Standard deviation} \\
+            \midrule
+            5 & 29 & 46 & 84 & 95 & 30.45 \\
+            32 & 57 & 64 & 126 & 146 & 65.59 \\
+            60 & 54 & 65 & 143 & 9036 & 1693.72 \\
+            \bottomrule
+        \end{tabular}
+        \label{tab:num_stats_ud}
+    }
+
+    \caption{Numeric statistic latency. All statistical values have unit $\mu$sec. IRQ is short for innerquartile range}
+    \label{tab:num_stats}
+\end{table}
+
+From this it can be observed that from these three points, standard deviation increases as number of clients increase.
+With RDMA, there is a signficant increase in variation after 32 clients.
+The median latency and 95th percentile of UC and UD remains similiar between 32 and 60 clients, however the outliers or 99th percentile, increase significantly.
+This is further supported by the CDF figure of 32 clients INSERT FIGURE REF and 60 clients INSERT FIGURE REF.
+In these figures, 80\% of the data is near 100 $\mu$sec and 90 $\mu$sec, for UD and UC respectively, deviating slightly between 32 and 60 clients.
+However, the top 1\% of the data is not below the 500 $\mu$sec shown for 60 clients, while this is the case for 32 clients.
+These outliers are caused by polling and concurrent number of threads, which exceed the number of physical threads.
+With high CPU usage, the time until a new request is seen and can be processed, increases, causing a delay for the client.
+These outliers can be also seen to cause the loss in throughput performance.
+
+It can also be observed that RC suffers from a peak spread around 32 clients, which afterwards falls back down.
+Innerquartile range reaches a peak of 149 $\mu$sec at 32 clients, with a median of 112 $\mu$sec.
+It is unclear what causes this, however should be considered when reaching maximum number of physical threads.
+
+
+
 In figure \ref{fig:latency-30} the variation is given in form of first and third quartile.
 It can be seen that TCP and UD have a constant, a small, variation.
 TCP is skewed towards higher latencies at 30 clients, while UD, and RC, stay normally distributed throughout.
