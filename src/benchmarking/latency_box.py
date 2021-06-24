@@ -43,6 +43,7 @@ for type in types:
     if len(all_latencies) > 0:
         concated = pd.concat(all_latencies)
         mean = concated.mean()
+        median = concated.median()
         min = concated.min()
         max = concated.max()
         q_one = concated.quantile(0.25)
@@ -52,7 +53,7 @@ for type in types:
         q_ninenine = concated.quantile(0.99)
 
     std = concated.std()
-        print(f"mean: {mean}, min: {min}, max: {max}, q1: {q_one}, q3: {q_three}, inner quartile: {q_inner}, 95th percentile: {q_ninefive}, 99th percentile: {q_ninenine}, std: {std}")
+        print(f"mean: {mean}, median: {median}, min: {min}, max: {max}, q1: {q_one}, q3: {q_three}, inner quartile: {q_inner}, 95th percentile: {q_ninefive}, 99th percentile: {q_ninenine}, std: {std}")
         all_types_df[type[0]] = concated
 
 
