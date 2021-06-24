@@ -84,5 +84,5 @@ plt.xlabel("Latency (usec)")
 plt.ylabel("Probability")
 plt.grid(linestyle='dotted')
 
-graph_filename = f"../../benchmarking/graphs/Latency_cdf{max_clients}{filename_addition}.pdf"
+graph_filename = f"../../benchmarking/graphs/Latency_cdf_{max_clients}{filename_addition}.pdf"
 plt.savefig(graph_filename, dpi=100, bbox_inches="tight")
