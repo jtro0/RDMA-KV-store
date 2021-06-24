@@ -68,7 +68,6 @@ for type in types:
 
         time_taken_sec = util.calc_time_difference_sec(current_start_sec, current_start_usec, current_end_sec, current_end_usec)
         ops_per_sec = op_count / time_taken_sec
-        print(ops_per_sec)
         if ops_per_sec > 0:
             print(type[0] + ', ' + str(current_number_clients) + ': ' + str(ops_per_sec))
             per_number_client.append(ops_per_sec)
