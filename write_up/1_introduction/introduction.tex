@@ -29,10 +29,19 @@
 
 
 \section{Context}
-Seemingly ever growing tech giants, such as Facebook, Amazon and Google, require fast, reliable and scalable key-value storage (KV-store) to serve product recommendations, user preferences, and advertisements\cite{decandia2007dynamo,geambasu2010comet}.
-A KV-store is a data storage type which aims to store many small values and provides a high throughput and low latency interface.
+Seemingly ever growing tech giants, such as Facebook, Amazon and Google, require fast, reliable and scalable key-value storage (KV-store) to serve a variety of services: product recommendations, user preferences, and advertisements\cite{decandia2007dynamo,geambasu2010comet}.
+Amazon's Dynamo is an example of such a highly used KV-store, which is used by Amazon to provide its core services, such as session storage and shopping cart\cite{decandia2007dynamo}.
+At peak, these services handle tens of millions customers a second.
+This requires Dynamo to process requests in the span of a few milliseconds, to provide a consistent and fast user experience.
+
+Remote direct memory access (RDMA) networks have increasingly become more popular in data centers, due to their increase in throughput, decrease in latency, and lower cost of RDMA capapble network interface cards (RNIC)\cite{kalia2016design, chen2019scalable}.
+RDMA and RNIC provides a lower latency networking interface compared to classical network cards, which is advantage for latency sensitive applications, such as a KV-store, deployed in data centers.
+
+
+In a more general sense, a KV-store aims to store many small values, identified with a key.
 KV-stores usually offer a simple interface using 3 commands: \textit{GET}, \textit{SET}, and \textit{DEL}.
-Typically, implemented with a hash-table, which matches the hash value of a given key, to the value associated with that key.
+With these commands, data can be retrieved, updated/added, or deleted.
+Typically, the basis of a KV-store is formed by a hash-table, which pairs a unique key with a value.
 Past advancements of KV-stores have focussed on improving these underlying data structures\cite{escriva2012hyperdex, lim2014mica}.
 Cuckoo and Hopscotch hashing\cite{kalia2014using, FaRM} have presented an alternative of an improved hash table algorithm.
 Nonetheless, with recent developments with RDMA networks, this has become a more attractive direction to improve KV-stores\cite{chen2019scalable}.
@@ -41,22 +50,30 @@ Remote direct memory access (RDMA) networks have increasingly become more popula
 RDMA offers a more direct connection between two machines, by using direct memory acces (DMA), without the involvement of host CPU or OS.
 
 \section{Problem statement}
-Making efficient use of RDMA networks is a difficult task, and requires in-depth knowledge on the hardware constraints present in the RNICs \cite{kalia2016design, chen2019scalable}.
-Additionally, in a higher level sense, there are design choices to be made.
-RDMA networks can handle of various transportation types and so-called verbs, each with their own advantage and disadvantage.
-The impact of transportation types on scalability of an RDMA bases KV-store has not been explicitly examined.
+Making efficient use of RDMA networks is a difficult task, and requires in-depth knowledge on the hardware constraints present in the RNICs\cite{kalia2016design, chen2019scalable}.
+Additionally, in a higher level sense, there are design choices to be made, in regard to transportation types and so-called verbs.
+RDMA networks can handle of various transportation types: reliable connection (RC), unreliable connection (UC) and unreliable datagrams (UD).
+Additionally, verbs can be seen as network operations.
+There are four main verbs: \textit{SEND}, \textit{RECV}, \textit{READ}, and \textit{WRITE}.
+Each transportation type and verb come with advantages and disadvantages, which will be discussed further in this thesis.
+However, impact of transportation types on scalability of an RDMA bases KV-store has not been explicitly examined.
 Previous work has focused on researching verb choices, less on transportation type\cite{kalia2014using, kalia2016fasst, mitchell2013using}.
-Scalability is an important factor for growing tech giants.
+
+Scalability of their KV-store service is an important factor for tech giants such as Amazon.
+With their growth in number of customers and concurrent clients, their KV-store servers are hit with large number of clients.
+
+
+
+Scalability is an important factor for growing tech giants, as their increasing customer .
 These require a low latency and scale to reach large number of clients, all the while being highly available\cite{decandia2007dynamo}, which RDMA could provide.
 
 \section{Research Question}
-This paper will explore to what extent RDMA transportation types affect the performance and scalability of KV-store.
+This paper will explore to what extent RDMA transportation types affect the performance and multicore scalability of KV-store.
 For this, this research will answer the following questions:
 
 \begin{itemize}
-    \item[\textbf{RQ1}] How scalable are the RDMA transportation types: reliable connection (RC), unreliable connection (UC), and unreliable datagram (UD)?%, compared to traditional TCP?
-    This being an important factor for deploying KV stores.
-    RDMA design choice could affect this, but at what cost?
+    \item[\textbf{RQ1}] What is the multicore scalability of the RDMA transportation types: reliable connection (RC), unreliable connection (UC), and unreliable datagram (UD)?
+    With the growing number of clients that
     \item[\textbf{RQ2}] What are the advantages and disadvantages of RDMA transportation types on an KV-store?
     This question aims to aid with design process of future RDMA KV stores.
     By applying known ramifications of RDMA to that in a KV store use case.
