@@ -132,8 +132,8 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
 
     if (blocking) {
         cq_ptr = NULL;
-        if (lock != NULL)
-            pthread_mutex_lock(lock);
+//        if (lock != NULL)
+//            pthread_mutex_lock(lock);
         /* We wait for the notification on the CQ channel */
         pr_debug("Getting cq event");
         ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
@@ -179,8 +179,8 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
                           1 /* we received one event notification. This is not
 		       number of WC elements */);
         pr_debug("Sent ack");
-        if (lock != NULL)
-            pthread_mutex_unlock(lock);
+//        if (lock != NULL)
+//            pthread_mutex_unlock(lock);
     }
     return total_wc;
 }
