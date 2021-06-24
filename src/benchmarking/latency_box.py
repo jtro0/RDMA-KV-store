@@ -47,8 +47,12 @@ for type in types:
         max = concated.max()
         q_one = concated.quantile(0.25)
         q_three = concated.quantile(0.75)
-        std = concated.std()
-        print(f"mean: {mean}, min: {min}, max: {max}, q1: {q_one}, q3: {q_three}, std: {std}")
+        q_inner = q_three - q_one
+        q_ninefive = concated.quantile(0.95)
+        q_ninenine = concated.quantile(0.99)
+
+    std = concated.std()
+        print(f"mean: {mean}, min: {min}, max: {max}, q1: {q_one}, q3: {q_three}, inner quartile: {q_inner}, 95th percentile: {q_ninefive}, 99th percentile: {q_ninenine}, std: {std}")
         all_types_df[type[0]] = concated
 
 
