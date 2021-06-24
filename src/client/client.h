@@ -16,6 +16,7 @@ struct client_to_server_conn {
     struct sockaddr_in *server_addr;
     struct request *request;
     struct response *response;
+    int blocking;
 
     struct rc_server_conn *rc_server_conn;
     struct ud_server_conn *ud_server_conn;

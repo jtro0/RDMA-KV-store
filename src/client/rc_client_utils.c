@@ -146,7 +146,7 @@ int client_connect_to_server(struct rc_server_conn *server_conn) {
     return 0;
 }
 
-int rc_send_request(struct rc_server_conn *server_conn, struct request *request) {
+int rc_send_request(struct rc_server_conn *server_conn, struct request *request, int blocking) {
     int ret;
     struct ibv_wc wc;
 
@@ -158,7 +158,7 @@ int rc_send_request(struct rc_server_conn *server_conn, struct request *request)
 
     /* at this point we are expecting 1 work completion for the write */
     ret = process_work_completion_events(server_conn->io_completion_channel,
-                                         &wc, 1, server_conn->client_cq);
+                                         &wc, 1, server_conn->client_cq, NULL, blocking);
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 
@@ -181,7 +181,7 @@ int rc_pre_post_receive_response(struct rc_server_conn *server_conn, struct resp
     check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
 }
 
-int rc_receive_response(struct rc_server_conn *server_conn, struct response *response) {
+int rc_receive_response(struct rc_server_conn *server_conn, struct response *response, int blocking) {
     int ret;
     struct ibv_wc wc;
 
@@ -191,7 +191,7 @@ int rc_receive_response(struct rc_server_conn *server_conn, struct response *res
 
     /* at this point we are expecting 1 work completion for the write */
     ret = process_work_completion_events(server_conn->io_completion_channel,
-                                         &wc, 1, server_conn->client_cq);
+                                         &wc, 1, server_conn->client_cq, NULL, blocking);
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 
@@ -281,12 +281,12 @@ int rc_main(char *key, struct sockaddr_in *server_sockaddr) {
     strncpy(server_conn->request->msg, "hello server", MSG_SIZE);
 
     print_request(server_conn->request);
-    ret = rc_send_request(server_conn, server_conn->request);
+    ret = rc_send_request(server_conn, server_conn->request, 0);
     check(ret, ret, "Failed to get send request, ret = %d \n", ret);
 
     server_conn->response = malloc(sizeof(struct response));
     bzero(server_conn->response, sizeof(struct response));
-    ret = rc_receive_response(server_conn, server_conn->response);
+    ret = rc_receive_response(server_conn, server_conn->response, 0);
     print_response(server_conn->response);
     check(ret, ret, "Failed to receive response, ret = %d \n", ret);
 
@@ -299,11 +299,11 @@ int rc_main(char *key, struct sockaddr_in *server_sockaddr) {
     server_conn->request->method = GET;
     print_request(server_conn->request);
 
-    ret = rc_send_request(server_conn, server_conn->request);
+    ret = rc_send_request(server_conn, server_conn->request, 0);
     check(ret, ret, "Failed to get send second request, ret = %d \n", ret);
 
     bzero(server_conn->response, sizeof(struct response));
-    ret = rc_receive_response(server_conn, server_conn->response);
+    ret = rc_receive_response(server_conn, server_conn->response, 0);
     print_response(server_conn->response);
     check(ret, ret, "Failed to receive second response ret = %d \n", ret);
 

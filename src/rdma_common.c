@@ -125,20 +125,29 @@ int process_rdma_cm_event(struct rdma_event_channel *echannel,
 
 
 int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct ibv_wc *wc, int max_wc,
-                                   struct ibv_cq *cq_ptr) {
+                                   struct ibv_cq *cq_ptr, pthread_mutex_t *lock, int blocking) {
 //    struct ibv_cq *cq_ptr = NULL;
     void *context = NULL;
     int ret = -1, i, total_wc = 0;
-    /* We wait for the notification on the CQ channel */
-//    ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
-//                           &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
-//                           &context); /* Associated CQ user context, which we did set */
-//    check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
-//
-//    /* Request for more notifications. */
-//    ret = ibv_req_notify_cq(cq_ptr, 0);
-//    check(ret, -errno, "Failed to request further notifications %d \n", -errno);
 
+    if (blocking) {
+        cq_ptr = NULL;
+//        if (lock != NULL)
+//            pthread_mutex_lock(lock);
+        /* We wait for the notification on the CQ channel */
+        pr_debug("Getting cq event");
+        ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
+                               &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
+                               &context); /* Associated CQ user context, which we did set */
+        check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
+        pr_debug("Got cq event");
+
+        /* Request for more notifications. */
+        pr_debug("Requesting another cq event");
+        ret = ibv_req_notify_cq(cq_ptr, 0);
+        check(ret, -errno, "Failed to request further notifications %d \n", -errno);
+        pr_debug("Requested cq event");
+    }
     /* We got notification. We reap the work completion (WC) element. It is
  * unlikely but a good practice it write the CQ polling code that
     * can handle zero WCs. ibv_poll_cq can return zero. Same logic as
@@ -146,6 +155,7 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
  */
     total_wc = 0;
     do {
+        pr_debug("Loop");
         ret = ibv_poll_cq(cq_ptr /* the CQ, we got notification for */,
                           max_wc - total_wc /* number of remaining WC elements*/,
                           wc + total_wc/* where to store */);
@@ -162,19 +172,37 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
             return -(wc[i].status);
         }
     }
-    /* Similar to connection management events, we need to acknowledge CQ events */
-    ibv_ack_cq_events(cq_ptr,
-                      1 /* we received one event notification. This is not
+    if (blocking) {
+        /* Similar to connection management events, we need to acknowledge CQ events */
+        pr_debug("Send ack");
+        ibv_ack_cq_events(cq_ptr,
+                          1 /* we received one event notification. This is not
 		       number of WC elements */);
+        pr_debug("Sent ack");
+//        if (lock != NULL)
+//            pthread_mutex_unlock(lock);
+    }
     return total_wc;
 }
 
-int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc,
-                                   struct ibv_cq *cq_ptr) {
+int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, struct ibv_cq *cq_ptr,
+                                                struct ibv_comp_channel *comp_channel, int blocking) {
 //    struct ibv_cq *cq_ptr = NULL;
     void *context = NULL;
     int ret = -1, i, total_wc = 0;
 
+    if (blocking) {
+        cq_ptr = NULL;
+        /* We wait for the notification on the CQ channel */
+        ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
+                               &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
+                               &context); /* Associated CQ user context, which we did set */
+        check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
+
+        /* Request for more notifications. */
+        ret = ibv_req_notify_cq(cq_ptr, 0);
+        check(ret, -errno, "Failed to request further notifications %d \n", -errno);
+    }
     struct timeval time;
     unsigned long start_time_msec, current_time_msec;
 
@@ -206,10 +234,12 @@ int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc,
             return -(wc[i].status);
         }
     }
-    /* Similar to connection management events, we need to acknowledge CQ events */
-//    ibv_ack_cq_events(cq_ptr,
-//                      1 /* we received one event notification. This is not
-//		       number of WC elements */);
+    if (blocking) {
+        /* Similar to connection management events, we need to acknowledge CQ events */
+        ibv_ack_cq_events(cq_ptr,
+                          1 /* we received one event notification. This is not
+		       number of WC elements */);
+    }
     return total_wc;
 }
 

@@ -55,7 +55,7 @@
 
 #define IB_PHYS_PORT 1			// HERD, Primary physical port number for qps
 
-#define MAX_POLL_CQ_TIMEOUT 1000
+#define MAX_POLL_CQ_TIMEOUT 100
 /*
  * We use attribute so that compiler does not step in and try to pad the structure.
  * We use this structure to exchange information between the server and the client.
@@ -151,9 +151,9 @@ void rdma_buffer_deregister(struct ibv_mr *mr);
  *          atleast this size.
  */
 int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct ibv_wc *wc, int max_wc,
-                                   struct ibv_cq *cq_ptr);
-int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc,
-                                                struct ibv_cq *cq_ptr);
+                                   struct ibv_cq *cq_ptr, pthread_mutex_t *lock, int blocking);
+int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, struct ibv_cq *cq_ptr,
+                                                struct ibv_comp_channel *comp_channel, int blocking);
 /* prints some details from the cm id */
 void show_rdma_cmid(struct rdma_cm_id *id);
 

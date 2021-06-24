@@ -99,6 +99,8 @@ struct ud_server_info {
     int request_count;
     struct ibv_ah *ah[MAX_CLIENTS];
     pthread_mutex_t lock;
+    pthread_mutex_t lock_proc_wc;
+
 };
 
 struct client_info {
@@ -114,6 +116,7 @@ struct client_info {
     struct ud_client_connection *ud_client;
 
     int client_nr;
+    int blocking;
 };
 
 struct server_info {
@@ -128,6 +131,7 @@ struct server_info {
     struct ud_server_info *ud_server_info;
 
 //    struct client_info *client;// Make array when doing multi clients
+    int blocking;
 };
 
 struct server_info *server_init(int argc, char *arg[]);
