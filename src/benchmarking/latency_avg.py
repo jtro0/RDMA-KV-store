@@ -26,9 +26,11 @@ for type in types:
     first_quartile = []
     third_quartile = []
     std_deviation = []
-    
+
     x_values = list(range(1, 11))
-    if max_clients > 10:
+    if max_clients >= 35:
+        x_values = x_values + list(range(15, 31, 5)) + list(range(30, 35)) + list(range(35, max_clients+1, 5))
+    elif max_clients > 10:
         x_values = x_values + list(range(15, max_clients+1, 5))
 
     for current_number_clients in x_values:
@@ -43,7 +45,7 @@ for type in types:
         for filename in filenames:
             type_file, number_clients, client_number, number_ops = util.get_parts(filename)
             
-            if (type[0] != type_file) or number_clients != current_number_clients or number_ops != 10000000:
+            if (type[0] != type_file) or number_clients != current_number_clients:
                 continue
 
             df = pd.read_csv(filename)
