@@ -56,7 +56,6 @@ for type in types:
         # all_types_df[type[0]] = concated
 
         concat = pd.concat(all_latencies).to_frame(name='latency')
-        print(concat)
         stats = concat.groupby('latency')['latency'].agg('count').pipe(pd.DataFrame).rename(columns = {'latency' : 'frequency'})
 
         stats['pdf'] = stats['frequency'] / sum(stats['frequency'])

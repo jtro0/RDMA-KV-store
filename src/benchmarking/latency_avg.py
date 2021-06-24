@@ -56,14 +56,20 @@ for type in types:
                 all_latencies.append(ms)
             
         if len(all_latencies) > 0:
-            concat = pd.concat(all_latencies)
+            concated = pd.concat(all_latencies)
+            mean = concated.mean()
+            median = concated.median()
+            min = concated.min()
+            max = concated.max()
+            q_one = concated.quantile(0.25)
+            q_three = concated.quantile(0.75)
+            q_inner = q_three - q_one
+            q_ninefive = concated.quantile(0.95)
+            q_ninenine = concated.quantile(0.99)
 
-            data = [concat.quantile(.25), concat.quantile(.75), concat.mean()]
-
-            print(type[0] + ', ' + str(current_number_clients) + ': ' + str(data))
-            first_quartile.append(data[0])
-            third_quartile.append(data[1])
-            per_number_client.append(data[2])
+            std = concated.std()
+            print(f"{type[0]} {current_number_clients}: mean: {mean}, median: {median}, min: {min}, max: {max}, q1: {q_one}, q3: {q_three}, inner quartile: {q_inner}, 95th percentile: {q_ninefive}, 99th percentile: {q_ninenine}, std: {std}")
+            per_number_client.append(mean)
             # std_deviation.append(concat.std()/1000)
         # per_number_client[current_number_clients-1] = ops_per_sec
         else:
