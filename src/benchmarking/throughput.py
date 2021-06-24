@@ -24,7 +24,7 @@ for type in types:
 
     x_values = list(range(1, 11))
     if max_clients >= 35:
-        x_values = x_values + list(range(15, 31), 5) + list(range(30, 35)) + list(range(35, max_clients+1, 5))
+        x_values = x_values + list(range(15, 31, 5)) + list(range(30, 35)) + list(range(35, max_clients+1, 5))
     elif max_clients > 10:
         x_values = x_values + list(range(15, max_clients+1, 5))
 
