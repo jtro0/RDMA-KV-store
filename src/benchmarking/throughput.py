@@ -44,6 +44,7 @@ for type in types:
             if (type[0] != type_file) or number_clients != current_number_clients:
                 continue
             op_count += number_ops
+            print(filename)
 
             df = pd.read_csv(filename)
 
