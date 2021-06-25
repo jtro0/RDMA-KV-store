@@ -105,7 +105,6 @@ struct ud_server_info {
 
 struct client_info {
     enum connection_type type;
-    bool is_test;
     struct request *request;
     unsigned int request_count;
     struct response *response;

@@ -143,7 +143,6 @@ int main(int argc, char *argv[]) {
         client->response = malloc(sizeof(struct response));
         client->request_count = 0;
         client->type = server_connection->type;
-        client->is_test = server_connection->is_test;
         client->client_nr = client_nr;
         client_nr++;
         pr_info("Accepting new connection\n");
