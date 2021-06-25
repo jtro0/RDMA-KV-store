@@ -189,26 +189,6 @@ int prepare_for_next_request(struct client_info *client) {
 int receive_header(struct client_info *client) {
     int recved;
     // With strings
-    if (client->is_test) {
-        // TODO remove dup code
-        if (connection_ready(client->tcp_client->socket_fd) == -1) {
-            return -1;
-        }
-
-        recved = parse_header(client->tcp_client->socket_fd, &client->request[client->request_count]);
-        if (recved == 0)
-            return 0;
-        if (recved == -1) {
-            client->request[client->request_count].connection_close = 1;
-            return -1;
-        }
-        if (recved == -2) {
-            send_response(client, PARSING_ERROR, 0, NULL);
-            client->request[client->request_count].connection_close = 1;
-            return -1;
-        }
-        return 1;
-    }
     pr_info("client %d: receiving header\n", client->client_nr);
     switch (client->type) {
         case TCP:

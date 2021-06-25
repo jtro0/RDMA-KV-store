@@ -2,58 +2,9 @@
 // Created by jtroo on 15-04-21.
 //
 
-/*
- * Implementation of the common RDMA functions.
- *
- * Authors: Animesh Trivedi
- *          atrivedi@apache.org
- */
 
 #include <sys/time.h>
 #include "rdma_common.h"
-
-void show_rdma_cmid(struct rdma_cm_id *id) {
-    if (!id) {
-        error("Passed ptr is NULL\n");
-        return;
-    }
-    printf("RDMA cm id at %p \n", id);
-    if (id->verbs && id->verbs->device)
-        printf("dev_ctx: %p (device name: %s) \n", id->verbs,
-               id->verbs->device->name);
-    if (id->channel)
-        printf("cm event channel %p\n", id->channel);
-    printf("QP: %p, port_space %x, port_num %u \n", id->qp,
-           id->ps,
-           id->port_num);
-}
-
-void show_rdma_buffer_attr(struct rdma_buffer_attr *attr) {
-    if (!attr) {
-        error("Passed attr is NULL\n");
-        return;
-    }
-    printf("---------------------------------------------------------\n");
-    printf("buffer attr, addr: %p , len: %u , stag : 0x%x \n",
-           (void *) attr->address,
-           (unsigned int) attr->length,
-           attr->stag.local_stag);
-    printf("---------------------------------------------------------\n");
-}
-
-struct ibv_mr *rdma_buffer_alloc(struct ibv_pd *pd, uint32_t size,
-                                 enum ibv_access_flags permission) {
-    struct ibv_mr *mr = NULL;
-    check(!pd, NULL, "Protection domain is NULL\n", NULL);
-    void *buf = calloc(1, size);
-    check(!buf, NULL, "failed to allocate buffer\n", NULL);
-    pr_debug("Buffer allocated: %p , len: %u \n", buf, size);
-    mr = rdma_buffer_register(pd, buf, size, permission);
-    if (!mr) {
-        free(buf);
-    }
-    return mr;
-}
 
 struct ibv_mr *rdma_buffer_register(struct ibv_pd *pd,
                                     void *addr, uint32_t length,
@@ -68,17 +19,6 @@ struct ibv_mr *rdma_buffer_register(struct ibv_pd *pd,
              (unsigned int) mr->length,
              mr->lkey);
     return mr;
-}
-
-void rdma_buffer_free(struct ibv_mr *mr) {
-    if (!mr) {
-        error("Passed memory region is NULL, ignoring\n");
-        return;
-    }
-    void *to_free = mr->addr;
-    rdma_buffer_deregister(mr);
-    pr_debug("Buffer %p free'ed\n", to_free);
-    free(to_free);
 }
 
 void rdma_buffer_deregister(struct ibv_mr *mr) {

@@ -1,5 +1,3 @@
-# Merged CMake from https://github.com/animeshtrivedi/rdma-example
-
 cmake_minimum_required(VERSION 3.15)
 project(RDMA_KV_store C)
 
@@ -16,7 +14,7 @@ set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Ofast -ffast-math -funroll-loops -march=native -Og -ggdb -Wall -Wextra -fsanitize=address \
 		 -fno-omit-frame-pointer -pthread")
 
-find_library(IBVERBS_LIBRARY ibverbs HINTS /home/jtroo/Downloads/rdma-core/build/lib)
+find_library(IBVERBS_LIBRARY ibverbs HINTS /home/jtroo/Downloads/rdma-core/build/lib) # Hard coded for SoftiWARP
 find_library(RDMACM_LIBRARY rdmacm HINTS /home/jtroo/Downloads/rdma-core/build/lib)
 
 link_libraries(pthread ${IBVERBS_LIBRARY} ${RDMACM_LIBRARY} -ldl)
