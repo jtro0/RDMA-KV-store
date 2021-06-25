@@ -1,6 +1,10 @@
 #include "hash.h"
 #include <pthread.h>
 
+
+/*
+ * Initialize hash table with a given capacity
+ */
 int init_hashtable(size_t capacity) {
     if (ht != NULL) {
         free(ht->items);
@@ -41,14 +45,19 @@ unsigned int hash(char *str) {
     return hash;
 }
 
+/*
+ * Index in bucket array for a key
+ */
 unsigned int get_bucket(char *key) {
     unsigned int hashed = hash(key);
     return hashed % ht->capacity;
 }
 
+/*
+ * Searches in hash table for a given key
+ */
 hash_item_t *search(char *key, size_t key_len) {
     unsigned int bucket = get_bucket(key);
-//    pthread_mutex_lock(&ht->user->locks[bucket]);
     hash_item_t *current = ht->items[bucket];
 
     while (current != NULL) {
@@ -57,10 +66,12 @@ hash_item_t *search(char *key, size_t key_len) {
         }
         current = current->next;
     }
-//    pthread_mutex_unlock(&ht->user->locks[bucket]);
     return current;
 }
 
+/*
+ * Removes item with given key from hash table
+ */
 int remove_item(char *key, size_t key_len) {
     unsigned int bucket = get_bucket(key);
     pthread_mutex_lock(&ht->locks[bucket]);
@@ -95,25 +106,22 @@ int remove_item(char *key, size_t key_len) {
     return 0;
 }
 
+/*
+ * Getting key-value pair item in hash table
+ */
 hash_item_t *get_key_entry(char *key, size_t key_len) {
-    pr_debug("getting key entry\n");
     unsigned int bucket = get_bucket(key);
-    pr_debug("got bucket %d\n", bucket);
 
     pthread_mutex_lock(&ht->locks[bucket]);
-    pr_debug("got lock\n");
 
     hash_item_t *item_head = ht->items[bucket];
     hash_item_t *entry = search(key, key_len);
-    pr_debug("found entry\n");
 
     if (entry == NULL) {
         entry = calloc(1, sizeof(hash_item_t));
         entry->key = malloc(key_len + 1); // maybe freed?
         memcpy(entry->key, key, key_len);
         entry->key[key_len] = '\0';
-//        entry->user = calloc(1, sizeof(struct user_item));
-//        entry->value = malloc(MSG_SIZE);
         entry->prev = NULL;
         entry->next = NULL;
         entry->value = NULL;
@@ -125,7 +133,6 @@ hash_item_t *get_key_entry(char *key, size_t key_len) {
         ht->items[bucket] = entry;
     }
     pthread_mutex_unlock(&ht->locks[bucket]);
-    pr_debug("unlocking\n");
 
     return entry;
 }

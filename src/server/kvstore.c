@@ -1,17 +1,20 @@
 #include <semaphore.h>
 #include <pthread.h>
-#include <sys/time.h>
+//#include <sys/time.h>
 
 #include "server_utils.h"
 #include "common.h"
-#include "request_dispatcher.h"
+//#include "request_dispatcher.h"
 #include "hash.h"
-#include "kvstore.h"
+//#include "kvstore.h"
 
 #define HT_CAPACITY 1024
 
-hashtable_t *ht;
+hashtable_t *ht; // Hash table used
 
+/*
+ * Process SET request
+ */
 int set_request(struct client_info *client, struct request *request, struct response *response) {
     size_t len = 0;
     size_t expected_len = request->msg_len;
@@ -21,45 +24,31 @@ int set_request(struct client_info *client, struct request *request, struct resp
     hash_item_t *item = get_key_entry(request->key, request->key_len);
 
     if (pthread_rwlock_trywrlock(&item->rwlock) != 0) {
-//        char *trash = malloc(expected_len);
-//        read_payload(client, request, expected_len, trash);
-//        check_payload(client->tcp_client->socket_fd, request, expected_len);
-        response->code = KEY_ERROR;
-//        free(trash);
-
+        response->code = KEY_ERROR; // Cannot lock item, is occupied
         return -1;
     }
-    item->value = malloc(MSG_SIZE); // maybe +1 for \0
+    item->value = malloc(MSG_SIZE);
 
-    if (client->is_test) {
-        read_payload(client, request, expected_len - len, item->value + len);
+    memcpy(item->value, request->msg, request->msg_len);
 
-        if (request->connection_close || check_payload(client->tcp_client->socket_fd, request, expected_len) < 0) {
-            pthread_rwlock_unlock(&item->rwlock);
-            remove_item(request->key, request->key_len);
-            return -1;
-        }
-    } else {
-        memcpy(item->value, request->msg, request->msg_len);
+    item->value_size = expected_len;
+    response->code = OK;
+    pthread_rwlock_unlock(&item->rwlock);
 
-        item->value_size = expected_len;
-        response->code = OK;
-        pr_debug("Everything is good, sent response\n");
-        pthread_rwlock_unlock(&item->rwlock);
-        pr_debug("pthread\n");
-
-    }
     return 0;
 }
 
+/*
+ * Process GET request
+ */
 void get_request(struct client_info *client, struct request *pRequest, struct response *response) {
     hash_item_t *item = search(pRequest->key, pRequest->key_len);
     if (item == NULL) {
-        response->code = KEY_ERROR;
+        response->code = KEY_ERROR; // No such item
         return;
     }
     if (pthread_rwlock_tryrdlock(&item->rwlock) != 0) {
-        response->code = KEY_ERROR;
+        response->code = KEY_ERROR; // Cannot acquire item, is occupied
         return;
     }
     response->code = OK;
@@ -69,6 +58,9 @@ void get_request(struct client_info *client, struct request *pRequest, struct re
     pthread_rwlock_unlock(&item->rwlock);
 }
 
+/*
+ * Process DEL request
+ */
 void del_request(struct client_info *client, struct request *pRequest, struct response *response) {
     if (remove_item(pRequest->key, pRequest->key_len) < 0) {
         response->code = KEY_ERROR;
@@ -77,6 +69,9 @@ void del_request(struct client_info *client, struct request *pRequest, struct re
     response->code = OK;
 }
 
+/*
+ * Worker thread job
+ */
 void *main_job(void *arg) {
     int method;
     struct client_info *client = arg;
@@ -86,18 +81,14 @@ void *main_job(void *arg) {
 //            ntohs(client->addr.sin_port));
     do {
         prepare_for_next_request(client);
-        struct request *request = recv_request(client);
+        struct request *request = recv_request(client); // Receive request from client
         if (request == NULL) {
             return 0;
         }
-        if (request->method != UNK)
+        if (request->method != UNK) // Needed to avoid null pointers later
             ready_for_next_request(client);
 
         bzero(client->response, sizeof(struct response));
-        if (client->type == UD)
-            pr_info("client %d: request count %d\n", client->client_nr, client->ud_client->ud_server->request_count);
-        else
-            pr_info("client %d: request count %d\n", client->client_nr, client->request_count);
 
         switch (request->method) {
             case SET:
@@ -112,7 +103,7 @@ void *main_job(void *arg) {
                 pr_info("del\n");
                 del_request(client, request, client->response);
                 break;
-            case RST:
+            case RST: // Resets hash table
                 pr_info("rst\n");
                 init_hashtable(HT_CAPACITY);
                 client->response->code = OK;
@@ -133,30 +124,21 @@ int main(int argc, char *argv[]) {
 
     struct server_info *server_connection = server_init(argc, argv);
 
-    pr_debug("Initializing table\n");
     if ((init = init_hashtable(HT_CAPACITY)) < 0) {
         pr_debug("Failed to initialize ");
         if (init == -1) {
-            pr_debug("at hashtable alloc\n");
             exit(EXIT_FAILURE);
         } else if (init == -2) {
-            pr_debug("at items alloc\n");
             exit(EXIT_FAILURE);
         }
         if (init == -3) {
-            pr_debug("at locks alloc\n");
             exit(EXIT_FAILURE);
         }
     }
 
     int client_nr = 0;
-    for (;;) {
-//    struct client_info *new_client =
-//            calloc(1, sizeof(struct client_info));
-        pr_info("New client\n");
+    for (;;) { // Thread loops to accept new clients
         struct client_info *client = malloc(sizeof(struct client_info));
-//        client = malloc(sizeof(struct client_info));
-        // TODO: put this in connection specific (UD doesnt need)
         client->request = calloc(REQUEST_BACKLOG, sizeof(struct request));
         client->response = malloc(sizeof(struct response));
         client->request_count = 0;
@@ -166,20 +148,11 @@ int main(int argc, char *argv[]) {
         client_nr++;
         pr_info("Accepting new connection\n");
         if (accept_new_connection(server_connection, client) < 0) {
-            pr_info("no new connection");
-//            exit(EXIT_FAILURE);
             continue;
-//            return 0;
         }
         pthread_t thread_id;
         printf("Before Thread\n");
-        pthread_create(&thread_id, NULL, main_job, client);
-//        main_job(client);
+        pthread_create(&thread_id, NULL, main_job, client); // Create a new worker thread for client
     }
-//    void *ret;
-//    if (pthread_join(thread_id, &ret) != 0) {
-//        pr_info("pthread join failed");
-//    }
-
     return 0;
 }
