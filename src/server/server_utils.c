@@ -30,7 +30,7 @@ void usage(char *prog) {
     fprintf(stderr, "--verbose -v\n\t Print info messages\n");
     fprintf(stderr, "--debug -d\n\t Print debug info\n");
     fprintf(stderr,
-            "--port -p\n\t Port to bind on. Default: pick the first available port\n");
+            "--port -p\n\t Port to bind on. Default: 35304\n");
     fprintf(stderr,
             "--rdma -r\n\t Use RDMA. Choose rc, uc, or ud.\n");
     fprintf(stderr,

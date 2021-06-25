@@ -66,10 +66,10 @@ int data_processing(struct operation *ops, int client_number) {
     if (save) {
         char *file_name = malloc(255 * sizeof(char)); // Hard coded DAS-5 user name. This is symbolicly linked with scratch folder
         if (blocking)
-            snprintf(file_name, 255, "./benchmarking/data/cmt2054/blocking/%s_%d_client_%d_%d.csv",
+            snprintf(file_name, 255, "./benchmarking/data/blocking/%s_%d_client_%d_%d.csv",
                      connection_type_to_str(connectionType), clients, client_number, num_ops / clients);
         else
-            snprintf(file_name, 255, "./benchmarking/data/cmt2054/non_blocking/%s_%d_client_%d_%d.csv",
+            snprintf(file_name, 255, "./benchmarking/data/non_blocking/%s_%d_client_%d_%d.csv",
                     connection_type_to_str(connectionType), clients, client_number, num_ops / clients);
         char *suffix = &file_name[strlen(file_name) - 4];
         if (strncmp(".csv", suffix, 4) != 0) {

@@ -26,7 +26,7 @@ def calc_time_difference_msec(start_sec, start_usec, end_sec, end_usec):
 def get_all_csv():
     filenames = []
     
-    for path, folders, files in os.walk("../../benchmarking/data/cmt2054/non_blocking/"):
+    for path, folders, files in os.walk("../../benchmarking/data/non_blocking/"):
         for file in files:
             if fnmatch.fnmatch(file, '*.csv'):
                 filenames.append(os.path.join(path, file))
@@ -35,7 +35,7 @@ def get_all_csv():
 def get_all_csv_blocking():
     filenames = []
 
-    for path, folders, files in os.walk("../../benchmarking/data/cmt2054/blocking/"):
+    for path, folders, files in os.walk("../../benchmarking/data/blocking/"):
         for file in files:
             if fnmatch.fnmatch(file, '*.csv'):
                 filenames.append(os.path.join(path, file))
