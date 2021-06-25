@@ -102,8 +102,28 @@ With only a limited number of CPU cycles, this is not used efficiently, resultin
 \end{table}
 
 \subsection{Throughput analysis by waiting for completion event}
+\begin{figure}
+    \centering
+    \includegraphics[height=8cm]{figures/PDF/Throughput_70_blocking}
+    \caption[Throughput of clients executing 10 million key-value operations, waiting for completion event.]{Throughput of clients executing 10 million key-value operations, waiting for completion event. Note: UD could not result in any reasonable time, or not at all. For this reason this is shown with no significant data.}
+    \label{fig:throughput-70-block}
+\end{figure}
 
+With a blocking design, maximum throughput decreases to 285395 ops/sec, again with UC transportation type, and UD could not be measured.
+This maximum throughput is a 22.9\% decrease compared to results shown in section \ref{sec:throughput-analysis} above.
+However, UC still achieves a 38.0\% increase in throughput compared to TCP.
+Similarly, RC performance 15.9\% better than TCP, with a throughput of 239600 ops/sec.
+Unlike the results shown without blocking above, multicore scalability has improved, without loss in performance with number of clients above 32.
+This can be seen in figure \ref{fig:throughput-70-block}.
 
+\subsubsection{Scalability of with waiting for completion event}
+Similar to without blocking, throughput performance scales linearly up to 15 clients.
+In these results, TCP has an average increase in throughput of 11065 ops/sec per additional client.
+For RC this is 13339 ops/sec per additional client, and 15770 ops/sec per additional client for UC.
+For RC and UC, this rate of change is less than seen without blocking, this is to be expected, as the overall performance has depreciated.
+
+After 32 clients, RC and TCP reach an equilibrium, while UC reaches equilibrium after 50 clients.
+This shows that this blocking method, despite lower maximum performance, can remain its throughput performance with high contention.
 
 
 \section{Latency analysis}\label{sec:latency:analysis}
@@ -199,7 +219,7 @@ A complete table, with all number of clients up to 70, can be found in table INS
         \label{tab:num_stats_ud}
     }
 
-    \caption{Numeric statistic latency. All statistical values have unit $\mu$sec. IRQ is short for innerquartile range}
+    \caption[Numerical statistics latency.]{Numerical statistics latency. All statistical values have unit $\mu$sec. IRQ is short for innerquartile range}
     \label{tab:num_stats}
 \end{table}
 
@@ -262,6 +282,162 @@ Innerquartile range reaches a peak of 149 $\mu$sec at 32 clients, at a median of
 It is unclear what causes this, however should be considered when reaching maximum number of physical threads.
 
 \subsection{Latency analysis by waiting for completion event}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\columnwidth]{figures/PDF/Latency_avg_70_blocking}
+    \caption{Latency of clients executing 10 million key-value operations, with waiting for completion event}
+    \label{fig:latency-70-block}
+\end{figure}
+
+Figure \ref{fig:latency-70-block} shows that latency performs worse below 32 clients, compared to non-blocking design, however scales better beyond 32 clients.
+Below 32 clients, RC has an average difference of 7.6 $\mu$sec compared to non-blocking, performing worse.
+UC has an average difference of 22.2 $\mu$sec.
+After 32 clients and up to 50 clients, this gap increases to on average 23.6 $\mu$sec for RC and 42.1 $\mu$sec for UC.
+Beyond 50 clients, waiting for completion events show to be favorable, compared to without.
+At this point, RC has an favorable average difference of -6.9 $\mu$sec, and UC -19.7 $\mu$sec.
+
+Additionally, from figure \ref{fig:latency-70-block}, it can be observed that all three types, TCP, RC and UC, scale linearly.
+Out of the three types, UC has the least rate of change in latency per additional client, thus performing favorably.
+The rate of change of UC is roughly 1.60 $\mu$sec, while RC and TCP have a value of 2.39 $\mu$sec and 2.66 $\mu$sec, respectively.
+At this rate, UC and RC will remain providing lower latency compared to TCP, with an increasing gap.
+
+
+\subsubsection{Variation of latency using blocked design}
+Comparing the variance between the blocked design and without blocking, shows significant improvement in variation and spread of latency data.
+This can be seen in table \ref{tab:num_stats_block}, again with larger table given in appendix, table INSERT TABLE REF.
+
+\begin{table}
+    \subtable[TCP] {
+        \centering
+        \begin{tabular}{rrrrrr}
+            \toprule
+            \textbf{Clients} & \textbf{Median} & \textbf{IQR} & \textbf{95th percentile} & \textbf{99th percentile} & \textbf{standard deviation} \\
+            \midrule
+            5 & 64 & 53 & 131 & 155 & 34.42 \\
+            32 & 130 & 38 & 193 & 241 & 266.65 \\
+            60 & 245 & 66 & 326 & 379 & 273.75 \\
+            \bottomrule
+        \end{tabular}
+        \label{tab:num_stats_tcp_block}
+    }
+
+    \subtable[RC] {
+        \centering
+        \begin{tabular}{rrrrrr}
+            \toprule
+            \textbf{Clients} & \textbf{Median} & \textbf{IQR} & \textbf{95th percentile} & \textbf{99th percentile} & \textbf{standard deviation} \\
+            \midrule
+            5 & 43 & 47 & 101 & 120 & 31.93 \\
+            32 & 111 & 118 & 219 & 231 & 109.48 \\
+            60 & 152 & 303 & 430 & 441 & 200.03 \\
+            \bottomrule
+        \end{tabular}
+        \label{tab:num_stats_rc_block}
+    }
+
+    \subtable[UC] {
+        \centering
+        \begin{tabular}{rrrrrr}
+            \toprule
+            \textbf{Clients} & \textbf{Median} & \textbf{IQR} & \textbf{95th percentile} & \textbf{99th percentile} & \textbf{standard deviation} \\
+            \midrule
+            5 & 41 & 47 & 98 & 112 & 31.64 \\
+            32 & 90 & 35 & 152 & 245 & 150.74 \\
+            60 & 158 & 55 & 249 & 325 & 326.77 \\
+            \bottomrule
+        \end{tabular}
+        \label{tab:num_stats_uc_blocked}
+    }
+
+    \caption[Numerical statistics latency, waiting for completition event.]{Numerical statistics latency, waiting for completition event. All statistical values have unit $\mu$sec. IRQ is short for innerquartile range}
+    \label{tab:num_stats_block}
+\end{table}
+
+In table \ref{tab:num_stats_block}, it can be seen that median, IQR, 95th percentile, 99th percentile, and standard deviation, all increase proportionally to the number of clients.
+Compared with table \ref{tab:num_stats}, it can be seen that for median, IQR, and 95th percentile, are worse for non-blocking, at 60 clients.
+However, the outliers are significantly decreased.
+The 99th percentile for UC at 60 clients, is 325 $\mu$sec, which is significantly less than that found for non-blocking design, which is at 1296 $\mu$sec.
+Additionally, standard deviation is found to be significantly better for blocking design, 326.77 $\mu$sec at 60 clients for blocking UC design, compared to 1629.16 $\mu$sec for similar non-blocking design.
+
+\begin{figure}
+    \centering
+    \subfigure[5 clients] {
+        \centering
+        \includegraphics[width=0.47\columnwidth]{figures/PDF/Latency_box_no_out_5_blocking}
+        \label{fig:box_5_block}
+    }
+    \subfigure[32 clients] {
+        \centering
+        \includegraphics[width=0.47\columnwidth]{figures/PDF/Latency_box_no_out_32_blocking}
+        \label{fig:box_32_block}
+    }
+    \subfigure[60 clients] {
+        \centering
+        \includegraphics[width=0.47\columnwidth]{figures/PDF/Latency_box_no_out_60_blocking}
+        \label{fig:box_60_block}
+    }
+    \caption[Latency box plot]{Latency box plot for 5, 32 and 60 clients with waiting for completion event.}
+    \label{fig:Box_block}
+\end{figure}
+
+Furthermore, RC can be seen to have a wide spread after 32 clients, compared to UC, in figure \ref{fig:box_32_block} for 32 clients, and figure \ref{fig:box_60_block} fr 60 clients.
+Innerquartile range is 118 and 303 $\mu$sec for 32 and 60 clients for RC.
+Compared with UC's innerquartile range of 35 and 55 $\mu$sec, shows a significant increase in spread.
+However, RC has less outliers, as its standard deviation is less compared to UC, as can be seen in table \ref{tab:num_stats_block}.
+This can be further seen in the CDF figures in figure \ref{fig:CDF_block}.
+From the figures \ref{fig:cdf_32_block} and \ref{fig:cdf_60_block} it can also be seen that RC has a slight bimodual distribution at 32 clients, and a more prominent at 60 clients.
+Additionally, it can be seen in these figures, that UC is more normally distributed in 32 and 60 clients.
+
+\begin{figure}
+    \centering
+    \subfigure[5 clients] {
+        \centering
+        \includegraphics[width=0.47\columnwidth]{figures/PDF/Latency_cdf_5_blocking}
+        \label{fig:cdf_5_block}
+    }
+    \subfigure[32 clients] {
+        \centering
+        \includegraphics[width=0.47\columnwidth]{figures/PDF/Latency_cdf_32_blocking}
+        \label{fig:cdf_32_block}
+    }
+    \subfigure[60 clients] {
+        \centering
+        \includegraphics[width=0.47\columnwidth]{figures/PDF/Latency_cdf_60_blocking}
+        \label{fig:cdf_60_block}
+    }
+    \caption[Latency cumulative distribution function (CDF) with waiting for completion event.]{Latency cumulative distribution function (CDF) for 5, 32 and 60 clients, and with waiting for completion event. }
+    \label{fig:CDF_block}
+\end{figure}
+
+\subsubsection{Effect of CPU context switching between blocking and non-blocking designs on performance}
+In the analysis above on throughput and latency performance between blocking and non-blocking design, has shown a loss in initial performance, but normalization beyond the physical thread count.
+With blocking, CPU utilization decreases, as threads are waiting to for completition event, without using CPU cycles.
+For this to happen however, CPU must use context switching to (re)store execution when blocking.
+This causes delay, as required data has to be loaded and unloaded inside the CPU.
+This delay is seen as a increase in latency, and decrease in maximum performance.
+However, as shown above, this only harms performance below 32 threads, as this is the number of physical threads.
+Beyond 32 threads, context switching causes throughput performance to remain equal, while without switching, contention would cause CPU cycle loss and drop performance.
+Table \ref{tab:context} shows the increase in number of context switches when blocking for completion event.
+It can also be seen that number of context switches is roughly equal to $2*number of operations$, as server worker threads would block when receiving request, but also when sending response, for benchmark this would be when sending request and receiving response.
+\begin{table}
+    \centering
+    \begin{tabular}{r p{3cm} p{3cm} p{3cm} p{3cm}}
+        \toprule
+        \textbf{Clients} & \textbf{No blocking: server} & \textbf{No blocking: benchmark} & \textbf{Blocking: server} & \textbf{Blocking: benchmark} \\
+        \midrule
+        5 & 1,453 & 47,120 & 19,547,566 & 19,813,183 \\
+        32 & 7,208 & 716,238 & 20,055,568 & 19,972,089 \\
+        60 & 191,667 & 574,049 & 20,077,619 & 19,980,293 \\
+        \bottomrule
+    \end{tabular}
+    \caption[Context switching for UC with and without blocking.]{Context switching for UC with and without blocking. Data collected by \textit{perf stat}, on both server and benchmarking side.}
+    \label{tab:context}
+\end{table}
+
+
+Also, the trend in throughput and latency, found when blocking, is similar to that of TCP.
+This is due to the fact that the TCP implementation as shown in this thesis, does a similar blocking and context switching.
 
 
 % ---------------------------------------------------------------------------
