@@ -28,7 +28,6 @@ struct rc_server_conn {
     struct sockaddr_in *server_sockaddr;
 };
 
-int rc_main(char *key, struct sockaddr_in *server_sockaddr);
 int client_prepare_connection(struct rc_server_conn *server_conn);
 int client_connect_to_server(struct rc_server_conn *server_conn);
 int rc_send_request(struct rc_server_conn *server_conn, struct request *request, int blocking);

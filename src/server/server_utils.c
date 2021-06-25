@@ -11,7 +11,6 @@
 #include <dlfcn.h>
 #include <assert.h>
 
-#include "parser.h"
 #include "server_utils.h"
 #include "common.h"
 #include "request_dispatcher.h"

@@ -3,6 +3,10 @@
 //
 #include "client.h"
 
+/*
+ * Send request to server.
+ * Returns 0 on success
+ */
 int send_request(struct client_to_server_conn *conn) {
     int ret = -1;
     switch (conn->conn_t) {
@@ -24,6 +28,10 @@ int send_request(struct client_to_server_conn *conn) {
     return ret;
 }
 
+/*
+ * Receive response from server.
+ * On success, returns number of bytes received, or number of WC completed.
+ */
 int receive_response(struct client_to_server_conn *conn) {
     int ret = -1;
     switch (conn->conn_t) {

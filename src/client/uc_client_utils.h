@@ -31,7 +31,6 @@ struct uc_server_conn {
     int socket_fd;
 };
 
-int uc_main(char *key, struct sockaddr_in *server_sockaddr);
 int uc_client_prepare_connection(struct uc_server_conn *server_conn);
 int uc_client_connect_to_server(struct uc_server_conn *server_conn);
 int uc_send_request(struct uc_server_conn *server_conn, struct request *request, int blocking);

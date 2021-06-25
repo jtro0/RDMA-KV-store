@@ -2,7 +2,6 @@ import util
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
-from operator import add, sub
 
 types = [["TCP", "o", "tab:blue"], ["RC", "^", "tab:orange"], ["UC", "P", "tab:red"], ["UD", "x", "tab:green"]]
 

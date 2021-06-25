@@ -35,7 +35,6 @@ struct ud_server_conn {
     int client_id;
 };
 
-int ud_main(char *key, struct sockaddr_in *server_sockaddr);
 int ud_prepare_client(struct ud_server_conn *server_conn);
 int ud_client_connect_to_server(struct ud_server_conn *server_conn);
 int ud_send_request(struct ud_server_conn *server_conn, struct request *request, int blocking);

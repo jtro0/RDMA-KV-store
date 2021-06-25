@@ -21,6 +21,5 @@ int tcp_client_connect_to_server(struct tcp_server_conn *server_conn);
 int tcp_send_request(struct tcp_server_conn *server_conn, struct request *request);
 int tcp_receive_response(struct tcp_server_conn *server_conn, struct response *response);
 int tcp_client_disconnect_and_clean(struct tcp_server_conn *server_conn);
-int tcp_main(char *key, struct sockaddr_in *server_sockaddr);
 
 #endif //RDMA_KV_STORE_TCP_CLIENT_UTILS_H
