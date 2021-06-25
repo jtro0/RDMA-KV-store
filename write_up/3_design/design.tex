@@ -152,32 +152,10 @@ The client sends out the request, and waits for response.
 All performance tests and results have been gathered on the DAS-5 computing cluster\cite{das5}.
 This distributed system of computers spread across the Netherlands, and is used by research groups from VU Amsterdam, TU Delft, Leiden University, and many more.
 Each cluster varies slightly in specifications, however each, is equipped with dual Intel E5-2630v3 8-core CPUs, a 56 Gbit/s Inifiniband (IB) RDMA networking, and 1 Gbit/s classical ethernet networking.
-The specifications of each cluster is as shown in table \ref{tab:das5}.
 The dual CPUs used per node, result in a total of 32 physical threads.
 
 All experiments make use of the IB network card, and is also configured to run TCP/IP.
 Furthermore, at least two nodes are used, his ensures that the server and clients are separated.
-
-\begin{table}
-    \centering
-    \begin{tabular}{lrlllll}
-        \toprule
-        \textbf{Cluster} & \textbf{Nodes} & \textbf{CPU type} & \textbf{Frequency (GHz)} & \textbf{Memory (GB)} & \textbf{Network} \\
-        \midrule
-        VU & 68 & dual 8-core & 2.4 & 64 & IB and GbE \\
-        LU & 24 & dual 8-core & 2.4 & 64 & IB and GbE \\
-        UvA & 18 & dual 8-core & 2.4 & 64 & IB and GbE \\
-        TUD & 48 & dual 8-core & 2.4 & 64 & IB and GbE \\
-        UvA-MN & 31 & dual 8-core & 2.4 & 64 & IB and GbE \\
-        ASTRON & 9 & dual 8/10/14-core & 2.6 & 128/512 & IB, 40 GbE, GbE \\
-        \bottomrule
-    \end{tabular}
-    \caption{DAS-5 cluster specifications}
-    \label{tab:das5}
-\end{table}
-
-
-
 
 
 

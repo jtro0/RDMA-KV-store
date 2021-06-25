@@ -9,8 +9,9 @@
     A fast a reliable service is required to perform well under heavy workloads, with performance changes being unnoticed for the end user, such as a shopping customers at Amazon.
     The increase in number of customers and demand for such services, require data centers to scale resources, to maintain performance.
     Previously, KV-stores have maintained performance through improvements to the underlying data structure, typically a hash table.
-    However, the increasing popularity of Remote Direct Memory Access (RDMA) networks in data centers, potentially gives rise to other advancements that can be made to KV-stores.
-    The main advantage of such RDMA networks, is that lower latency can be achieved.
+    Remote Direct Memory Access (RDMA) networks, potentially gives rise to other KV store advancements.
+    RDMA has become increasingly popular for data centers.
+    The main advantage of RDMA, is that lower latency can be achieved.
     This is crucial in latency sensitive applications, such as KV-store.
 
     RDMA makes use of three so-called transport types: reliable connection (RC), unreliable connection (UC), and unreliable datagram (UD).
@@ -23,18 +24,18 @@
     Clients threads are created by a benchmark application, and perform a set number of random KV-store operations, in total 10 million operations.
     These operations are generated randomly, with a 95\% probability of a GET operation, and 5\% probability of SET operation.
     This has been used as a realistic workload, to perform macro-level benchmarks.
-    Additionally, two designs have been evaluated, with and without thread waiting.
+    Additionally, two designs have been evaluated, with and without blocking until completion event.
     This has been done, as large number of threads results in high CPU usage.
 
     After conducting experiements on the DAS-5 computing cluster,the results have shown that UC performs best out the three transport types.
-    With wait, UC stabilizes around 273 thousand ops/sec.
-    Without wait, UC reaches a maximum throughput of 370 thousand ops/sec, at 32 clients.
-    After 32 clients, the maximum physical threads have been reached, and performances drops below TCP without waiting.
+    Without blocking, UC reaches a maximum throughput of 370 thousand ops/sec, at 32 clients.
+    After 32 clients, the maximum physical threads have been reached, and performances drops below TCP, showing poor scalability.
+    With blocking, UC stabilizes around 273 thousand ops/sec above 32 clients, showing no loss in performance with high number of threads.
     This loss in maximum performance has been shown to be caused by context switching.
-    UC achieves lower latency compared to TCP, in both blocking and non-blocking.
+    UC also achieves lower latency compared to TCP, in both blocking and non-blocking.
     However, the outliers in latency have been to shown to be significantly higher without blocking.
     Therefore, without any optimizations, it is recommended to use UC with blocking when exceeding maximum number of physical threads.
-    UD performance close to UC without blocking, and does allow for more optimizations, thus UD is recommended with optimizations.
+    UD performs close to UC without blocking, and does allow for more optimizations, thus UD is recommended with optimizations.
 
     All relevant project files can be found on Github\cite{github}.
 

@@ -35,7 +35,8 @@ Dynamo is used by Amazon to provide its core services, such as session storage a
 At peak, these services handle tens of millions customers a second.
 This requires Dynamo to process requests in the span of a few milliseconds, to provide a consistent and fast user experience.
 
-Remote direct memory access (RDMA) networks have increasingly become more popular in data centers, due to their high throughput, low latency, and lower cost of RDMA capapble network interface cards (RNIC)\cite{kalia2016design, chen2019scalable}.
+Remote direct memory access (RDMA) networks have increasingly become more popular in data centers.
+Over time, RDMA has achieved higher throughput, lower latency, and lower cost of RDMA capapble network interface cards (RNIC)\cite{kalia2016design, chen2019scalable}.
 RDMA and RNIC provides a lower latency networking interface compared to classical network cards, which is advantageous for latency sensitive applications, such as a KV-store, deployed in data centers.
 
 
@@ -57,8 +58,8 @@ This paper will explore to what extent RDMA transportation types affect the perf
 For this, research will be conducted to answer the following questions:
 
 \begin{itemize}
-    \item[\textbf{RQ1}] What is the multicore scalability of the RDMA transport types: reliable connection (RC), unreliable connection (UC), and unreliable datagram (UD)?
-    Scaling up by adding more resources to a system, in this case number of threads, is a more cost-effective strategy, compared to scaling horizontally by adding more nodes.
+    \item[\textbf{RQ1}] What is the multithreaded scalability of the RDMA transport types: reliable connection (RC), unreliable connection (UC), and unreliable datagram (UD)?
+    Scaling up by adding more resources to a system, in this case number of threads, is a more cost-effective strategy, compared to scaling horizontally by adding more compute nodes.
     For this reason, multithreaded scalability of these RDMA transport types will be investigated, with a blocking and non-blocking design.
     \item[\textbf{RQ2}] What are the advantages and disadvantages of RDMA transport types when implementing a RDMA KV-store?
     This question aims to aid with design process of future RDMA KV stores.
@@ -97,7 +98,7 @@ The prototype and all project files can be found on Github\cite{github}.
 \section{Plagiarism Declaration}
 I herby declare that this thesis work, all data collected and findings are my own.
 
-For this thesis, the basic structure of KV store from course Operating Systems, at the VU, has been used.
+For this thesis, the basic structure of KV store assignment from course Operating Systems, at the VU, has been used, however, little of which has been kept.
 Along with basic RDMA functions from Dr. Trivedi's RDMA example\cite{rdma_example}.
 This has been used as a starting point for RC implementation.
 

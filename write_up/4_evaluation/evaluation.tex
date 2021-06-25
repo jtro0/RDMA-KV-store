@@ -21,7 +21,7 @@ The RDMA transportation types are compared within and against the baseline TCP i
 Throughput and latency are mainly used to analysis the multicore scalability of these transportation types, with increasing number of clients, and therefore threads.
 For latency three figures have been used to evaluate: average latency, boxplot without outliers, and cumulative distribution function (CDF).
 The same raw data is used for both measurements, thus can be compared alongside each other.
-The two designs are analyzed, with and without waiting for completion event.
+The two designs are also analyzed, with and without waiting for completion event.
 
 In short, the results show:
 \begin{itemize}
@@ -60,7 +60,7 @@ However, after 32 clients, throughput has a sharp decline, with RC failing to co
 \begin{figure}
     \centering
     \includegraphics[height=8cm]{figures/PDF/Throughput_70}
-    \caption[Throughput of clients executing 10 million key-value operations.]{Throughput of clients executing 10 million key-value operations. Note: RC could not connect reliably above 60 clients, thus removed.}
+    \caption[Throughput of clients executing 10 million key-value operations.]{Throughput of clients executing 10 million key-value operations. \textit{Note: RC could not connect reliably above 60 clients, thus removed.}}
     \label{fig:throughput-70}
 \end{figure}
 
@@ -82,7 +82,7 @@ With only a limited number of CPU cycles, this is not used efficiently, resultin
 \begin{figure}
     \centering
     \includegraphics[height=8cm]{figures/PDF/Throughput_70_blocking}
-    \caption[Throughput of clients executing 10 million key-value operations, waiting for completion event.]{Throughput of clients executing 10 million key-value operations, waiting for completion event. Note: UD could not result in any reasonable time, or not at all. For this reason this is shown with no significant data.}
+    \caption[Throughput of clients executing 10 million key-value operations, waiting for completion event.]{Throughput of clients executing 10 million key-value operations, waiting for completion event. \textit{Note: UD could not result in any reasonable time, or not at all. For this reason this is shown with no significant data.}}
     \label{fig:throughput-70-block}
 \end{figure}
 

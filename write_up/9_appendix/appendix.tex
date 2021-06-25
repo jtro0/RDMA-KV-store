@@ -2,7 +2,7 @@
 % content in this file will be fed into the main document
 
 %: ----------------------- name of chapter  -------------------------
-\chapter*{Appendix} % top level followed by section, subsection
+\chapter{Appendix} % top level followed by section, subsection
 
 
 %: ----------------------- paths to graphics ------------------------
@@ -20,11 +20,65 @@
 
 \section{Reproducibility}
 All project files can be found on Github\cite{github}.
-This project has made use of $cmake$, and provides 3 executables: $kv_server$, $client$, and $benchmarking$.
-These are located in the "bin" folder after compiling.
-To reproduce the data as shown in this thesis, $kv_server$ and $benchmarking$ are needed.
-First a server needs to be started. This can
+A "README" file can be found there with some more details on how to build and configure DAS-5 and program environment.
 
+\subsubsection{DAS-5 setup}
+For these experiments, two DAS-5 nodes are reserved for 10800 seconds or 3 hours.
+This is sufficient to run benchmarks for all transport types and TCP, up to 70 clients.
+Make sure to use scratch folder on DAS, as this data can reach up to 43GB in data for the non-blocking design.
+This should be linked inside benchmarking folder, which can be done by the following command: "ln -s /var/scratch/<das5\_username> benchmarking/data"
+Data must be removed between blocking and non-blocking, as this would reach the limit of 50GB of scratch data.
+
+\subsection{Server}
+After compiling all binary executables as described in the "README", a server can be started.
+A sever can be started by executing "./bin/kv\_server".
+By default this starts a TCP server, however program arguments can be given, these are as follows:
+
+\begin{itemize}
+    \item --rdma -r <type> Use RDMA, requires type argument: rc, uc, ud
+    \item --port -p <port> Change the port to a given port number. Default: 35304.
+    \item --blocking Use blocking design, which waits for completion event.
+    \item --help -h Print help message
+    \item --verbose -v Print info messages.
+    \item --debug -d Print debug messages
+\end{itemize}
+
+As example, to run a key-value server running UC and blocks until completion event: "./bin/kv\_server -r uc --blocking".
+
+\subsection{Benchmark}
+Similarly, benchmark is a binary executable, which can be started by "./bin/benchmark -a <server ip address>"
+By default this runs with TCP, 10 million operations, and 1 client.
+Again, the following arguments can be given:
+\begin{itemize}
+    \item -a <server ip address> IP address of the listening server.
+    \item --clients -n <\# clients> Number of clients created.
+    \item --ops -o <\# of operations Total number of operations executed among n-clients.
+    \item --rdma -r <type> Use RDMA, requires type argument: rc, uc, ud
+    \item --port -p <port> Change the port to a given port number. Default: 35304.
+    \item --no-save Do not save data.
+    \item --blocking Use blocking design, which waits for completion event.
+    \item --help -h Print help message
+    \item --verbose -v Print info messages.
+    \item --debug -d Print debug messages
+\end{itemize}
+
+This will generate data and be stored in "benchmarking/data/blocking/" or "non\_blocking/".
+This data can be used by the python scripts to draw graphs.
+
+\subsection{Graphing}
+There are 4 graphing scripts available in "graphing/": Average latency, latency box plot, latency CDF, and throughput.
+Note, when running, current working directory must be in "graphing/"
+
+\begin{itemize}
+    \item Average latency can be run as follows: "python3 latency\_avg.py <max number of clients> blocking", with blocking is optional argument, and will use data in "benchmarking/data/blocking/". 
+    This will generate a graph with the following filename: "benchmarking/graphs/Latency\_avg\_<max number of clients>\_blocking.pdf" (or without "\_blocking" if not given)
+    \item Latency box plot can be run as follows: "python3 latency\_box.py <number of clients> blocking", where number of clients which client number shall be drawn.
+    This will generate a graph with the following name: \\"benchmarking/graphs/Latency\_box\_no\_out\_<number of clients>\_blocking.pdf"
+    \item Latency CDF plot can be run as follows: "python3 latency\_cdf.py <number of clients>", where number of clients which client number shall be drawn.
+    This will generate a graph in "benchmarking/graphs/Latency\_cdf\_<number of clients>.pdf"
+    \item Throughput can be run as follows: "python3 throughput.py <max number of clients> blocking".
+    This will generate a graph in "benchmarking/graphs/Throughput\_<max number of clients>\_blocking.pdf"
+\end{itemize}
 
 
 

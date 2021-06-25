@@ -55,13 +55,15 @@ Figure \ref{fig:linux_packet} shows the path a receiving packet takes inside a L
 Packet is processed by CPU, and system calls and memory copies needed between stacks and queues.
 
 \section[RDMA]{RDMA}\label{sec:rdma}
-Remote Direct Memory Access (RDMA) address the issues of linux sockets, providing lower latency, less CPU overhead, and potentially higher throughput.
+Remote Direct Memory Access (RDMA) address the issues of Linux socket API.
+RDMA technology provides lower latency, less CPU overhead, and potentially higher throughput, compared to classical networking cards and APIs.
 RDMA has been used in super computers for many years, however recently have seen significant improvements.
-RDMA capable network cards (RNICs) have seen lowering in cost \cite{kalia2016design}, which made this an appealing improvement to data center networking.
+RDMA capable network cards (RNICs) have seen lowering in cost\cite{kalia2016design}, which made this an appealing improvement to data center networking.
 
 RDMA achieves this low latency by offloading the network processing onto the RNIC, bypassing CPU and kernel entirely.
-As shown in section \ref{sec:linux-sockets} and figure \ref{fig:linux_packet} above, the Linux kernel has an extensive route, from application to NIC to network, including system calls and memory copies.
+As shown in section \ref{sec:linux-socket} and figure \ref{fig:linux_packet} above, the Linux kernel has an extensive route, from application to NIC to network, including system calls and memory copies.
 With RDMA, a zero-copy memory access can be realised through DMA and programmable IO (PIO) operations, which can be seen in \ref{fig:send_recv_drawing}.
+RDMA requires no kernel involvement, as its programming API directly communicates with the RNIC.
 Furthermore, RDMA offloads packet processing to the RNIC, freeing CPU cycles for other tasks.
 This makes RDMA a compelling technology for latency sensitive workloads, like KV-store, making remote memory operations possible and perform near to local memory operation speeds.
 
