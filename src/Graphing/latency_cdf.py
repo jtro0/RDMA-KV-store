@@ -37,33 +37,17 @@ for type in types:
             continue
         df = pd.read_csv(filename)
 
-        # print(df['latency'].mean())
         latency_usec = df['latency']
-        # print(latency_usec.mean())
         all_latencies.append(latency_usec)
 
     if len(all_latencies) > 0:
-        # concated = pd.concat(all_latencies)
-        # mean = concated.mean()
-        # min = concated.min()
-        # max = concated.max()
-        # q_one = concated.quantile(0.25)
-        # q_three = concated.quantile(0.75)
-        # std = concated.std()
-        # print(f"mean: {mean}, min: {min}, max: {max}, q1: {q_one}, q3: {q_three}, std: {std}")
-        # all_types_df[type[0]] = concated
-
         concat = pd.concat(all_latencies).to_frame(name='latency')
         stats = concat.groupby('latency')['latency'].agg('count').pipe(pd.DataFrame).rename(columns = {'latency' : 'frequency'})
 
         stats['pdf'] = stats['frequency'] / sum(stats['frequency'])
-
         stats['cdf'] = stats['pdf'].cumsum()
         stats = stats.reset_index()
 
-        #stats.plot(x = 'latency', y = 'cdf', grid=True)
-
-        #norm_cdf = norm.cdf(concat)
         plot_label = type[0]
         ax.plot(stats['latency'], stats['cdf'], label=plot_label, color=type[2])
 

@@ -21,7 +21,7 @@ fig = plt.figure()
 ax = fig.add_axes([0.1, 0.1, 0.6, 0.75])
 
 all_types_df = pd.DataFrame(columns=['TCP', 'RC', 'UC', 'UD'])
-# all_types = []
+
 for type in types:
     all_latencies = []
     print(type[0])
@@ -33,9 +33,7 @@ for type in types:
             continue
         df = pd.read_csv(filename)
 
-        # print(df['latency'].mean())
         latency_usec = df['latency']
-        # print(latency_usec.mean())
         all_latencies.append(latency_usec)
 
     if len(all_latencies) > 0:

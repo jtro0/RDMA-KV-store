@@ -74,9 +74,6 @@ for type in types:
         else:
             per_number_client.append(0)
 
-        # per_number_client[current_number_clients-1] = ops_per_sec
-
-        
     if per_number_client:
         plot_label = type[0]
         plt.plot(x_values, per_number_client, label=plot_label, marker=type[1], color=type[2])

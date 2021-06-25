@@ -12,9 +12,9 @@ if len(sys.argv) > 2:
     blocking_arg = str(sys.argv[2])
 
 if blocking_arg == "blocking":
-    filenames = util.get_all_csv_blocking()
+    filenames = util.get_all_csv_blocking() # filenames in blocking folder
 else:
-    filenames = util.get_all_csv()
+    filenames = util.get_all_csv() # filenames in non-blocking folder
 
 fig = plt.figure()
 ax = fig.add_axes([0.1, 0.1, 0.6, 0.75])
@@ -26,6 +26,7 @@ for type in types:
     third_quartile = []
     std_deviation = []
 
+    # Incremental values. Up to 45 look like this [1,2,3,4,5,6,7,8,9,10,15,20,25,30,31,32,33,34,35,40,45]
     x_values = list(range(1, 11))
     if max_clients >= 35:
         x_values = x_values + list(range(15, 31, 5)) + list(range(30, 35)) + list(range(35, max_clients+1, 5))
@@ -48,14 +49,15 @@ for type in types:
                 continue
 
             df = pd.read_csv(filename)
-            #ms = df.apply(lambda x:  util.time_in_msec(x[" diff_sec"], x[" diff_usec"]), axis=1)
-            ms = df['latency']
-            if len(ms) > 0:
-                # print(ms)
-                all_latencies.append(ms)
+            latency = df['latency']
+            if len(latency) > 0:
+                all_latencies.append(latency) # append all latencies
             
         if len(all_latencies) > 0:
+            # concatenate all latencies into a single series
             concated = pd.concat(all_latencies)
+
+            # Get statistical data
             mean = concated.mean()
             median = concated.median()
             min = concated.min()
@@ -65,8 +67,9 @@ for type in types:
             q_inner = q_three - q_one
             q_ninefive = concated.quantile(0.95)
             q_ninenine = concated.quantile(0.99)
-
             std = concated.std()
+
+            # Print these stats out for further investigation
             print(f"{type[0]} {current_number_clients}: mean: {mean}, median: {median}, min: {min}, max: {max}, q1: {q_one}, q3: {q_three}, inner quartile: {q_inner}, 95th percentile: {q_ninefive}, 99th percentile: {q_ninenine}, std: {std}")
             per_number_client.append(mean)
             # std_deviation.append(concat.std()/1000)
@@ -80,12 +83,7 @@ for type in types:
         plot_label = type[0]
         first_quartile_label = "First and third quartile %s" % type[0]
 
-        # x_plus_std = list(map(add, x_values, std_deviation))
-        # x_min_std = list(map(sub, x_values, std_deviation))
         ax.plot(x_values, per_number_client, label=plot_label, marker=type[1], color=type[2])
-        # ax.plot(x_values, first_quartile, label=first_quartile_label, linestyle='--', color=type[2])
-        # ax.plot(x_values, third_quartile, linestyle='--', color=type[2])
-        # ax.fill_between(x_values, first_quartile, third_quartile, alpha=0.1, interpolate=True)
 
 if blocking_arg == "blocking":
     plot_title = "Overall latency per Transport Type while Blocking for WC"
