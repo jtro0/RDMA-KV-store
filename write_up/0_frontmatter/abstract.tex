@@ -6,18 +6,38 @@
 \begin{abstracts}        %this creates the heading for the abstract page
 
     Seemingly ever growing tech giants, such as Facebook, Amazon and Google, require fast, reliable and scalable key-value storage (KV-store) to serve product recommendations, user preferences, and advertisements.
-    Past advancements of KV-stores have focussed on improving these underlying data structures.
-    Remote direct memory access (RDMA) networks have increasingly become more popular in commercial and academic data centers.
-    This relatively new technology offers lower latency and higher throughput performance compared to tradition sockets and network interface cards (NIC).
-    Scalability performance of RDMA transportation protocols has seen relatively little investigation, the majority of previous work focused on RDMA verb choice.
+    A fast a reliable service is required to perform well under heavy workloads, with performance changes being unnoticed for the end user, such as a shopping customers at Amazon.
+    The increase in number of customers and demand for such services, require data centers to scale resources, to maintain performance.
+    Previously, KV-stores have maintained performance through improvements to the underlying data structure, typically a hash table.
+    Remote Direct Memory Access (RDMA) networks, potentially gives rise to other KV store advancements.
+    RDMA has become increasingly popular for data centers.
+    The main advantage of RDMA, is that lower latency can be achieved.
+    This is crucial in latency sensitive applications, such as KV-store.
 
-    This paper focuses on this gap, evaluating scalability performance of RDMA transportation types.
+    RDMA makes use of three so-called transport types: reliable connection (RC), unreliable connection (UC), and unreliable datagram (UD).
+    Each transport type has its advantages and disadvantages.
+    Previous work has not explicitly focused on transport type choice in an RDMA KV-store application.
+    This paper focuses on this gap, evaluating multithreaded scalability performance of RDMA transportation types.
     These findings will be used to give recommendation for RDMA KV-store implementations.
-    Macro-level benchmarks have been conducted, with realistic KV-store workloads.
-    This has shown that RDMA offers a significant improvements compared to TCP.
-    UD has shown to perform best, with 94.8\% throughput improvement over TCP, and 58.7\% improvement over RC.
-    All the while offering consistent and gradually increasing latency up to 30 clients, reaching a maximum average latency of 64 $\mu$sec, which is an 52.0\% improvement over TCP.
-    Additionally, scalability issues of RC have been shown, and is not recommended in a KV-store application.
+
+    This paper made use of multithreaded KV server, with a worker thread for each additional client.
+    Clients threads are created by a benchmark application, and perform a set number of random KV-store operations, in total 10 million operations.
+    These operations are generated randomly, with a 95\% probability of a GET operation, and 5\% probability of SET operation.
+    This has been used as a realistic workload, to perform macro-level benchmarks.
+    Additionally, two designs have been evaluated, with and without blocking until completion event.
+    This has been done, as large number of threads results in high CPU usage.
+
+    After conducting experiements on the DAS-5 computing cluster,the results have shown that UC performs best out the three transport types.
+    Without blocking, UC reaches a maximum throughput of 370 thousand ops/sec, at 32 clients.
+    After 32 clients, the maximum physical threads have been reached, and performances drops below TCP, showing poor scalability.
+    With blocking, UC stabilizes around 273 thousand ops/sec above 32 clients, showing no loss in performance with high number of threads.
+    This loss in maximum performance has been shown to be caused by context switching.
+    UC also achieves lower latency compared to TCP, in both blocking and non-blocking.
+    However, the outliers in latency have been to shown to be significantly higher without blocking.
+    Therefore, without any optimizations, it is recommended to use UC with blocking when exceeding maximum number of physical threads.
+    UD performs close to UC without blocking, and does allow for more optimizations, thus UD is recommended with optimizations.
+
+    All relevant project files can be found on Github\cite{github}.
 
 \end{abstracts}
 %\end{abstractlongs}

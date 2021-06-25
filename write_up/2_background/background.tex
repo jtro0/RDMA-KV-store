@@ -18,10 +18,10 @@
 %
 %
 In this section, background information on key value stores, which is the backbone of this thesis, will be given.
-Also, the issues with commonly used linux sockets, will be explained.
+Also, the issues with commonly used Linux socket, will be explained.
 Further, RDMA is thoroughly explained, as this is crucial to the understanding of this paper, and how it addresses issues facing sockets.
 
-\section[KV-store]{Key Value Store}\label{sec:kv-store}
+\section[Key-Value store]{Key-Value Store}\label{sec:kv-store}
 Key value stores are extensively used to offer low latency look ups.
 These have a wide variety of use cases, most notably as cache systems, such as Memcached\cite{memcached}, and as remote DRAM storage, such as RAMCloud\cite{ousterhout2010case}.
 In its simplest form, KV store use a set of commands, commonly \textit{SET}, \textit{GET}, and \textit{DEL}, to perform tasks on a server.
@@ -32,26 +32,39 @@ It has been found that typical work loads consist mostly of \textit{GET} request
 Atikoglu et. al. analysed workloads on Memcached systems, and have found that on average a 30:1 (95\%) \textit{GET}/\textit{SET} ratio\cite{atikoglu2012workload}.
 This figure will be used in the benchmarking design, see section \ref{sec:benchmark-design}.
 
-\section[Linux scokets and TCP]{Linux sockets and TCP network stack}\label{sec:linux-sockets}
-Linux sockets are versatile programming API, offering a simple interface to network communication.
-Behind this socket interface, the kernel is tasked with data and memory, and connection management\cite{hanford2018survey,seth2009tcp} .
+\section[Linux scoket and TCP]{Linux socket and TCP network stack}\label{sec:linux-socket}
+The Linux socket programming API, is versatile, and offers a simple interface to network communication.
+Behind this socket interface, the kernel is tasked with data and memory, and connection management\cite{hanford2018survey,seth2009tcp}.
 This results in CPU cycles being used to process incoming packets and data copies, while these cycles could be used for other tasks.
 Linux takes an extensive route when dealing with packets, as shown by Hanford et. al. detailed investigation\cite{hanford2018survey}.
-Memory copies have been found to cause delay in Frey and Alonso's work\cite{frey2009minimizing}, however for small message sizes, Yasukata, and team, found this is insignificant\cite{yasukata2016stackmap}.
-TCP processing accounted for more than half of the overhead, after subtracting unavoidable PCIe latencies.
+Memory copies have been found to cause delay in packet processing\cite{frey2009minimizing}.
+However, for small messages in the order of 100 bytes, Yasukata, and team, found that memory copies is insignificant to packet processing time\cite{yasukata2016stackmap}.
 
 Past attempts at improving TCP performance included offloading most processing to the network interface card (NIC)\cite{hanford2018survey}.
-Higher end NICs use an TCP offload engine (TOE) and DMA.
-The socket API still requires system calls, among other limitations, thus requiring kernel trapping for management.
+The socket API still requires system calls, among other limitations, thus requiring kernel trapping for management of socket queues, and consuming packets.
+
+\begin{figure}
+    \centering
+    \includegraphics{figures/PDF/receive_path}
+    \caption[System overview of hardware to application for receiving a packet.]{System overview of hardware to application for receiving a packet. Path is as follows: 1. remotely a packet is sent and recieved by NIC. 2. Hardware interrupt to the device drive, indicating new packet. 3. Device driver dequeues packet in RX queue. 4. Networking stack processes packet. 5. Packet is enqueued in queue assosiated with the socket. 6. Application performs a read system call, and performs \textit{epoll\_wait} if necessary. 7. Packet is copied and consumed by application.}
+    \label{fig:linux_packet}
+\end{figure}
+
+
+Figure \ref{fig:linux_packet} shows the path a receiving packet takes inside a Linux system.
+Packet is processed by CPU, and system calls and memory copies needed between stacks and queues.
 
 \section[RDMA]{RDMA}\label{sec:rdma}
-Remote Direct Memory Access (RDMA) address the issues of linux sockets, providing lower latency, less CPU overhead, and potentially higher throughput.
+Remote Direct Memory Access (RDMA) address the issues of Linux socket API.
+RDMA technology provides lower latency, less CPU overhead, and potentially higher throughput, compared to classical networking cards and APIs.
 RDMA has been used in super computers for many years, however recently have seen significant improvements.
-RDMA capable network cards (RNICs) have seen lowering in cost \cite{kalia2016design}, which made this an appealing improvement to data center networking.
+RDMA capable network cards (RNICs) have seen lowering in cost\cite{kalia2016design}, which made this an appealing improvement to data center networking.
 
 RDMA achieves this low latency by offloading the network processing onto the RNIC, bypassing CPU and kernel entirely.
-As shown in section \ref{sec:linux-sockets} above, the linux kernel has an extensive route, from application to NIC to network, including system calls and memory copies.
+As shown in section \ref{sec:linux-socket} and figure \ref{fig:linux_packet} above, the Linux kernel has an extensive route, from application to NIC to network, including system calls and memory copies.
 With RDMA, a zero-copy memory access can be realised through DMA and programmable IO (PIO) operations, which can be seen in \ref{fig:send_recv_drawing}.
+RDMA requires no kernel involvement, as its programming API directly communicates with the RNIC.
+Furthermore, RDMA offloads packet processing to the RNIC, freeing CPU cycles for other tasks.
 This makes RDMA a compelling technology for latency sensitive workloads, like KV-store, making remote memory operations possible and perform near to local memory operation speeds.
 
 \subsection{Queue Pairs}\label{subsec:queue-pairs}
@@ -69,12 +82,10 @@ For signalled WR's, a completion event will be passed from RNIC to CPU, thus min
 
 
 For RDMA operations like \textit{READ} and \textit{WRITE} this would include the remote address to be accessed, with two-sided verbs such as \textit{SEND} and \textit{RECV} this is accompanied by a buffer for which DMA operations can take place.
-In this paper, the focus will be on \textit{SEND} and \textit{RECV} verbs, more can be read in section \ref{subsec:verbs} below and in \ref{sec:rdma2}.
 
 \subsection{Transportation types}\label{subsec:transportation-types}
-Much like traditional networking, RDMA can make use of several transport protocols.
-Simply put, these can be split into two types, connection and datagram, and reliable and unreliable.
-There are 3 main transportation types: reliable connection (RC), unreliable connection (UC), and unreliable datagram (UD).
+RDMA can make use of several transport protocols, each having their trade-offs.
+Simply put, there are three main and supported transport types: reliable connection (RC), unreliable connection (UC), and unreliable datagram (UD).
 
 Firstly, unreliable protocols do not make use of ACK/NAK packets, while this is used for reliable, this could result in packet loss and unordered packets.
 However, it has been shown that this rarely occurs\cite{kalia2014using, kalia2016fasst}.
@@ -85,18 +96,21 @@ As stated in the name, RC and UC need a connection between queue pairs (QP).
 Only one QP can be connected to another QP.
 Contrasting this, unreliable datagram (UD) do not require a connection.
 This meaning that a UD QP can communicate with any other UD QP.
-UD therefore can make efficient use of a one-to-many network topology or application, and RNIC cache.
-Every QP has to be held by RNIC in cache, which is severely limited\cite{qiu2018toward}.
-A cache miss or many context switching in RNIC, would diminish performance.
-With the fan-in and fan-out effect present in many data center workloads\cite{vasudevan2009safe}, the potential scalability of connection oriented QP's is limited\cite{kalia2016fasst}.
-UD requires an adress handler (AH) to be passed along with its WR's.
-This is the route and the destination for a packet.
+UD therefore can make efficient use of a one-to-many network topology or application.
+Every QP has to be held by RNIC in cache, which is limited in space\cite{qiu2018toward}.
+At large number of QP's, this might not be able to be cached, thus causing cache misses when switching between all QP's.
+This cache miss would diminish performance, as QP metadata must be retrieved from main memory.
+Data center workloads typically run with many connected machines\cite{vasudevan2009safe}.
+If a connection oriented transport type is used in such use cases, performance could be limited\cite{kalia2016fasst}.
+
+UD requires an address handler (AH) to be passed along with its WR's.
+AH hold the relevant data for routing a packet to its destination.
 The destination does not need to be a QP, but could also be a multicast group.
 Multiple clients can listen on the same channel, this is can be applied in applications where the same data can be used by multiple clients.
 An AH can be created from a previous work completion (WC), or via metadata exchange, see \ref{subsec:connecting-qp's}.
 
-UD is limited however in the maximum transmission unit (MTU).
-As can be seen in table \ref{tab:transport-verb}, UD has a maximum message size of 4KB, beyond this and the message is divided into several packets.
+UD is limited however to a maximum transmission unit (MTU) of 4KB, as can be seen in table \ref{tab:transport-verb}.
+Beyond this 4KB, the message is divided into several packets.
 This strongly contrasts the 2 GB available for RC and UC.
 This has to be taken into account on a per-application bases.
 In the case of this thesis, 4 KB is sufficient message size for KV-stores.
@@ -109,7 +123,7 @@ Read and write (\textit{READ} and \textit{WRITE}) follow so-called memory semant
 Memory semantics require the destination memory address to be known.
 This meaning, to be able to perform a RDMA read of a remote memory location, the memory address of the requested memory needs to be known.
 
-Channel semantics are similar to sockets, in the sense that the remote memory address does not need to be known.
+Channel semantics are similar to socket, in the sense that the remote memory address does not need to be known.
 However, to perform a \textit{SEND} operation, the receiving end must post a \textit{RECV} WR before the \textit{SEND} WR is sent, this is called pre-posting.
 This tells the server's RNIC which memory location the application expects the next incoming message to be place.
 
@@ -118,9 +132,10 @@ Table \ref{tab:transport-verb} summarizes the transportation type and which verb
 
 \begin{table}
     \centering
-    \begin{tabular}{lllllr}
+    \begin{tabular}{l| p{2cm} lll|r}
         \toprule
-          & \textbf{SEND} & \textbf{RECV} & \textbf{READ} & \textbf{WRITE} & \textbf{MTU size} \\
+         & \textbf{Application verb} & & & & \\
+         & \textbf{SEND} & \textbf{RECV} & \textbf{READ} & \textbf{WRITE} & \textbf{MTU} \\
         \midrule
         \textit{RC} & YES & YES & YES & YES & 2 GB \\
         \textit{UC} & YES & YES & NO & YES & 2 GB \\
@@ -135,8 +150,8 @@ Table \ref{tab:transport-verb} summarizes the transportation type and which verb
 Establishing a connection between QP's involves exchanging metadata related to the QP.
 This can be done via a known QP, or via traditional networks, using for example TCP.
 However, in some cases, a classical ethernet NIC is not available.
-In these circumstances, a known QP, Communication Manager (CM), can be used.
-This QP which is always available when using RNIC, and can be used to communicate between RNICs.
+In these circumstances, a known QP can be used.
+This is available by the Communication Manager (CM)\cite{mellanox_prog_guide, rdmamojo}.
 
 Unconnected datagrams also require metadata exchange.
 Data such as QP number, and physical port, which is are needed to create AH, or join a multicast group.
@@ -146,17 +161,19 @@ This can be achieved in the same way as with connected protocols.
 
 \begin{figure}
     \centering
-    \includegraphics[width=\columnwidth]{figures/PDF/RDAM_SEND_RECV_drawing}
-    \caption[Process overview of \textit{SEND} and \textit{RECV}.]{Process overview of pre-posting receive and send from client to server. Numbered arrows have a corresponding function described in \ref{subsec:programming-with-rdma}. Numbered dashed lines are cache page entries for registered memory.}
+    \includegraphics[width=\columnwidth]{figures/PDF/RDMA_SEND_RECV_drawing}
+    \caption[Process overview of \textit{SEND} and \textit{RECV}.]{Process overview of pre-posting receive and send from client to server. Numbered arrows have a corresponding function described in \ref{subsec:programming-with-rdma}. Looping arrows such as 1 or 7, indicate memory fetching/polling.}
     \label{fig:send_recv_drawing}
 \end{figure}
 
-Unlike traditional sockets, much of RDMA's interfacing is open to the programmer, allowing for detailed optimizations.
+Unlike traditional sockets, much of RDMA's programming API allows for more control, thus more detailed optimizations can be implemented.
 This interface is developed and supported by the OpenFabrics Alliance\cite{openfab}.
 The cost of this is the need for more memory management in userspace, which otherwise would be done by the kernel.
 In this subsection, this open interface will be discussed, what functions are needed to be done to make use of RDMA, and what happens internally.
 For this, figure \ref{fig:send_recv_drawing} illustrates the process of an RC QP connection, and \textit{SEND} and \textit{RECV} operation, from client to server.
 It is assumed that client and server have successfully made a protection domain (PD), QP, and connect or exchanged data for these QP's, see section \ref{subsec:connecting-qp's} on how this can be done.
+Protection domains are used to separate resources, such as memory regions, QP's, and AH.
+
 The numbered arrows in figure \ref{fig:send_recv_drawing} correspond to the following:
 
 \begin{enumerate}
@@ -175,12 +192,12 @@ The numbered arrows in figure \ref{fig:send_recv_drawing} correspond to the foll
     \item In step 8, this data is then sent over the network to the server.
     \item The server's RNIC receives this data and performs an DMA operation to the buffer given by its \textit{RECV} WR.
     \item RNIC notifies with a completion event to the CPU, that it has a new event in its CQ.
-    \item RNIC also sends an completion event to the client.
-    \item This is passed along to the CPU.
+    \item RNIC also sends a completion event to the client, in the case of reliable connection.
+    \item This completion event is passed along to the CPU, to signal a waiting thread.
     \item The server can poll on the CQ, this tells the application that the \textit{RECV} request has been completed, and can now be read with the same data as was in the clients buffer.
 \end{enumerate}
 
-For more insight in which functions are avaliable, see RDMA programming guid \cite{mellanox_prog_guide} or the OpenFabric Alliance\cite{openfab} which develop kernel bypassing API for RDMA aware networks.
+For more insight in which functions are avaliable, see RDMA programming guide\cite{mellanox_prog_guide} or the OpenFabric Alliance\cite{openfab} which develop kernel bypassing API for RDMA aware networks.
 % ---------------------------------------------------------------------------
 % ----------------------- end of thesis sub-document ------------------------
 % ---------------------------------------------------------------------------

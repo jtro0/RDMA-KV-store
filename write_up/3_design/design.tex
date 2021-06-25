@@ -20,7 +20,7 @@ Further, benchmarking strategy will be explained, used to evaluate the performan
 Lastly, an overview of DAS-5 is given, which will be used to run benchmarks.
 This can be used when comparisons are made with other findings.
 
-\section{Key value store}
+\section{Key-value store}
 This thesis is focused on the scalability using RDMA, and will not focus on advancing KV-stores.
 Therefore, a trivial KV store has been used.
 For this KV store, \textit{SET} and \textit{GET} instructions are mainly used, a long with other commands for testing purposes.
@@ -47,7 +47,8 @@ For a client to interact with a KV server, the client has to send a request towa
 A request is structured as shown in figure \ref{fig:request}.
 This key is used to identify the correct index within the hash table.
 A field for payload is always sent, however only used for \textit{SET} commands.
-This is to have a constant data size, key having 64 bytes and message 256.
+This is to have a constant packet size, along with fixed sizes for key and message arrays: 64 bytes and 256 bytes.
+Constant packet size is required for memory registration with RDMA, and the size needs to be known at the destination when posting \textit{SEND}.
 
 \subsection{Response}
 
@@ -86,27 +87,24 @@ Other response codes can be seen in \ref{fig:codes}
 Internally, a hash table with 1024 buckets is used.
 Each bucket contains a linked list of key-value pairs.
 Figure \ref{fig:hash_table} shows the structure of the KV store used.
-It should be noted, a linked list approach, as used here, does not scale well.
-As buckets are filled, either due to a hash collisions or extensive use, \textit{GET} requests can cause for significantly delay, especially when encountering a key miss.
-This can be partially solved with a large hash table, this however will not be a long term solution, along with strong hash function.
-However, with a 95\% GET request workload, the scalability issues will not show a significant performance loss.
+It should be noted, a linked list approach, as used here, does not scale well with number of elements.
+Worst case, this approach to hash table has a search time complexity of $O(n)$, where $n$ represents the number of elements in the hash table.
+This can be partially solved with a large hash table, as this decreases the average size in each bucket.
+For this thesis, 1024 number of buckets has been found, by trial and error, to be a sufficient size.
+Additionally, using a constant number of key-value operations, the scalability issues, with respect to increasing number of elements in buckets, is also kept constant with increasing number of clients.
 More over, in section \ref{sec:benchmark-design} this issue will be kept constant throughout experiments.
 
 \subsection{Multithreaded}\label{subsec:multithreaded}
-The KV server implemented for this thesis is also multithreaded.
+Since this thesis focuses on the multicore scalability, the KV server is implemented with multithreading.
 For every client a worker thread process will be created.
 This thread will read requests, process accordingly, and send back a response, all the while the main thread is used to accept and set up for new clients.
-In this way, worker threads are unaffected by new clients that are connecting.
 
 To ensure concurrent and correct operation, each bucket has a mutex lock, and each key-value pair a read-write lock.
-This could cause performance loss as been seen in FaSST \cite{kalia2016fasst, qiu2018toward}.
+This could cause performance loss as been seen in FaSST \cite{kalia2016fasst, qiu2018toward}, however is required to provide isolation for the \textit{ACID} principle.
 
 \section{RDMA}\label{sec:rdma2}
 For this research, the two-sided verbs \textit{SEND} and \textit{RECV} are used for RDMA.
 Looking at table \ref{tab:transport-verb}, across all transportation types \textit{SEND}/\textit{RECV} is the only available verb.
-This might come at a cost of performance, due to the channel schematic and minor CPU involvement.
-It has been shown that in some use cases, one-sided \textit{WRITE} operations performs superior compared to \textit{SEND}\cite{kalia2014using}.
-However, this difference is minimal, and the use of \textit{WRITE} is not possible for this research.
 
 To establish a baseline improvement and scalability, no optimizations are implemented.
 In section \ref{ch:future-improvements} possible optimizations are discussed.
@@ -121,13 +119,18 @@ A worker thread is still created for every client, however, in the case of UD, a
 
 %TODO ADD MORE GRAPHICS
 
+\subsubsection{Work completion processing}
+With large number of threads, exceeding the 32 physical threads present per node of DAS, CPU usage would increase when directly polling.
+Therefore, two methods are used in this thesis: waiting for completion event and directly polling.
+In both cases, polling on completion queue is done by consuming a WC one by one.
 
 \section{Benchmark design}\label{sec:benchmark-design}
 To evaluate the performance and scalability of the RDMA KV store, a multiclient benchmark has been made.
-In total, 10 million tasks will be divided among clients.
+Each client is run on its own thread, with no shared memory.
+In total, 10 million key-value operations will be divided among clients.
 This number is constant to lessen the scalability issues with the underlying hash table.
-A task involves two operations, sending a request and receiving response.
-Only once a response is received from the server, can the client continue to the next task.
+A task involves two network operations, sending a request and receiving response.
+Only once a response is received from the server, can the client continue to the next task, thus running sequentially.
 This meaning that the full potential of RDMA is not being used, however it has been chosen for correctness, and such that latency can be evaluated accurately on a per-task level. %TODO MAYBE I SHOULD CONTINUE?
 
 During client benchmark execution, the time will be taken at two points: before sending request, and after receiving response.
@@ -139,7 +142,7 @@ For this, Python 3.6\cite{python} is used, along with pandas\cite{pandas} and ma
 
 The benchmark is designed to evaluate each transportation types under similar conditions, and will follow the same path.
 Once a client is setup and connected with the server, it will start performing its tasks.
-These tasks follow the 30:1 \textit{GET}/\textit{SET} ratio that found by Atikoglu et. al.\cite{atikoglu2012workload}.
+These tasks follow a realistic workload of 30:1 \textit{GET}/\textit{SET} ratio, this has been found by Atikoglu et al.\cite{atikoglu2012workload}.
 A \textit{SET} request has a 5\% chance of being generated.
 This is done by generating a random number as follows: $rand() \bmod 100 <= 5$.
 Else a \textit{GET} request is generated.
@@ -149,31 +152,10 @@ The client sends out the request, and waits for response.
 All performance tests and results have been gathered on the DAS-5 computing cluster\cite{das5}.
 This distributed system of computers spread across the Netherlands, and is used by research groups from VU Amsterdam, TU Delft, Leiden University, and many more.
 Each cluster varies slightly in specifications, however each, is equipped with dual Intel E5-2630v3 8-core CPUs, a 56 Gbit/s Inifiniband (IB) RDMA networking, and 1 Gbit/s classical ethernet networking.
-The specifications of each cluster is as shown in table \ref{tab:das5}.
+The dual CPUs used per node, result in a total of 32 physical threads.
 
 All experiments make use of the IB network card, and is also configured to run TCP/IP.
 Furthermore, at least two nodes are used, his ensures that the server and clients are separated.
-
-\begin{table}
-    \centering
-    \begin{tabular}{lrlllll}
-        \toprule
-        \textbf{Cluster} & \textbf{Nodes} & \textbf{CPU type} & \textbf{Frequency (GHz)} & \textbf{Memory (GB)} & \textbf{Network} \\
-        \midrule
-        VU & 68 & dual 8-core & 2.4 & 64 & IB and GbE \\
-        LU & 24 & dual 8-core & 2.4 & 64 & IB and GbE \\
-        UvA & 18 & dual 8-core & 2.4 & 64 & IB and GbE \\
-        TUD & 48 & dual 8-core & 2.4 & 64 & IB and GbE \\
-        UvA-MN & 31 & dual 8-core & 2.4 & 64 & IB and GbE \\
-        ASTRON & 9 & dual 8/10/14-core & 2.6 & 128/512 & IB, 40 GbE, GbE \\
-        \bottomrule
-    \end{tabular}
-    \caption{DAS-5 cluster specifications}
-    \label{tab:das5}
-\end{table}
-
-
-
 
 
 
