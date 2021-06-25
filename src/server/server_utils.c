@@ -54,10 +54,11 @@ struct server_info *server_init(int argc, char *argv[]) {
             {0,  0,                0,      0}
     };
 
+    // Process arguments
     for (;;) {
         int option_index = 0;
         int c;
-        c = getopt_long(argc, argv, "hvdp:r:to", long_options,
+        c = getopt_long(argc, argv, "hvdp:r:o", long_options,
                         &option_index);
         if (c == -1)
             break;
@@ -84,9 +85,6 @@ struct server_info *server_init(int argc, char *argv[]) {
                     connInfo->type = UD;
                     break;
                 }
-            case 't':
-                connInfo->is_test = true;
-                break;
             case 'b':
                 connInfo->blocking = 1;
                 break;
@@ -102,6 +100,7 @@ struct server_info *server_init(int argc, char *argv[]) {
     connInfo->addr.sin_addr.s_addr = htonl(INADDR_ANY);
     connInfo->addr.sin_port = htons(connInfo->port);
 
+    // Initialize server connections
     switch (connInfo->type) {
         case TCP:
             connInfo->tcp_server_info = calloc(1, sizeof(struct tcp_conn_info));
@@ -127,6 +126,7 @@ struct server_info *server_init(int argc, char *argv[]) {
 int accept_new_connection(struct server_info *server, struct client_info *client) {
     int ret;
 
+    // Pass along if it needs to block or not
     client->blocking = server->blocking;
 
     switch (server->type) {
@@ -136,9 +136,7 @@ int accept_new_connection(struct server_info *server, struct client_info *client
             break;
         case RC:
             client->rc_client = malloc(sizeof(struct rc_client_connection));
-            pr_debug("allocated rc_client\n");
             ret = rc_accept_new_connection(server, client);
-            pr_debug("accepted new connection\n");
             break;
         case UC:
             client->uc_client = malloc(sizeof(struct uc_client_connection));
@@ -162,7 +160,6 @@ void close_connection(int socket) {
 }
 
 
-// TODO Ask if it is better to have it wait for the prev request to be done or to alloc/reg new request
 int prepare_for_next_request(struct client_info *client) {
     pr_info("client %d: ready to receive request %d\n", client->client_nr, client->request_count);
 
@@ -177,7 +174,7 @@ int prepare_for_next_request(struct client_info *client) {
             ret = uc_post_receive_request(client);
             break;
         case UD:
-//            ret = ud_post_receive_request(client->ud_client->ud_server);
+            // UD does not need to prepare the same way, this is done in ready_for_next_request()
             break;
     }
     check(ret, ret, "Failed to pre-post the receive buffer %d, errno: %d \n", client->request_count, ret);
@@ -185,10 +182,11 @@ int prepare_for_next_request(struct client_info *client) {
     return ret;
 }
 
+/*
+ * Receive request
+ */
 int receive_header(struct client_info *client) {
     int recved;
-    // With strings
-    pr_info("client %d: receiving header\n", client->client_nr);
     switch (client->type) {
         case TCP:
             if (connection_ready(client->tcp_client->socket_fd) == -1) {
@@ -197,7 +195,6 @@ int receive_header(struct client_info *client) {
             recved = tcp_read_header(client->tcp_client->socket_fd, &client->request[client->request_count]);
             break;
         case RC:
-            pr_info("rc going to receive\n");
             recved = rc_receive_header(client);
             break;
         case UC:
@@ -225,52 +222,10 @@ struct request *recv_request(struct client_info *client) {
     }
     struct request *current = get_current_request(client);
     if (client->type == UD) {
-        client->ud_client->client_handling = current->client_id;
+        client->ud_client->client_handling = current->client_id; // Remember who sent this, for AH
     }
     request_dispatcher(client);
     return current;
-}
-
-/**
- * It read 'expected_len' bytes from 'socket' and return them into 'buf'
- * it returns the actual number of read bytes or -1 on error.
- * On error 'request->connection_close' is set to indicate that the connection
- * should be closed from the server side.
- */
-int read_payload(struct client_info *client, struct request *request, size_t expected_len,
-                 char *buf) {
-    char tmp;
-    int recvd = 0;
-    // Still read out the payload so we keep the stream consistent
-    for (size_t i = 0; i < expected_len; i++) {
-        if (read(client->tcp_client->socket_fd, &tmp, 1) <= 0) {
-            request->connection_close = 1;
-            return -1;
-        }
-        recvd++;
-        buf[i] = tmp;
-    }
-
-    return recvd;
-}
-
-/**
- * Check the payload is well formed and read the last byte which shoudl be '\n'
- * It returns 0 on success, -1 otherwise.
- */
-int check_payload(int socket, struct request *request, size_t expected_len) {
-    char tmp;
-    int rcved;
-
-    // The payload (if there was any) should be followed by a \n
-    if (expected_len &&
-        (((rcved = read(socket, &tmp, 1)) <= 0) || tmp != '\n')) {
-        error("Corrupted stream (read %d chars, char %c (%#x))\n",
-              rcved, tmp, tmp);
-        request->connection_close = 1;
-        return -1;
-    }
-    return 0;
 }
 
 int send_response_to_client(struct client_info *client) {

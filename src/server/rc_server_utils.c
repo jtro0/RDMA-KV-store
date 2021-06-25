@@ -114,7 +114,6 @@ int init_rc_server(struct server_info *server) {
 
     pr_info("Server RDMA CM id is successfully bound \n");
 
-    // TODO put this into accept? for multiple clients?
     /* Now we start to listen on the passed IP and port. However unlike
      * normal TCP listen, this is a non-blocking call. When a new client is
      * connected, a new connection management (CM) event is generated on the
@@ -227,6 +226,7 @@ int rc_accept_new_connection(struct server_info *server, struct client_info *cli
 int rc_receive_header(struct client_info *client) {
     int ret = 0;
     struct ibv_wc wc;
+    // See if there is a new request
     ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1, client->rc_client->cq, NULL,
                                          client->blocking);
     check(ret < 0, -errno, "Failed to receive header: %d\n", ret);
@@ -236,7 +236,7 @@ int rc_receive_header(struct client_info *client) {
 
 int rc_post_receive_request(struct client_info *client) {
     int ret = 0;
-    pr_info("receiving %d\n", client->request_count);
+    // Ready for the next request
     ret = post_recieve(sizeof(struct request), client->rc_client->request_mr->lkey, client->request_count, client->rc_client->client_qp,
                        &client->request[client->request_count]);
     return ret;
@@ -246,7 +246,9 @@ int rc_send_response(struct client_info *client) {
     int ret = -1;
     struct ibv_wc wc;
 
+    //Send response
     ret = post_send(sizeof(struct response), client->rc_client->response_mr->lkey, 0, client->rc_client->client_qp, client->response);
+    // Did it complete?
     ret = process_work_completion_events(client->rc_client->io_completion_channel, &wc, 1, client->rc_client->cq, NULL,
                                          client->blocking);
     check(ret < 0, -errno, "Failed to send response: %d\n", ret);

@@ -66,36 +66,29 @@ int process_rdma_cm_event(struct rdma_event_channel *echannel,
 
 int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct ibv_wc *wc, int max_wc,
                                    struct ibv_cq *cq_ptr, pthread_mutex_t *lock, int blocking) {
-//    struct ibv_cq *cq_ptr = NULL;
     void *context = NULL;
     int ret = -1, i, total_wc = 0;
 
+    /*
+     * We can choose to block and wait for completion event
+     */
     if (blocking) {
         cq_ptr = NULL;
-//        if (lock != NULL)
-//            pthread_mutex_lock(lock);
-        /* We wait for the notification on the CQ channel */
-        pr_debug("Getting cq event");
         ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
                                &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
                                &context); /* Associated CQ user context, which we did set */
         check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
-        pr_debug("Got cq event");
 
         /* Request for more notifications. */
-        pr_debug("Requesting another cq event");
         ret = ibv_req_notify_cq(cq_ptr, 0);
         check(ret, -errno, "Failed to request further notifications %d \n", -errno);
-        pr_debug("Requested cq event");
     }
-    /* We got notification. We reap the work completion (WC) element. It is
- * unlikely but a good practice it write the CQ polling code that
-    * can handle zero WCs. ibv_poll_cq can return zero. Same logic as
-    * MUTEX conditional variables in pthread programming.
- */
+
+    /*
+     * Poll on the completion queue for new events. If blocked before, then this contains a WC.
+     */
     total_wc = 0;
     do {
-        pr_debug("Loop");
         ret = ibv_poll_cq(cq_ptr /* the CQ, we got notification for */,
                           max_wc - total_wc /* number of remaining WC elements*/,
                           wc + total_wc/* where to store */);
@@ -113,21 +106,17 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
         }
     }
     if (blocking) {
-        /* Similar to connection management events, we need to acknowledge CQ events */
-        pr_debug("Send ack");
         ibv_ack_cq_events(cq_ptr,
-                          1 /* we received one event notification. This is not
-		       number of WC elements */);
-        pr_debug("Sent ack");
-//        if (lock != NULL)
-//            pthread_mutex_unlock(lock);
+                          1 /* we received one event notification.*/);
     }
     return total_wc;
 }
 
+/*
+ * Same principle as above, but now with a timeout defined in rdma_common.h
+ */
 int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, struct ibv_cq *cq_ptr,
                                                 struct ibv_comp_channel *comp_channel, int blocking) {
-//    struct ibv_cq *cq_ptr = NULL;
     void *context = NULL;
     int ret = -1, i, total_wc = 0;
 
@@ -143,17 +132,14 @@ int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, s
         ret = ibv_req_notify_cq(cq_ptr, 0);
         check(ret, -errno, "Failed to request further notifications %d \n", -errno);
     }
+
     struct timeval time;
     unsigned long start_time_msec, current_time_msec;
 
+    // Start timer
     gettimeofday(&time, NULL);
     start_time_msec = (time.tv_sec * 1000) + (time.tv_usec / 1000);
 
-    /* We got notification. We reap the work completion (WC) element. It is
- * unlikely but a good practice it write the CQ polling code that
-    * can handle zero WCs. ibv_poll_cq can return zero. Same logic as
-    * MUTEX conditional variables in pthread programming.
- */
     total_wc = 0;
     do {
         ret = ibv_poll_cq(cq_ptr /* the CQ, we got notification for */,
@@ -161,9 +147,9 @@ int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, s
                           wc + total_wc/* where to store */);
         check(ret < 0, ret, "Failed to poll cq for wc due to %d \n", ret);
         total_wc += ret;
-        gettimeofday(&time, NULL);
+        gettimeofday(&time, NULL); // Stop timer
         current_time_msec = (time.tv_sec * 1000) + (time.tv_usec / 1000);
-    } while (total_wc < max_wc && ((current_time_msec - start_time_msec) < MAX_POLL_CQ_TIMEOUT));
+    } while (total_wc < max_wc && ((current_time_msec - start_time_msec) < MAX_POLL_CQ_TIMEOUT)); // Break if we got all WC we requests, or time has run out
     pr_debug("%d WC are completed \n", total_wc);
     /* Now we check validity and status of I/O work completions */
     for (i = 0; i < total_wc; i++) {
@@ -175,10 +161,8 @@ int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, s
         }
     }
     if (blocking) {
-        /* Similar to connection management events, we need to acknowledge CQ events */
         ibv_ack_cq_events(cq_ptr,
-                          1 /* we received one event notification. This is not
-		       number of WC elements */);
+                          1 /* we received one event notification.*/);
     }
     return total_wc;
 }
@@ -238,6 +222,9 @@ int post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, voi
     return ret;
 }
 
+/*
+ * Similar as post_send(), but now with AH
+ */
 int ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf, struct ibv_ah *ah,
                  uint32_t qpn) {
     int ret = 0;
@@ -255,16 +242,10 @@ int ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, 
             .num_sge    = 1,
             .opcode     = IBV_WR_SEND,
             .send_flags = IBV_SEND_SIGNALED,
-            .wr.ud.ah = ah,
+            .wr.ud.ah = ah, // Give the route it needs to take
             .wr.ud.remote_qpn = qpn,
             .wr.ud.remote_qkey = 0x11111111
     };
-
-    if (ah == NULL) {
-        fprintf(stderr,"send %p %p %p %p %p\n", buf, &send_wr, &bad_send_wr, qp, ah);
-        sleep(1);
-    }
-    pr_debug("send %p %p %p %p %p\n", buf, &send_wr, &bad_send_wr, qp, ah);
 
     ret = ibv_post_send(qp, &send_wr, &bad_send_wr);
     return ret;
@@ -277,11 +258,9 @@ int ud_set_init_qp(struct ibv_qp *qp) {
             .port_num        = IB_PHYS_PORT,
             .qkey            = 0x11111111
     };
-    pr_info("In here\n");
 
     int ret = ibv_modify_qp(qp, &dgram_attr,
                             IBV_QP_STATE | IBV_QP_PKEY_INDEX | IBV_QP_PORT | IBV_QP_QKEY);
-    pr_info("After here\n");
 
     check(ret, ret, "Failed to modify dgram. QP to INIT\n", NULL);
 }

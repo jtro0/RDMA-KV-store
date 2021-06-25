@@ -77,6 +77,7 @@ enum response_code {
 extern int verbose;
 extern int debug;
 
+// Request structure
 struct request {
     int client_id;
     enum method method;
@@ -87,6 +88,7 @@ struct request {
     int connection_close;
 };
 
+// Response structure
 struct response {
     enum response_code code;
     char msg[MSG_SIZE];
