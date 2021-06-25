@@ -23,20 +23,31 @@ HERD uses RDMA \textit{WRITE} over UC for requests and \textit{SEND} over UD for
 Kalia et. al. have shown that incoming \textit{WRITE}s offers lower latency and higher throughput compared to \textit{READ}.
 Outgoing \textit{WRITE}s have also been shown to not scale well, making this unadvisable for sending responses.
 
-HERD out performs the RDMA KV store presented in this thesis significantly.
-This could due to multiple factors:
+HERD has been shown to perform well with increasing number of clients.
+Factors which contributed to this:
 \begin{itemize}
     \item HERD has implemented some optimizations towards prefetching before posting a \textit{SEND} WR.
     With this they have observed roughly 30\% improvement, in the best case comparison (2 random memory accesses at 4 CPU cores.)
-    \item Making use of one-sided \textit{WRITE} for requests, bypassing the CPU.
+    \item Making use of one-sided \textit{WRITE} for requests, bypassing the CPU with network operations.
+    To know if a request has been received with \textit{WRITE}, polling/checking on memory changes is required.
     \item Using inlined data for key.
     Inlining small payloads decreases latency as there is no need for a DMA operation.
 \end{itemize}
 
-However, Kalia et. al. stated that performance should be comparable to \textit{SEND}/\textit{SEND}, given that inlining is possible.
-It was found that for a large number of clients and/or requests, the round-robin polling used, is inefficient.
+However, Kalia et al. stated that performance should be comparable to \textit{SEND}/\textit{SEND} with UC, given that inlining is possible.
+It was found that for many clients and/or requests, the round-robin polling used, is inefficient.
 With 1000s of clients, a \textit{SEND}/\textit{SEND} design would scale better than the \textit{WRITE}/\textit{SEND} used in HERD.
 
+\section{ScaleRPC}
+ScaleRPC makes uses of RC and efficient resource sharing, to provide a scalable RPC\cite{chen2019scalable}, comparable to HERD\cite{kalia2014using}.
+Like HERD, ScaleRPC makes use of prefetching to decrease latency when receiving requests.
+Additionally, ScaleRPC groups clients to balance contention to the RNIC cache.
+With this performance and be held with increasing number of clients, and thus increasing number of connected QPs.
+
+\section{FaSST}
+FaSST shows comparable performance to HERD and ScaleRPC.
+FaSST is built on two-sided verbs with UD, and most makes use of batching to increase performance\cite{kalia2016fasst}.
+Kalia et al. have shown that packet loss is rare, even with UD, and can be ignored.
 
 
 % ---------------------------------------------------------------------------

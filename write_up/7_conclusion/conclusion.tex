@@ -19,21 +19,39 @@
 RDMA has been shown to be a promising advancement for key values stores.
 The low latency that RDMA brings with it, opens up new possibilities and improved performance.
 RDMA also requires more design decision to be made, which transportation protocol to use, which optimizations to use, and which verbs to use.
-In this thesis, the transportation protocols RC and UD have been compared, on performance, to TCP.
+In this thesis, the transportation protocols RC, UC, and UD have been compared, on performance, to TCP, using both blocking and non-blocking methods.
 
 \textbf{RQ1:} In industry, KV stores require to be scalable and low latency.
-Connection based transportation (RC and UC) put stress on RNIC when using large number of clients, hindering performance with respect to throughput and scalability.
-RC has similar scalability to TCP, with a near 60 kilo-tasks/sec increase in throughput across all number of clients.
-Best performing transportation type is UD, with close to 400 kilo-tasks/sec throughput and 64 $\mu$sec at 30 clients.
-It has been shown that UD offers a 58.7\% improvement in throughput against RC, and 45.5\% improvement in latency.
-For scalability UD is recommended to use, as this offers the best overall performance and sustains this up to 30 clients, and has the potential for optimizations to further improve performance.
+For scalability, UC has been shown to be the best performing transport type.
+When directly polling, UC reaches maximum performance of roughly 370 thousand ops/sec, with 33 clients connected.
+This is a 79\% increase over TCP.
+UC also performed best in regard to latency, achieving roughly 49 $\mu$sec, which at 32 clients, is a 64\% increase over TCP.
+However, much like all other transport types, above 33 clients, throughput and latency performance drops below TCP's throughput performance, while UC nears TCP's latency.
+This shows poor scalability for all RDMA transport types with contesting threads, causing high CPU usage.
+
+Waiting for completion event, has shown proper improvements to both latency and throughput, when exceeding physical thread count.
+By blocking, CPU usage decreases, at the cost of context switching.
+Below 32 clients, context switching results in 23\% decrease in throughput performance.
+Above 32 clients however, throughput is reaches an equilibrium, much like TCP.
+UC beats RC in performance, reaching a maximum throughput of roughly 285 thousand ops/sec.
+This is a 38\% improvement over TCP.
+In context of latency, UC scaled well here too.
+Latency, and its standard deviation, remained proportional to number of clients.
+UC remained below TCP and RC, achieving an average latency of 99 $\mu$sec at 32 clients, and 158 $\mu$sec at 60 clients.
+Along with TCP and RC, variance on latency increases with number of clients, this is to be expected.
+However, it has been found that outliers are significantly reduced compared to the non-blocking method.
+
+Therefore, for scalability UC is recommended to use.
+If number of threads will not exceed the maximum number of physical threads, then non-blocking achieves higher throughput and latency.
+However, with multithreading beyond physical thread count, blocking would be recommend, as throughput and latency performance remains consistent.
 
 \textbf{RQ2:} The advantages and disadvantages present with the different transportation types impact the KV store design choices.
 In context of KV stores, UD is a compelling transportation type, however does not offer RDMA verbs such as \textit{READ} and \textit{WRITE}, which could offer for improved performance.
 UD also allow for more optimizations, due to their one-to-many QP.
-UD performance in this thesis have found to be limited.
-Multiple UD QP's along with client grouping could continue scalability further.
+An example optimization would to multiple UD QP's along with client grouping could continue scalability further.
 Connection based transportation types are limited by one-to-one QP, although also have some room for improvements.
+However, UC is easier to implement with multiple worker threads, as there is one QP per client.
+Thus, without any optimizations, UC is recommended to be used.
 
 
 % ---------------------------------------------------------------------------

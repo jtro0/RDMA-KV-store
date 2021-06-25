@@ -78,29 +78,6 @@ This is due to the non-blocked design, and 32 physical threads being the maximum
 Without this blocking or scheduling, threads take CPU cycles while polling on the receive queue.
 With only a limited number of CPU cycles, this is not used efficiently, resulting in drop in performance for all worker threads.
 
-\begin{table}
-    \centering
-    \begin{tabular}{rllll}
-        \toprule
-        \textbf{Clients} & \textbf{TCP} & \textbf{RC} & \textbf{UC} & \textbf{UD} \\
-        \midrule
-        1 &  &  &  &  \\
-        2 & 6531.57 & 24686.53 & 24638.92 & 26502.61 \\
-        3 & 13594.19 & 23770.88 & 24785.06 & 28301.23 \\
-        4 & 4297.08 & 24568.10 & 27795.82 & 23489.22 \\
-        5 & 7363.60 & 17665.62 & 19850.78 & 22090.11 \\
-        6 & 6521.77 & 16064.32 & 20579.03 & 24167.81 \\
-        7 & 11672.15 & 13975.28 & 21439.07 & 16246.35 \\
-        8 & 18989.11 & 14401.89 & 17510.51 & 14201.32 \\
-        9 & 12033.20 & 4957.15 & 17930.69 & 21432.35 \\
-        10 & 11858.04 & 18916.31 & 20129.91 & 17827.71 \\
-        15 & 9603.18 & 8252.11 & 19962.03 & 16410.47 \\
-        \bottomrule
-    \end{tabular}
-    \caption[Change in throughput per additional client, up to 15 clients.]{Change in throughput per additional client, up to 15 clients. Values are shown in ops/sec per additional client.}
-    \label{tab:throughput_add_client}
-\end{table}
-
 \subsection{Throughput analysis by waiting for completion event}
 \begin{figure}
     \centering
@@ -161,7 +138,6 @@ To examine the variation in latency with increasing number of clients visually, 
 Graphs show the spread in latency results at three points: 5 clients, 32 clients and 60 clients.
 Additionally, the median, innerquartile range, 95th and 99th percentile, and standard deviation, is used to examine the spread numerically.
 This numeric data can be found in table \ref{tab:num_stats}, for the three sets of data.
-A complete table, with all number of clients up to 70, can be found in table INSERT TABLE in the appendix.
 \begin{table}
     \subtable[TCP] {
         \centering
@@ -305,7 +281,7 @@ At this rate, UC and RC will remain providing lower latency compared to TCP, wit
 
 \subsubsection{Variation of latency using blocked design}
 Comparing the variance between the blocked design and without blocking, shows significant improvement in variation and spread of latency data.
-This can be seen in table \ref{tab:num_stats_block}, again with larger table given in appendix, table INSERT TABLE REF.
+This can be seen in table \ref{tab:num_stats_block}.
 
 \begin{table}
     \subtable[TCP] {
@@ -410,7 +386,7 @@ Additionally, it can be seen in these figures, that UC is more normally distribu
     \label{fig:CDF_block}
 \end{figure}
 
-\subsubsection{Effect of CPU context switching between blocking and non-blocking designs on performance}
+\section{Effect of CPU context switching between blocking and non-blocking designs on performance}
 In the analysis above on throughput and latency performance between blocking and non-blocking design, has shown a loss in initial performance, but normalization beyond the physical thread count.
 With blocking, CPU utilization decreases, as threads are waiting to for completition event, without using CPU cycles.
 For this to happen however, CPU must use context switching to (re)store execution when blocking.

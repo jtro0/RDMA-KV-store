@@ -119,13 +119,18 @@ A worker thread is still created for every client, however, in the case of UD, a
 
 %TODO ADD MORE GRAPHICS
 
+\subsubsection{Work completion processing}
+With large number of threads, exceeding the 32 physical threads present per node of DAS, CPU usage would increase when directly polling.
+Therefore, two methods are used in this thesis: waiting for completion event and directly polling.
+In both cases, polling on completion queue is done by consuming a WC one by one.
 
 \section{Benchmark design}\label{sec:benchmark-design}
 To evaluate the performance and scalability of the RDMA KV store, a multiclient benchmark has been made.
-In total, 10 million tasks will be divided among clients.
+Each client is run on its own thread, with no shared memory.
+In total, 10 million key-value operations will be divided among clients.
 This number is constant to lessen the scalability issues with the underlying hash table.
-A task involves two operations, sending a request and receiving response.
-Only once a response is received from the server, can the client continue to the next task.
+A task involves two network operations, sending a request and receiving response.
+Only once a response is received from the server, can the client continue to the next task, thus running sequentially.
 This meaning that the full potential of RDMA is not being used, however it has been chosen for correctness, and such that latency can be evaluated accurately on a per-task level. %TODO MAYBE I SHOULD CONTINUE?
 
 During client benchmark execution, the time will be taken at two points: before sending request, and after receiving response.
@@ -137,7 +142,7 @@ For this, Python 3.6\cite{python} is used, along with pandas\cite{pandas} and ma
 
 The benchmark is designed to evaluate each transportation types under similar conditions, and will follow the same path.
 Once a client is setup and connected with the server, it will start performing its tasks.
-These tasks follow the 30:1 \textit{GET}/\textit{SET} ratio that found by Atikoglu et. al.\cite{atikoglu2012workload}.
+These tasks follow a realistic workload of 30:1 \textit{GET}/\textit{SET} ratio, this has been found by Atikoglu et al.\cite{atikoglu2012workload}.
 A \textit{SET} request has a 5\% chance of being generated.
 This is done by generating a random number as follows: $rand() \bmod 100 <= 5$.
 Else a \textit{GET} request is generated.
@@ -148,6 +153,7 @@ All performance tests and results have been gathered on the DAS-5 computing clus
 This distributed system of computers spread across the Netherlands, and is used by research groups from VU Amsterdam, TU Delft, Leiden University, and many more.
 Each cluster varies slightly in specifications, however each, is equipped with dual Intel E5-2630v3 8-core CPUs, a 56 Gbit/s Inifiniband (IB) RDMA networking, and 1 Gbit/s classical ethernet networking.
 The specifications of each cluster is as shown in table \ref{tab:das5}.
+The dual CPUs used per node, result in a total of 32 physical threads.
 
 All experiments make use of the IB network card, and is also configured to run TCP/IP.
 Furthermore, at least two nodes are used, his ensures that the server and clients are separated.
