@@ -8,44 +8,8 @@
 
 #include "hash.h"
 #include "request_dispatcher.h"
-#include "parser.h"
-#include "kvstore.h"
 
 int send_response(struct client_info *client, int code, int payload_len, char *payload) {
-    if (client->is_test) {
-        char response[MSG_SIZE];
-        ssize_t sent;
-        int response_len;
-
-        response_len = snprintf(response, sizeof(response), "%d %s %d\n", code,
-                                code_msg(code), payload_len);
-        if (response_len < 0 || response_len == sizeof(response)) {
-            error("Error formatting response (status: %d)\n", code);
-            return -1;
-        }
-        sent = send_on_socket(client->tcp_client->socket_fd, response, response_len);
-        if (sent <= 0) {
-            error("Cannot send response on socket\n");
-            return -1;
-        }
-
-        if (payload_len) {
-            assert(payload);
-            sent = send_on_socket(client->tcp_client->socket_fd, payload, payload_len);
-            if (sent <= 0) {
-                error("Cannot send payload on socket\n");
-                return -1;
-            }
-            sent = send_on_socket(client->tcp_client->socket_fd, "\n", 1);
-            if (sent <= 0) {
-                error("Cannot send payload terminator on socket\n");
-                return -1;
-            }
-        }
-        pr_debug("Response %s\n", code_msg(code));
-        return 0;
-    }
-
     int sent;
 
     bzero(client->response->msg, MSG_SIZE);
@@ -65,48 +29,6 @@ int send_response(struct client_info *client, int code, int payload_len, char *p
 }
 
 int ping(struct client_info *client) {
-    return send_response(client, OK, 0, NULL);
-}
-
-/*
- * Thread unsafe
- */
-int dump(const char *filename, struct client_info *client) {
-    assert(ht != NULL);
-
-    int fd;
-    if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666)) == -1) {
-        char errbuf[1024];
-        snprintf(errbuf, sizeof(errbuf), "Could not open %s for creating dump",
-                 filename);
-        error("%s\n", errbuf);
-        send_response(client, UNK_ERROR, strlen(errbuf), errbuf);
-        return -1;
-    }
-
-    for (unsigned bucket = 0; bucket < ht->capacity; bucket++) {
-        dprintf(fd, "B %d\n", bucket);
-        hash_item_t *curr = ht->items[bucket];
-        while (curr != NULL) {
-            dprintf(fd, "K %s %zu\n", curr->key, curr->value_size);
-            if (write(fd, curr->value, curr->value_size) < 0) {
-                char errbuf[1024];
-                snprintf(errbuf, sizeof(errbuf),
-                         "Could not dump value of size %zu for key %s",
-                         curr->value_size, curr->key);
-                error("%s\n", errbuf);
-                send_response(client, UNK_ERROR, strlen(errbuf), errbuf);
-                break;
-            }
-            if (write(fd, "\n", 1) < 0) {
-                error("Could not write newline to dump\n");
-                send_response(client, UNK_ERROR, 0, NULL);
-                break;
-            }
-            curr = curr->next;
-        }
-    }
-    close(fd);
     return send_response(client, OK, 0, NULL);
 }
 
@@ -141,10 +63,7 @@ void request_dispatcher(struct client_info *client) {
         case PING:
             ping(client);
             break;
-        case DUMP:
-            dump(DUMP_FILE, client);
-            break;
-        case EXIT:
+        case EXIT: //TODO: Deallocate for clients
             send_response(client, OK, 0, NULL);
             exit(0);
             break;
@@ -153,7 +72,6 @@ void request_dispatcher(struct client_info *client) {
             break;
         case UNK:
             send_response(client, PARSING_ERROR, 0, NULL);
-//            exit(-1);
             break;
         default:
             return;

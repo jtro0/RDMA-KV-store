@@ -99,11 +99,12 @@ struct ud_server_info {
     int request_count;
     struct ibv_ah *ah[MAX_CLIENTS];
     pthread_mutex_t lock;
+    pthread_mutex_t lock_proc_wc;
+
 };
 
 struct client_info {
     enum connection_type type;
-    bool is_test;
     struct request *request;
     unsigned int request_count;
     struct response *response;
@@ -114,13 +115,13 @@ struct client_info {
     struct ud_client_connection *ud_client;
 
     int client_nr;
+    int blocking;
 };
 
 struct server_info {
     enum connection_type type;
     struct sockaddr_in addr;
     unsigned int port;
-    bool is_test;
 
     struct tcp_conn_info *tcp_server_info;
     struct rc_server_info *rc_server_info;
@@ -128,6 +129,7 @@ struct server_info {
     struct ud_server_info *ud_server_info;
 
 //    struct client_info *client;// Make array when doing multi clients
+    int blocking;
 };
 
 struct server_info *server_init(int argc, char *arg[]);
@@ -143,11 +145,6 @@ int prepare_for_next_request(struct client_info *client);
 int receive_header(struct client_info *client);
 
 void close_connection(int socket);
-
-int read_payload(struct client_info *client, struct request *request, size_t expected_len,
-                 char *buf);
-
-int check_payload(int socket, struct request *request, size_t expected_len);
 
 int send_response_to_client(struct client_info *client);
 struct request *get_current_request(struct client_info *client);

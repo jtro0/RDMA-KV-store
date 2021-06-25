@@ -5,14 +5,6 @@
 #ifndef RDMA_KV_STORE_RDMA_COMMON_H
 #define RDMA_KV_STORE_RDMA_COMMON_H
 
-/*
- * Header file for the common RDMA routines used in the server/client example
- * program.
- *
- * Author: Animesh Trivedi
- *          atrivedi@apache.org
- *
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -55,24 +47,7 @@
 
 #define IB_PHYS_PORT 1			// HERD, Primary physical port number for qps
 
-#define MAX_POLL_CQ_TIMEOUT 1000
-/*
- * We use attribute so that compiler does not step in and try to pad the structure.
- * We use this structure to exchange information between the server and the client.
- *
- * For details see: http://gcc.gnu.org/onlinedocs/gcc/Type-Attributes.html
- */
-struct __attribute((packed)) rdma_buffer_attr {
-    uint64_t address;
-    uint32_t length;
-    union stag {
-        /* if we send, we call it local stags */
-        uint32_t local_stag;
-        /* if we receive, we call it remote stag */
-        uint32_t remote_stag;
-    } stag;
-    uint32_t rkey;
-};
+#define MAX_POLL_CQ_TIMEOUT 100
 
 struct qp_attr {
     uint64_t gid_global_interface_id;	// Store the gid fields separately because I
@@ -97,9 +72,6 @@ struct ud_response {
 /* resolves a given destination name to sin_addr */
 int get_addr(char *dst, struct sockaddr *addr);
 
-/* prints RDMA buffer info structure */
-void show_rdma_buffer_attr(struct rdma_buffer_attr *attr);
-
 /*
  * Processes an RDMA connection management (CM) event.
  * @echannel: CM event channel where the event is expected.
@@ -109,23 +81,6 @@ void show_rdma_buffer_attr(struct rdma_buffer_attr *attr);
 int process_rdma_cm_event(struct rdma_event_channel *echannel,
                           enum rdma_cm_event_type expected_event,
                           struct rdma_cm_event **cm_event);
-
-/* Allocates an RDMA buffer of size 'length' with permission permission. This
- * function will also register the memory and returns a memory region (MR)
- * identifier or NULL on error.
- * @pd: Protection domain where the buffer should be allocated
- * @length: Length of the buffer
- * @permission: OR of IBV_ACCESS_* permissions as defined for the enum ibv_access_flags
- */
-struct ibv_mr *rdma_buffer_alloc(struct ibv_pd *pd,
-                                 uint32_t length,
-                                 enum ibv_access_flags permission);
-
-/* Frees a previously allocated RDMA buffer. The buffer must be allocated by
- * calling rdma_buffer_alloc();
- * @mr: RDMA memory region to free
- */
-void rdma_buffer_free(struct ibv_mr *mr);
 
 /* This function registers a previously allocated memory. Returns a memory region
  * (MR) identifier or NULL on error.
@@ -151,11 +106,9 @@ void rdma_buffer_deregister(struct ibv_mr *mr);
  *          atleast this size.
  */
 int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct ibv_wc *wc, int max_wc,
-                                   struct ibv_cq *cq_ptr);
-int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc,
-                                                struct ibv_cq *cq_ptr);
-/* prints some details from the cm id */
-void show_rdma_cmid(struct rdma_cm_id *id);
+                                   struct ibv_cq *cq_ptr, pthread_mutex_t *lock, int blocking);
+int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, struct ibv_cq *cq_ptr,
+                                                struct ibv_comp_channel *comp_channel, int blocking);
 
 int post_recieve(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf);
 

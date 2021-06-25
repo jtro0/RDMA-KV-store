@@ -2,58 +2,9 @@
 // Created by jtroo on 15-04-21.
 //
 
-/*
- * Implementation of the common RDMA functions.
- *
- * Authors: Animesh Trivedi
- *          atrivedi@apache.org
- */
 
 #include <sys/time.h>
 #include "rdma_common.h"
-
-void show_rdma_cmid(struct rdma_cm_id *id) {
-    if (!id) {
-        error("Passed ptr is NULL\n");
-        return;
-    }
-    printf("RDMA cm id at %p \n", id);
-    if (id->verbs && id->verbs->device)
-        printf("dev_ctx: %p (device name: %s) \n", id->verbs,
-               id->verbs->device->name);
-    if (id->channel)
-        printf("cm event channel %p\n", id->channel);
-    printf("QP: %p, port_space %x, port_num %u \n", id->qp,
-           id->ps,
-           id->port_num);
-}
-
-void show_rdma_buffer_attr(struct rdma_buffer_attr *attr) {
-    if (!attr) {
-        error("Passed attr is NULL\n");
-        return;
-    }
-    printf("---------------------------------------------------------\n");
-    printf("buffer attr, addr: %p , len: %u , stag : 0x%x \n",
-           (void *) attr->address,
-           (unsigned int) attr->length,
-           attr->stag.local_stag);
-    printf("---------------------------------------------------------\n");
-}
-
-struct ibv_mr *rdma_buffer_alloc(struct ibv_pd *pd, uint32_t size,
-                                 enum ibv_access_flags permission) {
-    struct ibv_mr *mr = NULL;
-    check(!pd, NULL, "Protection domain is NULL\n", NULL);
-    void *buf = calloc(1, size);
-    check(!buf, NULL, "failed to allocate buffer\n", NULL);
-    pr_debug("Buffer allocated: %p , len: %u \n", buf, size);
-    mr = rdma_buffer_register(pd, buf, size, permission);
-    if (!mr) {
-        free(buf);
-    }
-    return mr;
-}
 
 struct ibv_mr *rdma_buffer_register(struct ibv_pd *pd,
                                     void *addr, uint32_t length,
@@ -68,17 +19,6 @@ struct ibv_mr *rdma_buffer_register(struct ibv_pd *pd,
              (unsigned int) mr->length,
              mr->lkey);
     return mr;
-}
-
-void rdma_buffer_free(struct ibv_mr *mr) {
-    if (!mr) {
-        error("Passed memory region is NULL, ignoring\n");
-        return;
-    }
-    void *to_free = mr->addr;
-    rdma_buffer_deregister(mr);
-    pr_debug("Buffer %p free'ed\n", to_free);
-    free(to_free);
 }
 
 void rdma_buffer_deregister(struct ibv_mr *mr) {
@@ -125,25 +65,28 @@ int process_rdma_cm_event(struct rdma_event_channel *echannel,
 
 
 int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct ibv_wc *wc, int max_wc,
-                                   struct ibv_cq *cq_ptr) {
-//    struct ibv_cq *cq_ptr = NULL;
+                                   struct ibv_cq *cq_ptr, pthread_mutex_t *lock, int blocking) {
     void *context = NULL;
     int ret = -1, i, total_wc = 0;
-    /* We wait for the notification on the CQ channel */
-//    ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
-//                           &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
-//                           &context); /* Associated CQ user context, which we did set */
-//    check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
-//
-//    /* Request for more notifications. */
-//    ret = ibv_req_notify_cq(cq_ptr, 0);
-//    check(ret, -errno, "Failed to request further notifications %d \n", -errno);
 
-    /* We got notification. We reap the work completion (WC) element. It is
- * unlikely but a good practice it write the CQ polling code that
-    * can handle zero WCs. ibv_poll_cq can return zero. Same logic as
-    * MUTEX conditional variables in pthread programming.
- */
+    /*
+     * We can choose to block and wait for completion event
+     */
+    if (blocking) {
+        cq_ptr = NULL;
+        ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
+                               &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
+                               &context); /* Associated CQ user context, which we did set */
+        check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
+
+        /* Request for more notifications. */
+        ret = ibv_req_notify_cq(cq_ptr, 0);
+        check(ret, -errno, "Failed to request further notifications %d \n", -errno);
+    }
+
+    /*
+     * Poll on the completion queue for new events. If blocked before, then this contains a WC.
+     */
     total_wc = 0;
     do {
         ret = ibv_poll_cq(cq_ptr /* the CQ, we got notification for */,
@@ -162,30 +105,41 @@ int process_work_completion_events(struct ibv_comp_channel *comp_channel, struct
             return -(wc[i].status);
         }
     }
-    /* Similar to connection management events, we need to acknowledge CQ events */
-    ibv_ack_cq_events(cq_ptr,
-                      1 /* we received one event notification. This is not
-		       number of WC elements */);
+    if (blocking) {
+        ibv_ack_cq_events(cq_ptr,
+                          1 /* we received one event notification.*/);
+    }
     return total_wc;
 }
 
-int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc,
-                                   struct ibv_cq *cq_ptr) {
-//    struct ibv_cq *cq_ptr = NULL;
+/*
+ * Same principle as above, but now with a timeout defined in rdma_common.h
+ */
+int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc, struct ibv_cq *cq_ptr,
+                                                struct ibv_comp_channel *comp_channel, int blocking) {
     void *context = NULL;
     int ret = -1, i, total_wc = 0;
+
+    if (blocking) {
+        cq_ptr = NULL;
+        /* We wait for the notification on the CQ channel */
+        ret = ibv_get_cq_event(comp_channel, /* IO channel where we are expecting the notification */
+                               &cq_ptr, /* which CQ has an activity. This should be the same as CQ we created before */
+                               &context); /* Associated CQ user context, which we did set */
+        check(ret, -errno, "Failed to get next CQ event due to %d \n", -errno);
+
+        /* Request for more notifications. */
+        ret = ibv_req_notify_cq(cq_ptr, 0);
+        check(ret, -errno, "Failed to request further notifications %d \n", -errno);
+    }
 
     struct timeval time;
     unsigned long start_time_msec, current_time_msec;
 
+    // Start timer
     gettimeofday(&time, NULL);
     start_time_msec = (time.tv_sec * 1000) + (time.tv_usec / 1000);
 
-    /* We got notification. We reap the work completion (WC) element. It is
- * unlikely but a good practice it write the CQ polling code that
-    * can handle zero WCs. ibv_poll_cq can return zero. Same logic as
-    * MUTEX conditional variables in pthread programming.
- */
     total_wc = 0;
     do {
         ret = ibv_poll_cq(cq_ptr /* the CQ, we got notification for */,
@@ -193,9 +147,9 @@ int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc,
                           wc + total_wc/* where to store */);
         check(ret < 0, ret, "Failed to poll cq for wc due to %d \n", ret);
         total_wc += ret;
-        gettimeofday(&time, NULL);
+        gettimeofday(&time, NULL); // Stop timer
         current_time_msec = (time.tv_sec * 1000) + (time.tv_usec / 1000);
-    } while (total_wc < max_wc && ((current_time_msec - start_time_msec) < MAX_POLL_CQ_TIMEOUT));
+    } while (total_wc < max_wc && ((current_time_msec - start_time_msec) < MAX_POLL_CQ_TIMEOUT)); // Break if we got all WC we requests, or time has run out
     pr_debug("%d WC are completed \n", total_wc);
     /* Now we check validity and status of I/O work completions */
     for (i = 0; i < total_wc; i++) {
@@ -206,10 +160,10 @@ int process_work_completion_events_with_timeout(struct ibv_wc *wc, int max_wc,
             return -(wc[i].status);
         }
     }
-    /* Similar to connection management events, we need to acknowledge CQ events */
-//    ibv_ack_cq_events(cq_ptr,
-//                      1 /* we received one event notification. This is not
-//		       number of WC elements */);
+    if (blocking) {
+        ibv_ack_cq_events(cq_ptr,
+                          1 /* we received one event notification.*/);
+    }
     return total_wc;
 }
 
@@ -268,6 +222,9 @@ int post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, voi
     return ret;
 }
 
+/*
+ * Similar as post_send(), but now with AH
+ */
 int ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, void *buf, struct ibv_ah *ah,
                  uint32_t qpn) {
     int ret = 0;
@@ -285,16 +242,10 @@ int ud_post_send(size_t size, uint32_t lkey, uint64_t wr_id, struct ibv_qp *qp, 
             .num_sge    = 1,
             .opcode     = IBV_WR_SEND,
             .send_flags = IBV_SEND_SIGNALED,
-            .wr.ud.ah = ah,
+            .wr.ud.ah = ah, // Give the route it needs to take
             .wr.ud.remote_qpn = qpn,
             .wr.ud.remote_qkey = 0x11111111
     };
-
-    if (ah == NULL) {
-        fprintf(stderr,"send %p %p %p %p %p\n", buf, &send_wr, &bad_send_wr, qp, ah);
-        sleep(1);
-    }
-    pr_debug("send %p %p %p %p %p\n", buf, &send_wr, &bad_send_wr, qp, ah);
 
     ret = ibv_post_send(qp, &send_wr, &bad_send_wr);
     return ret;
@@ -307,11 +258,9 @@ int ud_set_init_qp(struct ibv_qp *qp) {
             .port_num        = IB_PHYS_PORT,
             .qkey            = 0x11111111
     };
-    pr_info("In here\n");
 
     int ret = ibv_modify_qp(qp, &dgram_attr,
                             IBV_QP_STATE | IBV_QP_PKEY_INDEX | IBV_QP_PORT | IBV_QP_QKEY);
-    pr_info("After here\n");
 
     check(ret, ret, "Failed to modify dgram. QP to INIT\n", NULL);
 }

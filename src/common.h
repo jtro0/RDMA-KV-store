@@ -6,13 +6,11 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#define SERVER                          "EDU_OS_SERVER"
+#define SERVER  "KV_SERVER"
 
 #define PORT        35304
-#define MAXLINE     128
 #define MSG_SIZE    256
 #define KEY_SIZE 64
-#define DUMP_FILE   "dump.dat"
 
 
 enum connection_type {
@@ -79,6 +77,7 @@ enum response_code {
 extern int verbose;
 extern int debug;
 
+// Request structure
 struct request {
     int client_id;
     enum method method;
@@ -89,6 +88,7 @@ struct request {
     int connection_close;
 };
 
+// Response structure
 struct response {
     enum response_code code;
     char msg[MSG_SIZE];

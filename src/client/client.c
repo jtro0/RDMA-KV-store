@@ -3,6 +3,10 @@
 //
 #include "client.h"
 
+/*
+ * Send request to server.
+ * Returns 0 on success
+ */
 int send_request(struct client_to_server_conn *conn) {
     int ret = -1;
     switch (conn->conn_t) {
@@ -12,18 +16,22 @@ int send_request(struct client_to_server_conn *conn) {
                 ret = 0;
             break;
         case RC:
-            ret = rc_send_request(conn->rc_server_conn, conn->rc_server_conn->request);
+            ret = rc_send_request(conn->rc_server_conn, conn->rc_server_conn->request, conn->blocking);
             break;
         case UC:
-            ret = uc_send_request(conn->uc_server_conn, conn->uc_server_conn->request);
+            ret = uc_send_request(conn->uc_server_conn, conn->uc_server_conn->request, conn->blocking);
             break;
         case UD:
-            ret = ud_send_request(conn->ud_server_conn, conn->ud_server_conn->request);
+            ret = ud_send_request(conn->ud_server_conn, conn->ud_server_conn->request, conn->blocking);
             break;
     }
     return ret;
 }
 
+/*
+ * Receive response from server.
+ * On success, returns number of bytes received, or number of WC completed.
+ */
 int receive_response(struct client_to_server_conn *conn) {
     int ret = -1;
     switch (conn->conn_t) {
@@ -31,13 +39,13 @@ int receive_response(struct client_to_server_conn *conn) {
             ret = tcp_receive_response(conn->tcp_server_conn, conn->tcp_server_conn->response);
             break;
         case RC:
-            ret = rc_receive_response(conn->rc_server_conn, conn->rc_server_conn->response);
+            ret = rc_receive_response(conn->rc_server_conn, conn->rc_server_conn->response, conn->blocking);
             break;
         case UC:
-            ret = uc_receive_response(conn->uc_server_conn, conn->uc_server_conn->response);
+            ret = uc_receive_response(conn->uc_server_conn, conn->uc_server_conn->response, conn->blocking);
             break;
         case UD:
-            ret = ud_receive_response(conn->ud_server_conn, conn->ud_server_conn->response);
+            ret = ud_receive_response(conn->ud_server_conn, conn->ud_server_conn->response, conn->blocking);
             break;
     }
     return ret;

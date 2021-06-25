@@ -17,12 +17,7 @@ int ud_prepare_client(struct ud_server_conn *server_conn) {
           -errno);
 
     pr_debug("A new protection domain is allocated at %p \n", server_conn->pd);
-    /* Now we need a completion channel, were the I/O completion
-     * notifications are sent. Remember, this is different from connection
-     * management (CM) event notifications.
-     * A completion channel is also tied to an RDMA device, hence we will
-     * use cm_client_id->verbs.
-     */
+
     server_conn->io_completion_channel = ibv_create_comp_channel(context);
     check(!server_conn->io_completion_channel, -errno,
           "Failed to create an I/O completion event channel, %d\n",
@@ -30,12 +25,7 @@ int ud_prepare_client(struct ud_server_conn *server_conn) {
 
     pr_debug("An I/O completion event channel is created at %p \n",
              server_conn->io_completion_channel);
-    /* Now we create a completion queue (CQ) where actual I/O
-     * completion metadata is placed. The metadata is packed into a structure
-     * called struct ibv_wc (wc = work completion). ibv_wc has detailed
-     * information about the work completion. An I/O request in RDMA world
-     * is called "work" ;)
-     */
+
     server_conn->ud_cq = ibv_create_cq(context /* which device*/,
                                                   CQ_CAPACITY /* maximum capacity*/,
                                                   NULL /* user context, not used here */,
@@ -52,9 +42,6 @@ int ud_prepare_client(struct ud_server_conn *server_conn) {
     check(ret, -errno, "Failed to request notifications on CQ errno: %d \n",
           -errno);
 
-    /* Now the last step, set up the queue pair (send, recv) queues and their capacity.
-     * The capacity here is define statically but this can be probed from the
-     * device. We just use a small number as defined in rdma_common.h */
     bzero(&server_conn->qp_init_attr, sizeof server_conn->qp_init_attr);
     server_conn->qp_init_attr.cap.max_recv_sge = MAX_SGE; /* Maximum SGE per receive posting */
     server_conn->qp_init_attr.cap.max_recv_wr = MAX_WR; /* Maximum receive posting capacity */
@@ -65,15 +52,6 @@ int ud_prepare_client(struct ud_server_conn *server_conn) {
     server_conn->qp_init_attr.recv_cq = server_conn->ud_cq; /* Where should I notify for receive completion operations */
     server_conn->qp_init_attr.send_cq = server_conn->ud_cq; /* Where should I notify for send completion operations */
     /*Lets create a QP */
-//    ret = rdma_create_qp(server_conn->cm_client_id /* which connection id TODO change this to ibv_create_qp*/,
-//                         server_conn->pd /* which protection domain*/,
-//                         &server_conn->qp_init_attr /* Initial attributes */);
-//    check(ret, -errno, "Failed to create QP due to errno: %d\n", -errno);
-//
-//    /* Save the reference for handy typing but is not required */
-//    server_conn->ud_qp = server_conn->cm_client_id->qp;
-//    pr_debug("Client QP created at %p\n", server_conn->ud_qp);
-
     server_conn->ud_qp = ibv_create_qp(server_conn->pd, &server_conn->qp_init_attr);
     check(server_conn->ud_qp == NULL, -errno, "Failed to create QP due to errno: %d\n", -errno);
 
@@ -133,7 +111,7 @@ int ud_client_connect_to_server(struct ud_server_conn *server_conn) {
     return 0;
 }
 
-int ud_send_request(struct ud_server_conn *server_conn, struct request *request) {
+int ud_send_request(struct ud_server_conn *server_conn, struct request *request, int blocking) {
     int ret;
     struct ibv_wc wc;
 
@@ -146,7 +124,7 @@ int ud_send_request(struct ud_server_conn *server_conn, struct request *request)
     pr_info("Do we need this?\n");
     /* at this point we are expecting 1 work completion for the write */
     ret = process_work_completion_events(server_conn->io_completion_channel,
-                                         &wc, 1, server_conn->ud_cq);
+                                         &wc, 1, server_conn->ud_cq, NULL, blocking);
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 
@@ -171,7 +149,7 @@ int ud_pre_post_receive_response(struct ud_server_conn *server_conn, struct ud_r
     return ret;
 }
 
-int ud_receive_response(struct ud_server_conn *server_conn, struct ud_response *response) {
+int ud_receive_response(struct ud_server_conn *server_conn, struct ud_response *response, int blocking) {
     int ret;
     struct ibv_wc wc;
 
@@ -180,7 +158,8 @@ int ud_receive_response(struct ud_server_conn *server_conn, struct ud_response *
     check(ret, -errno, "Failed to recv response, errno: %d \n", -errno);
 
     /* at this point we are expecting 1 work completion for the write */
-    ret = process_work_completion_events_with_timeout(&wc, 1, server_conn->ud_cq);
+    ret = process_work_completion_events_with_timeout(&wc, 1, server_conn->ud_cq, server_conn->io_completion_channel,
+                                                      blocking);
     check(ret != 1, ret, "We failed to get 1 work completions , ret = %d \n",
           ret);
 
@@ -223,69 +202,4 @@ int ud_client_disconnect_and_clean(struct ud_server_conn *server_conn) {
     }
     printf("Client resource clean up is complete \n");
     return 0;
-}
-
-int ud_main(char *key, struct sockaddr_in *server_sockaddr) {
-    int ret;
-    struct ud_server_conn *server_conn = calloc(1, sizeof(struct ud_server_conn));
-    server_conn->server_sockaddr = server_sockaddr;
-    server_conn->request = allocate_request();
-    server_conn->response = malloc(sizeof(struct ud_response));
-
-    int client_nr;
-    if (strcmp(key, "boo") == 0) {
-        client_nr = 0;
-    }
-    else {
-        client_nr = 1;
-    }
-
-    ret = ud_prepare_client(server_conn);
-    check(ret, ret, "Failed to setup client connection , ret = %d \n", ret);
-
-    ret = ud_client_connect_to_server(server_conn);
-    check(ret, ret, "Failed to setup client connection , ret = %d \n", ret);
-
-    bzero(server_conn->request, sizeof(struct request));
-    strncpy(server_conn->request->key, key, KEY_SIZE);
-    server_conn->request->key_len = strlen(server_conn->request->key);
-    server_conn->request->method = SET;
-    server_conn->request->msg_len = strlen("hello server");
-    strncpy(server_conn->request->msg, "hello server", MSG_SIZE);
-    server_conn->request->client_id = client_nr;
-
-    sleep(1);
-
-    print_request(server_conn->request);
-    ret = ud_send_request(server_conn, server_conn->request);
-    check(ret, ret, "Failed to get send request, ret = %d \n", ret);
-
-    pr_info("Sent!\n");
-    bzero(server_conn->response, sizeof(struct ud_response));
-    ret = ud_receive_response(server_conn, server_conn->response);
-    print_response(&server_conn->response->response);
-    check(ret, ret, "Failed to receive response, ret = %d \n", ret);
-
-    sleep(5);
-
-//    server_conn->request = allocate_request();
-    bzero(server_conn->request, sizeof(struct request));
-    strncpy(server_conn->request->key, key, KEY_SIZE);
-    server_conn->request->key_len = strlen(server_conn->request->key);
-    server_conn->request->method = GET;
-    print_request(server_conn->request);
-    server_conn->request->client_id = client_nr;
-
-    ret = ud_send_request(server_conn, server_conn->request);
-    check(ret, ret, "Failed to get send second request, ret = %d \n", ret);
-
-    bzero(server_conn->response, sizeof(struct ud_response));
-    ret = ud_receive_response(server_conn, server_conn->response);
-    print_response(&server_conn->response->response);
-    check(ret, ret, "Failed to receive second response ret = %d \n", ret);
-
-    ret = ud_client_disconnect_and_clean(server_conn);
-    check(ret, ret, "Failed to cleanly disconnect and clean up resources \n", ret);
-
-    return ret;
 }

@@ -31,11 +31,10 @@ struct uc_server_conn {
     int socket_fd;
 };
 
-int uc_main(char *key, struct sockaddr_in *server_sockaddr);
 int uc_client_prepare_connection(struct uc_server_conn *server_conn);
 int uc_client_connect_to_server(struct uc_server_conn *server_conn);
-int uc_send_request(struct uc_server_conn *server_conn, struct request *request);
+int uc_send_request(struct uc_server_conn *server_conn, struct request *request, int blocking);
 int uc_pre_post_receive_response(struct uc_server_conn *server_conn, struct response *response);
-int uc_receive_response(struct uc_server_conn *server_conn, struct response *response);
+int uc_receive_response(struct uc_server_conn *server_conn, struct response *response, int blocking);
 int uc_client_disconnect_and_clean(struct uc_server_conn *server_conn);
 #endif //RDMA_KV_STORE_UC_CLIENT_UTILS_H

@@ -7,9 +7,6 @@
 
 #include "instance.h"
 #include "client/client.h"
-#include "client/rc_client_utils.h"
-#include "client/uc_client_utils.h"
-#include "client/ud_client_utils.h"
 
 void make_get_request(struct client_to_server_conn *conn, int count) {
     struct request *request = NULL;
@@ -60,6 +57,9 @@ void make_set_request(struct client_to_server_conn *conn, int count) {
     request->client_id = conn->instance_nr;
 }
 
+/*
+ * Used to validate response
+ */
 void make_expected_response(struct response *response, struct request *made_request, int count) {
     switch (made_request->method) {
         case UNK:
@@ -73,33 +73,34 @@ void make_expected_response(struct response *response, struct request *made_requ
             response->msg_len = strlen(response->msg);
             break;
         case DEL:
-            break;
         case PING:
-            break;
-        case DUMP:
-            break;
         case RST:
-            break;
         case EXIT:
-            break;
         case SETOPT:
+            response->code = OK;
             break;
     }
 }
 
+/*
+ * Client thread
+ */
 void* start_instance(void *arguments) {
     struct thread_args *args = arguments;
     enum connection_type conn_t = args->conn_t;
     struct sockaddr_in *server_addr = args->server_addr;
-    unsigned int num_ops = args->num_ops;
+    unsigned int num_ops = args->num_ops; // Number of operations needed to perform
     int instance_nr = args->instance_nr;
+    int blocking = args->blocking;
 
     int returned;
     struct client_to_server_conn conn;
     conn.conn_t = conn_t;
     conn.server_addr = server_addr;
     conn.instance_nr = instance_nr;
+    conn.blocking = blocking;
 
+    // Ugly but it works
     switch (conn_t) {
         case TCP:
             conn.tcp_server_conn = malloc(sizeof(struct tcp_server_conn));
@@ -125,10 +126,8 @@ void* start_instance(void *arguments) {
             conn.uc_server_conn->request = calloc(1, sizeof(struct request));
             conn.uc_server_conn->response = calloc(1, sizeof(struct response));
             conn.uc_server_conn->expected_response = calloc(1, sizeof(struct response));
-            pr_info("Preparing\n");
             returned = uc_client_prepare_connection(conn.uc_server_conn);
             check(returned, NULL, "Failed to setup client connection , returned = %d \n", returned);
-            pr_debug("prepared\n");
             returned = uc_client_connect_to_server(conn.uc_server_conn);
             check(returned, NULL, "Failed to setup client connection , returned = %d \n", returned);
             break;
@@ -141,45 +140,42 @@ void* start_instance(void *arguments) {
             conn.ud_server_conn->client_id = instance_nr;
             returned = ud_prepare_client(conn.ud_server_conn);
             check(returned, NULL, "Failed to setup client connection , returned = %d \n", returned);
-            pr_debug("prepared\n");
             returned = ud_client_connect_to_server(conn.ud_server_conn);
             check(returned, NULL, "Failed to setup client connection , returned = %d \n", returned);
             break;
     }
-    struct operation *ops = calloc(num_ops, sizeof(struct operation));
+    struct operation *ops = calloc(num_ops, sizeof(struct operation)); // Array of operations, used to store time
 
-    sleep(1);
+    sleep(1); // Wait until server is fully ready
 
     int count = 0;
 
     do {
+        // 5% chance of a SET request
         if (rand() % 100 <= 5) {
             make_set_request(&conn, count);
         }
-        else {
+        else { // 95% chance of GET request
             make_get_request(&conn, (rand() % (count+1))-1);
         }
         ops[count].start = malloc(sizeof(struct timeval));
         ops[count].end = malloc(sizeof(struct timeval));
 
-        gettimeofday(ops[count].start, NULL);
+        gettimeofday(ops[count].start, NULL); // Start timer of current operation
 
         returned = 0;
-        while (returned == 0) {
+        while (returned == 0) { // Loop until response is received
             returned = send_request(&conn);
             check(returned, ops, "Failed to get send request, returned = %d \n", returned);
 
             returned = receive_response(&conn);
             check(returned < 0, ops, "Failed to get receive response, returned = %d \n", returned);
-            pr_debug("returned %d\n", returned);
         }
 
-        gettimeofday(ops[count].end, NULL);
+        gettimeofday(ops[count].end, NULL); // Received response, can stop the timer!
 
-//        usleep(1);
         count++;
-//        bzero(conn.rc_server_conn->expected_response, sizeof(struct response));
     } while (count < num_ops);
 
-    pthread_exit((void*)ops);
+    pthread_exit((void*)ops); // Return the array of timers
 }
