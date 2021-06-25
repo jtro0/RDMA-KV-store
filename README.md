@@ -1,8 +1,8 @@
 # RDMA based key-value store
-A multithreaded key-value server using RDMA technology, and accommodating benchmark, used for my Bachelor Thesis: Scalability of RDMA transport types in a Key-Value store application. Report and presentation can be found in the `docs` folder.
+A multithreaded key-value server using RDMA technology, and accommodating benchmark, used for my Bachelor Thesis: Scalability of RDMA transport types in a Key-Value store application. The thesis report can be found in `write_up/thesis.pdf`.
 
 The server and benchmarking support RDMA transport types RC, UC, and UD, along with TCP. For RDMA, this program makes use of two-sided channel semantics, `SEND` and `RECV`.
-
+Benchmarking is done with 10 million key-value store operations (GET and SET). 
 
 ## Dependencies
 ### Building
